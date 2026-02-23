@@ -1,0 +1,378 @@
+:root {
+    --bg-main: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #111827;
+    --bg-hover: #1f2937;
+
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+
+    --border: #374151;
+    --shadow: rgba(0,0,0,0.6);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-main);
+}
+
+/* =========================
+   LAYOUT
+   ========================= */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+
+.navbar {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px var(--shadow);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+}
+
+.nav-logo h2 {
+    color: var(--accent);
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    width: 100%;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--accent);
+}
+
+.nav-auth {
+    margin-left: auto;   /* Pushes to the right */
+    display: flex;
+    gap: 15px;
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: 0.25s ease;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(59,130,246,0.4);
+}
+
+.btn-secondary {
+    background: #374151;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+}
+
+.btn-outline:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-large {
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
+/* =========================
+   HERO SECTION
+   ========================= */
+
+.hero {
+    background: linear-gradient(135deg, #020617, #1e293b);
+    color: var(--text-primary);
+    padding: 120px 0 80px;
+    text-align: center;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+/* HERO CONTAINER FLEX */
+.hero-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    flex-wrap: wrap; /* makes it responsive on small screens */
+}
+
+/* LEFT TEXT */
+.hero-content {
+    flex: 1 1 500px; /* flexible, minimum width 500px */
+    max-width: 600px;
+}
+
+/* HERO HEADINGS */
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 1.3rem;
+    margin-bottom: 40px;
+    color: var(--text-secondary);
+}
+
+/* HERO BUTTONS */
+.hero-buttons {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* RIGHT IMAGE */
+.hero-image-container {
+    flex: 1 1 400px; /* flexible, minimum width 400px */
+    text-align: center;
+}
+
+.hero-image {
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .hero-container {
+        flex-direction: column-reverse;
+        text-align: center;
+    }
+
+    .hero-content {
+        max-width: 100%;
+    }
+
+    .hero-buttons {
+        justify-content: center;
+    }
+
+    .hero-image-container {
+        margin-bottom: 30px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.2rem;
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+    }
+}
+
+/* =========================
+   SECTIONS
+   ========================= */
+
+section {
+    padding: 80px 0;
+}
+
+section h2 {
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+/* =========================
+   CARDS
+   ========================= */
+
+.service-card,
+.dashboard-card,
+.table-container,
+.search-filter {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.services-grid p {
+    text-align: center;
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+/* =========================
+   MODALS
+   ========================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid var(--border);
+}
+
+.close {
+    color: var(--text-secondary);
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: white;
+}
+
+/* =========================
+   FORMS
+   ========================= */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    color: var(--text-secondary);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.form-group input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* =========================
+   TABLES
+   ========================= */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+td {
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+tr:hover {
+    background: var(--bg-hover);
+}
+
+/* =========================
+   UTILITIES
+   ========================= */
+
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}

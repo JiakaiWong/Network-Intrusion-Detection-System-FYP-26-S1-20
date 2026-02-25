@@ -11,7 +11,11 @@ import Usermanagement from "./pages/admin/UserManagement";
 import About from "./pages/shared/About";
 import Features from "./pages/shared/Features";
 import Demo from "./pages/shared/Demo";
-import AlertDetails from "./pages/analyst/AlertDetails"; 
+import NetworkTraffic from "./pages/analyst/NetworkTraffic";
+import Notifications from "./pages/analyst/Notifications";
+import Profile from "./pages/analyst/Profile";
+import AlertDetails from "./pages/analyst/AlertDetails";
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,11 +31,15 @@ function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/network-traffic" element={<NetworkTraffic />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/usermanagement" element={<Usermanagement />} />
         <Route path="/alert/:id" element={<AlertDetails />} />
 
+
         
-           
+  
 
       </Routes>
     </BrowserRouter>

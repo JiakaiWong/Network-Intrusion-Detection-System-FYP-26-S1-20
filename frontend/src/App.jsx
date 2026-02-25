@@ -11,7 +11,7 @@ import Usermanagement from "./pages/admin/UserManagement";
 import About from "./pages/shared/About";
 import Features from "./pages/shared/Features";
 import Demo from "./pages/shared/Demo";
-
+import AlertDetails from "./pages/analyst/AlertDetails"; 
 function App() {
   return (
     <BrowserRouter>
@@ -27,7 +27,11 @@ function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/usermanagement" element={<Usermanagement />} />   
+        <Route path="/usermanagement" element={<Usermanagement />} />
+        <Route path="/alert/:id" element={<AlertDetails />} />
+
+        
+           
 
       </Routes>
     </BrowserRouter>

@@ -1,7 +1,24 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Logout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleCancel = () => {
+    const isAdminPath = location.pathname.toLowerCase().includes("admin");
+    console.log("Current path:", location.pathname, "Is admin:", isAdminPath);
+    
+    if (isAdminPath) {
+      navigate("/Admin");
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear(); // Clear everything
+    navigate("/");
+  };
 
   return (
     <div style={styles.container}>
@@ -9,16 +26,10 @@ function Logout() {
         <h2 style={styles.title}>Confirm Logout</h2>
         <p style={styles.subtitle}>Are you sure you want to logout?</p>
         <div style={styles.buttonRow}>
-          <button
-            style={styles.cancelButton}
-            onClick={() => navigate("/dashboard")}
-          >
+          <button style={styles.cancelButton} onClick={handleCancel}>
             Cancel
           </button>
-          <button
-            style={styles.logoutButton}
-            onClick={() => navigate("/")}
-          >
+          <button style={styles.logoutButton} onClick={handleLogout}>
             Logout
           </button>
         </div>

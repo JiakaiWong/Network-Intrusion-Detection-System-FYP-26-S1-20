@@ -1,16 +1,128 @@
-# React + Vite
+```markdown
+# IDS Analysis Dashboard — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite frontend for the Network Intrusion Detection System (IDS) dashboard.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Prerequisites
 
-## React Compiler
+Make sure you have the following installed:
+- [Node.js](https://nodejs.org/) v22+ (LTS recommended)
+- npm v10+
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
+```
+## To verify:
+```bash
+node -v
+npm -v
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/Network-Intrusion-Detection-System-FYP-26-S1-20-.git
+cd Network-Intrusion-Detection-System-FYP-26-S1-20-
+```
+
+### 2. Navigate to Frontend
+
+```bash
+cd frontend
+```
+
+### 3. Install Dependencies
+
+```bash
+npm install
+```
+
+### 4. Start Development Server
+```bash
+npm run dev
+```
+
+The app will run at **http://localhost:5173**
+
+---
+
+## Project Structure
+
+```
+frontend/
+├── public/
+│   └── securityimage.jpeg        # Static assets
+├── src/
+│   ├── pages/
+│   │   ├── shared/               # Public-facing pages
+│   │   │   ├── Visitor.jsx       # Landing page
+│   │   │   ├── Login.jsx         # Login (Analyst & Admin)
+│   │   │   ├── Register.jsx      # Registration page
+│   │   │   ├── About.jsx         # About page
+│   │   │   ├── Features.jsx      # Features page
+│   │   │   ├── Demo.jsx          # Demo page
+│   │   │   └── Logout.jsx        # Logout confirmation
+│   │   ├── analyst/              # Security Analyst pages
+│   │   │   ├── Dashboard.jsx     # Analyst dashboard
+│   │   │   ├── Alerts.jsx        # Alerts table
+│   │   │   └── Reports.jsx       # Reports page
+│   │   └── admin/                # Administrator pages
+│   │       ├── AdminDashboard.jsx # Admin home
+│   │       └── UserManagement.jsx # User management
+│   ├── App.jsx                   # Route configuration
+│   ├── main.jsx                  # App entry point
+│   └── index.css                 # Global styles
+├── index.html
+├── package.json
+└── vite.config.js
+```
+
+---
+
+## Page Routes
+
+| Route              | Page            | Access             |
+|--------------------|-----------------|-------------------|
+| `/`                | Visitor          | Public             |
+| `/about`           | About            | Public             |
+| `/features`        | Features         | Public             |
+| `/demo`            | Demo             | Public             |
+| `/login`           | Login            | Public             |
+| `/register`        | Register         | Public             |
+| `/dashboard`       | Dashboard        | Security Analyst   |
+| `/alerts`          | Alerts           | Security Analyst   |
+| `/reports`         | Reports          | Security Analyst   |
+| `/admin`           | Admin Dashboard  | Administrator      |
+| `/usermanagement`  | User Management  | Administrator      |
+| `/logout`          | Logout           | Authenticated      |
+
+---
+
+## Dependencies
+
+| Package              | Purpose                    |
+|----------------------|----------------------------|
+| `react`              | UI framework               |
+| `react-dom`          | DOM rendering              |
+| `react-router-dom`   | Client-side routing        |
+| `vite`               | Build tool and dev server  |
+
+---
+
+## 🔗 Backend Connection
+
+
+---
+
+## 🛠️ Available Scripts
+
+| Command             | Description                 |
+|---------------------|-----------------------------|
+| `npm run dev`       | Start development server    |
+```
+

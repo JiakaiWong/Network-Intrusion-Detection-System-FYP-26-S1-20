@@ -8,7 +8,7 @@ MONGODB_URL = os.getenv("MONGODB_URL")
 print(f"Raw MONGODB_URL from env: {MONGODB_URL}")   # Check if the variable is loaded correctly
 if not MONGODB_URL:
     print("WARNING: MONGODB_URL is not set!")
-    # Optionally fallback to localhost for debugging? But we want to know.
+    # Optionally fallback to localhost for debugging?
 else:
     # Redact password for safe printing
     import re

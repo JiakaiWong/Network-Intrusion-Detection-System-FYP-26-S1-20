@@ -2,9 +2,8 @@ from pydantic import BaseModel, EmailStr, field_validator
 from enum import Enum
 
 class RoleEnum(str, Enum):
-    ANALYST = "analyst"
-    ADMIN = "admin"
-    VIEWER = "viewer"
+    ANALYST = "Security Analyst"
+    ADMIN = "Administrator"
 
 class UserIn(BaseModel):
     email: EmailStr

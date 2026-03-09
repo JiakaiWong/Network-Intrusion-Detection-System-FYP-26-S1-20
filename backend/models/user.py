@@ -22,3 +22,17 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str
     role: str
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+    @field_validator('email', 'password', mode='before')
+    def trim_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+class LoginOut(BaseModel):
+    token: str
+    user: UserOut

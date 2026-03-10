@@ -238,6 +238,7 @@ def test_login_token_has_correct_expiry(client, mock_user_data):
         assert response.status_code == 200
         token = response.json()["token"]
         payload = verify_token(token)
+        assert payload is not None
         exp_time = datetime.utcfromtimestamp(payload["exp"])
         current_time = datetime.utcnow()
         time_diff = (exp_time - current_time).total_seconds()

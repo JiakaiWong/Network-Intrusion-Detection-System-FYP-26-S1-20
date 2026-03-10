@@ -48,5 +48,5 @@ def mock_user_data():
         "email": "test@example.com",
         "password": "TestPass123!",
         "full_name": "Test User",
-        "role": "analyst"
+        "role": "Security Analyst"
     }

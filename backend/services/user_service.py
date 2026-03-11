@@ -1,11 +1,9 @@
 import re
 from database import db
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from core.security import hash_password
 
 def validate_password_strength(password: str) -> None:
-    """Validate password meets complexity requirements."""
+    # Validate password meets complexity requirements
     if len(password) < 8:
         raise ValueError("Password must be at least 8 characters long")
     
@@ -22,7 +20,7 @@ def validate_password_strength(password: str) -> None:
         raise ValueError("Password must contain at least one special character")
 
 def validate_full_name(full_name: str) -> None:
-    """Validate full name format."""
+    # Validate full name format
     if len(full_name) < 2:
         raise ValueError("Full name must be at least 2 characters long")
     
@@ -31,6 +29,11 @@ def validate_full_name(full_name: str) -> None:
     
     if not re.match(r"^[a-zA-Z\s\-\']+$", full_name):
         raise ValueError("Full name can only contain letters, spaces, hyphens, and apostrophes")
+
+async def get_user_by_email(email: str):
+    email = email.strip()
+    user = await db.users.find_one({"email": email})
+    return user
 
 async def create_user(email: str, password: str, full_name: str, role: str):
     email = email.strip()
@@ -50,7 +53,7 @@ async def create_user(email: str, password: str, full_name: str, role: str):
     validate_full_name(full_name)
     
     # Hash password
-    hashed_password = pwd_context.hash(password)
+    hashed_password = hash_password(password)
     
     # Insert into database
     user_doc = {

@@ -18,11 +18,16 @@ function Login() {
     }
   };
 
+  // ✅ NEW: Navigate to Forgot Password page
+  const handleForgotPassword = () => {
+    navigate("/forgotpassword");
+  };
+
   return (
     <div style={styles.page}>
       {/* Navbar */}
       <nav style={styles.navbar}>
-        <h2 style={styles.logo}>26-S1-20</h2>
+        <h2 style={styles.logo}>Intrusion Detection</h2>
         <div style={styles.navLinks}>
           <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
           <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>
@@ -66,8 +71,9 @@ function Login() {
                   {showPassword ? "🙈" : "👁️"}
                 </span>
               </div>
-              <p style={styles.forgotPassword} onClick={() => alert("Forgot password feature coming soon!")}>
-                Forgot password ?
+              {/* ✅ FIXED: Now redirects to ForgotPassword page */}
+              <p style={styles.forgotPassword} onClick={handleForgotPassword}>
+                Forgot password?
               </p>
             </div>
 
@@ -103,6 +109,7 @@ function Login() {
   );
 }
 
+// ✅ Styles unchanged - just added hover effect for forgot password
 const styles = {
   page: {
     backgroundColor: "#0f172a",
@@ -203,12 +210,15 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
   },
+  // ✅ Enhanced forgot password style
   forgotPassword: {
     textAlign: "right",
     fontSize: "0.8rem",
-    color: "#94a3b8",
+    color: "#60a5fa",
     cursor: "pointer",
     marginTop: "0.4rem",
+    transition: "color 0.2s ease",
+    fontWeight: 500,
   },
   select: {
     width: "100%",

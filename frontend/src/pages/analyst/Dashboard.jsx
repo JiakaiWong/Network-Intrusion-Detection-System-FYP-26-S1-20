@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiEye } from 'react-icons/fi';
+import AnalystSidebar from './AnalystSidebar';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -8,8 +9,7 @@ const Dashboard = () => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
-
-  // Sample data for the table – now with unique IDs
+  // Sample data for alerts table
   const recentAlerts = [
     { id: 1, severity: 'High', type: 'SQLI', src: '192.168.1.100', dst: '10.0.0.12', ids: 'Snort', time: '30s ago', progress: 'New' },
     { id: 2, severity: 'High', type: 'Malware', src: '192.168.1.120', dst: '10.0.0.5', ids: 'Suricata', time: '1m ago', progress: 'New' },
@@ -27,12 +27,10 @@ const Dashboard = () => {
     { id: 14, severity: 'Low', type: 'Reconnaissance', src: '104.16.45.33', dst: '192.168.1.10', ids: 'Zeek', time: '5h ago', progress: 'Resolved' },
   ];
 
-  // Handler for viewing alert details – navigates to details page with alert data
   const handleViewAlert = (alert) => {
     navigate(`/alert/${alert.id}`, { state: { alert } });
   };
 
-  // Pie chart component (unchanged)
   const PieChart = () => {
     const data = [
       { value: 175, color: '#28a745' }, // Low
@@ -69,33 +67,11 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar (unchanged) */}
-      <aside className="sidebar">
-        <div className="sidebar-header">Intrusion Detection</div>
-        <nav className="sidebar-nav">
-          <div className="nav-section">
-            <ul>
-              <li className="active">Dashboard</li>
-              <li className={isActive('/alerts') ? 'active' : ''}>
-                <Link to="/alerts">Alerts</Link>
-              </li>
-              <li>Network Traffic</li>
-              <li>Reports</li>
-            </ul>
-          </div>
-        </nav>
-        <div className="sidebar-user">
-          <hr className="divider" />
-          <div className="user-info">
-            <span className="user-role">Analyst</span>
-            <span className="user-name">Security Analyst 1</span>
-          </div>
-        </div>
-      </aside>
+      {/* Analyst Sidebar */}
+      <AnalystSidebar />
 
       {/* Main Content */}
       <main className="dashboard-main">
-        {/* Summary Cards (unchanged) */}
         <div className="summary-cards">
           <div className="card card-total">
             <span className="card-icon">!</span>
@@ -123,7 +99,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Threat Trends + Alerts Distribution (unchanged) */}
         <div className="trends-distribution-row">
           <div className="trends-card">
             <div className="trends-header">
@@ -142,7 +117,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Alerts Table with View Column */}
         <div className="recent-alerts-section">
           <h2>Recent Alerts</h2>
           <table className="alerts-table">
@@ -152,7 +126,7 @@ const Dashboard = () => {
                 <th>Alert Type</th>
                 <th>Source IP</th>
                 <th>Destination IP</th>
-                <th>IDS source</th>
+                <th>IDS Source</th>
                 <th>Time</th>
                 <th>Progress</th>
                 <th>View</th>
@@ -191,7 +165,6 @@ const Dashboard = () => {
           </table>
         </div>
 
-        {/* Footer */}
         <footer className="footer">
           <p>2026 Intrusion Detection Dashboard</p>
         </footer>

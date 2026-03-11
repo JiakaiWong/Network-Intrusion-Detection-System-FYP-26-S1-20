@@ -7,7 +7,7 @@ function Visitor() {
     <div style={styles.page}>
       {/* Navbar */}
       <nav style={styles.navbar}>
-        <h2 style={styles.logo}>26-S1-20</h2>
+        <h2 style={styles.logo}>Intrusion Detection</h2>
         <div style={styles.navLinks}>
           <span style={styles.navActive} onClick={() => navigate("/")}>Home</span>
           <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>

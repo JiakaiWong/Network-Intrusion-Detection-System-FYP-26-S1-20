@@ -1,44 +1,58 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AdminLayout from "./pages/admin/AdminLayout";
-
-import Register from "./pages/shared/Register";
-import Visitor from "./pages/shared/Visitor";
 import Login from "./pages/shared/Login";
-import Dashboard from "./pages/analyst/Dashboard";
-import Alerts from "./pages/analyst/Alerts";
-import Reports from "./pages/analyst/Reports";
-import Logout from "./pages/shared/Logout";
-import Admin from "./pages/admin/AdminDashboard";   
-import Usermanagement from "./pages/admin/UserManagement";
-import Profile from "./pages/admin/Profile";
-import Settings from "./pages/admin/Settings";
 import About from "./pages/shared/About";
 import Features from "./pages/shared/Features";
 import Demo from "./pages/shared/Demo";
+import Register from "./pages/shared/Register";
+import Visitor from "./pages/shared/Visitor";
+import ForgetPassword from "./pages/shared/ForgotPassword";
+import Logout from "./pages/shared/Logout";
+
+import Admin from "./pages/admin/AdminDashboard";   
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminProfile from "./pages/admin/Profile";
+import Settings from "./pages/admin/Settings";
+import Usermanagement from "./pages/admin/UserManagement";
+
+import Dashboard from "./pages/analyst/Dashboard";
+import Alerts from "./pages/analyst/Alerts";
+import Reports from "./pages/analyst/Reports";
+import AnalystProfile from "./pages/analyst/Profile";
 import AlertDetails from "./pages/analyst/AlertDetails";
+import NetworkTraffic from "./pages/analyst/NetworkTraffic";
+import Notifications from "./pages/analyst/Notifications";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Visitor />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />
         <Route path="/features" element={<Features />} />
         <Route path="/demo" element={<Demo />} />
+        <Route path="/forgotpassword" element={<ForgetPassword />} />
+        
+
+        {/* Analyst Routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/alerts" element={<Alerts />} />
-        <Route path="/reports" element={<Reports />} />
+        <Route path="/network-traffic" element={<NetworkTraffic />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/analyst/profile" element={<AnalystProfile />} />  
         <Route path="/alert/:id" element={<AlertDetails />} />
+        <Route path="/reports" element={<Reports />} />
 
-        {/* AdminDashboard  */}
+        {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Admin />} />           
           <Route path="users" element={<Usermanagement />} />  
           <Route path="settings" element={<Settings />} />     
-          <Route path="profile" element={<Profile />} />
+          <Route path="profile" element={<AdminProfile />} />  
         </Route>
+        
         <Route path="/logout" element={<Logout />} />
       </Routes>
     </BrowserRouter>

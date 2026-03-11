@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiEye } from 'react-icons/fi';
 import AnalystSidebar from './AnalystSidebar';
@@ -8,8 +8,78 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+  const [telegramMessage, setTelegramMessage] = useState("");
 
+<<<<<<< HEAD
   // Sample data for alerts table
+=======
+  // REMOVE THIS when backend is implemented
+  const TOKEN = "8500029016:AAG13AhvWboYuAQSG4CmTh8RppPgu8G2aKI";
+  const CHAT_ID = "1733380706"; //This is Dion's chat ID, used for testing. Replace this with the user's ID when backend is implemented.
+
+  // Test the box to send any direcct message to the bot, back to the phone.
+  const sendTelegramMessage = async () => {
+    if (!telegramMessage.trim()) return;
+
+    try {
+      const res = await fetch(
+        //"http://localhost:5000/send-telegram" (replace line below when bkend is done)
+        `https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          chat_id: CHAT_ID,
+          text: telegramMessage })
+      });
+
+      const data = await res.json();
+      alert("Telegram alert sent!");
+      setTelegramMessage("");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send Telegram message.");
+    }
+  };
+
+  // Try to send the displayed data back to the bot.
+  const sendAlertToTelegram = async (alert) => {
+    const message = `IDS ALERT
+
+  Type: ${alert.type}
+  Source: ${alert.src}
+  Destination: ${alert.dst}
+  Severity: ${alert.severity}
+  IDS: ${alert.ids}
+  Time: ${alert.time}`;
+
+    try {
+      const response = await fetch(
+        `https://api.telegram.org/bot${TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: message
+          })
+        }
+      );
+
+      const data = await response.json();
+      console.log(data);
+      alert("Alert sent to Telegram!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send alert.");
+    }
+  };
+
+  // Sample data for the table – now with unique IDs
+>>>>>>> 5725732805192af831a03c51df0322603d859a6c
   const recentAlerts = [
     { id: 1, severity: 'High', type: 'SQLI', src: '192.168.1.100', dst: '10.0.0.12', ids: 'Snort', time: '30s ago', progress: 'New' },
     { id: 2, severity: 'High', type: 'Malware', src: '192.168.1.120', dst: '10.0.0.5', ids: 'Suricata', time: '1m ago', progress: 'New' },
@@ -67,8 +137,35 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+<<<<<<< HEAD
       {/* Analyst Sidebar */}
       <AnalystSidebar />
+=======
+      {/* Sidebar (unchanged) */}
+      <aside className="sidebar">
+        <div className="sidebar-header">Intrusion Detection</div>
+        <nav className="sidebar-nav">
+          <div className="nav-section">
+            <ul>
+              <li className="active">Dashboard</li>
+              <li className={isActive('/alerts') ? 'active' : ''}>
+                <Link to="/alerts">Alerts</Link>
+              </li>
+              <li>Network Traffic</li>
+              <li>Reports</li>
+              <li>Settings</li>
+            </ul>
+          </div>
+        </nav>
+        <div className="sidebar-user">
+          <hr className="divider" />
+          <div className="user-info">
+            <span className="user-role">Analyst</span>
+            <span className="user-name">Security Analyst 1</span>
+          </div>
+        </div>
+      </aside>
+>>>>>>> 5725732805192af831a03c51df0322603d859a6c
 
       {/* Main Content */}
       <main className="dashboard-main">
@@ -130,6 +227,7 @@ const Dashboard = () => {
                 <th>Time</th>
                 <th>Progress</th>
                 <th>View</th>
+                <th>Telegram</th>
               </tr>
             </thead>
             <tbody>
@@ -159,12 +257,66 @@ const Dashboard = () => {
                       <FiEye />
                     </button>
                   </td>
+                  <td>
+                    <button
+                      className="telegram-btn"
+                      onClick={() => sendAlertToTelegram(alert)}
+                      title="Send to Telegram"
+                    >
+                      Send
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+<<<<<<< HEAD
+=======
+        {/* Telegram Alert Section */}
+        <div style={{
+          marginTop: "30px",
+          padding: "20px",
+          background: "#1e293b",
+          borderRadius: "8px"
+        }}>
+          <h2>Telegram Alert Test</h2>
+
+          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+            <input
+              type="text"
+              placeholder="Type Telegram message..."
+              value={telegramMessage}
+              onChange={(e) => setTelegramMessage(e.target.value)}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #334155",
+                background: "#0f172a",
+                color: "white"
+              }}
+            />
+
+            <button
+              onClick={sendTelegramMessage}
+              style={{
+                padding: "10px 20px",
+                background: "#3b82f6",
+                border: "none",
+                borderRadius: "6px",
+                color: "white",
+                cursor: "pointer"
+              }}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+>>>>>>> 5725732805192af831a03c51df0322603d859a6c
         <footer className="footer">
           <p>2026 Intrusion Detection Dashboard</p>
         </footer>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiEye } from 'react-icons/fi';
 import './Dashboard.css';
@@ -8,7 +8,29 @@ const Dashboard = () => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const [telegramMessage, setTelegramMessage] = useState("");
+  const [backendStatus, setBackendStatus] = useState("Not tested");
+  const [backendAlerts, setBackendAlerts] = useState([]);
+  useEffect(() => {
+  const testConnection = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/alerts");
+      const data = await res.json();
 
+      console.log("Backend response:", data);
+      
+      setBackendAlerts(data.items || []);
+      
+      setBackendStatus(
+        `Connected: ${data.items ? data.items.length : 0} alerts found`
+      );
+    } catch (err) {
+      console.error("Connection failed:", err);
+      setBackendStatus("Connection failed");
+    }
+  };
+
+  testConnection();
+}, []);
   // REMOVE THIS when backend is implemented
   const TOKEN = "8500029016:AAG13AhvWboYuAQSG4CmTh8RppPgu8G2aKI";
   const CHAT_ID = "1733380706"; //This is Dion's chat ID, used for testing. Replace this with the user's ID when backend is implemented.
@@ -188,7 +210,9 @@ const Dashboard = () => {
             <div className="card-value">175</div>
           </div>
         </div>
-
+        <div style={{ margin: "15px 0", color: "white", fontWeight: "bold" }}>
+          Backend status: {backendStatus}
+        </div>
         {/* Threat Trends + Alerts Distribution (unchanged) */}
         <div className="trends-distribution-row">
           <div className="trends-card">
@@ -226,21 +250,27 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {recentAlerts.map((alert) => (
+              {backendAlerts.map((alert) => (
                 <tr key={alert.id}>
                   <td>
-                    <span className={`severity-badge ${alert.severity.toLowerCase()}`}>
-                      {alert.severity}
+                    <span className={`severity-badge ${alert.severity_label}`}>
+                      {alert.severity_label}
                     </span>
                   </td>
-                  <td>{alert.type}</td>
-                  <td>{alert.src}</td>
-                  <td>{alert.dst}</td>
-                  <td>{alert.ids}</td>
-                  <td>{alert.time}</td>
+                  
+                  <td>{alert.signature}</td>
+                  
+                  <td>{alert.src_ip}</td>
+                  
+                  <td>{alert.dest_ip}</td>
+                  
+                  <td>{alert.proto}</td>
+                  
+                  <td>{new Date(alert.timestamp).toLocaleString()}</td>
+                  
                   <td>
-                    <span className={`progress-badge ${alert.progress.toLowerCase().replace(' ', '-')}`}>
-                      {alert.progress}
+                    <span className={`progress-badge ${alert.status}`}>
+                      {alert.status}
                     </span>
                   </td>
                   <td>

@@ -72,7 +72,34 @@ frontend should surface this to the user.
 Approval workflow: every new account is created with approved = False. The UI should inform users that an administrator must approve their account; the backend does not yet provide an approval endpoint.
 
 
-4. **Swagger Docs**
+
+
+4. **Run the Frontend**
+   
+In new terminal :
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will run on : http://localhost:5173
+
+5.**IDS Alerts testing**
+
+Simulating Suricata alerts locally,
+Run ingestion script :
+```bash
+cd backend
+python eve_ingestor.py
+```
+This script will reads IDS events from eve.json and sends them to the backend API.
+
+6. **IDS Alert Pipeline**
+Current pipeline works like this :
+Suricata / IDS -> eve.json (alert log) -> eve_ingestor.py -> FastAPI Backend (app.py) -> MongoDB -> Frontend Dashboard
+
+7.  **Swagger Docs**
 
 Swagger / docs: visit
 http://localhost:8000/docs or http://localhost:8000/redoc while

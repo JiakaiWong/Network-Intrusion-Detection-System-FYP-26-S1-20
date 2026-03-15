@@ -1,25 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { styles } from './Settings.styles';
 
-function Settings() {
-  console.log('Settings component rendering');
-  
-  const [logs, setLogs] = useState([
-    {
-      name: 'Suricata Rules',
-      type: 'File based',
-      logType: 'JSON',
-      status: 'Active',
-      lastUpdated: '29-Feb-2026 12:34'
-    },
-    {
-      name: 'Snort Office 360',
-      type: 'Syslog',
-      logType: 'TCP',
-      status: 'Active',
-      lastUpdated: '28-Feb-2026 10:22'
-    }
-  ]);
-  
+function Settings({ logs, setLogs }) {
   const [formData, setFormData] = useState({
     logName: '',
     logType: '',
@@ -27,11 +9,81 @@ function Settings() {
     logFile: null
   });
   const [filter, setFilter] = useState('');
+  const [hoveredRow, setHoveredRow] = useState(null);
+
+  // Modal state
+  const [modalLog, setModalLog] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const filteredLogs = logs.filter(log =>
     log.name.toLowerCase().includes(filter.toLowerCase()) ||
     log.type.toLowerCase().includes(filter.toLowerCase())
   );
+
+  const getTimestamp = () => {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = now.toLocaleString('en-GB', { month: 'short' });
+    const year = now.getFullYear();
+    const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return `${day}-${month}-${year} ${time}`;
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const openModal = (log) => {
+    setModalLog(log);
+    setEditData({ ...log });
+    setEditMode(false);
+  };
+
+  const closeModal = () => {
+    setModalLog(null);
+    setEditMode(false);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdit = () => {
+    const updated = { ...editData, lastUpdated: getTimestamp() };
+    setLogs(prev => prev.map(l => l.id === modalLog.id ? updated : l));
+    setModalLog(updated);
+    setEditMode(false);
+    showToast(`"${editData.name}" updated successfully`);
+  };
+
+  const handleToggleStatus = () => {
+    const newStatus = modalLog.status === 'Active' ? 'Inactive' : 'Active';
+    const updated = { ...modalLog, status: newStatus, lastUpdated: getTimestamp() };
+    setLogs(prev => prev.map(l => l.id === modalLog.id ? updated : l));
+    setModalLog(updated);
+    setEditData(prev => ({ ...prev, status: newStatus }));
+    showToast(`"${modalLog.name}" set to ${newStatus}`);
+  };
+
+  const handleDeleteLog = () => {
+    setConfirmModal({
+      title: 'Remove Log Source',
+      message: `Remove "${modalLog.name}"? This will stop ingesting data from this source and may affect dashboard alerts.`,
+      confirmLabel: 'Remove',
+      confirmColor: '#ef4444',
+      onConfirm: () => {
+        const name = modalLog.name;
+        setLogs(prev => prev.filter(l => l.id !== modalLog.id));
+        closeModal();
+        showToast(`"${name}" removed`, 'error');
+      },
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -44,19 +96,137 @@ function Settings() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const uploadData = new FormData();
-    uploadData.append('logName', formData.logName);
-    uploadData.append('logType', formData.logType);
-    uploadData.append('parsingOption', formData.parsingOption);
-    if (formData.logFile) {
-      uploadData.append('logFile', formData.logFile);
-    }
-    console.log('Form submitted:', Object.fromEntries(uploadData));
+    const newLog = {
+      id: Date.now(),
+      name: formData.logName,
+      type: formData.logType,
+      logType: formData.parsingOption,
+      status: 'Active',
+      lastUpdated: getTimestamp(),
+    };
+    setLogs(prev => [...prev, newLog]);
     setFormData({ logName: '', logType: '', parsingOption: '', logFile: null });
+    showToast(`"${newLog.name}" connection added`);
   };
 
   return (
     <div style={styles.pageContainer}>
+      {/* Toast */}
+      {toast && (
+        <div style={styles.toast(toast.type)}>
+          <span>{toast.type === 'success' ? '✓' : '✕'}</span>
+          {toast.message}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div style={styles.modalOverlay} onClick={() => setConfirmModal(null)}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div>
+                <p style={styles.modalSubtitle}>Confirm Action</p>
+                <h2 style={styles.modalTitle}>{confirmModal.title}</h2>
+              </div>
+              <button style={styles.modalClose} onClick={() => setConfirmModal(null)}>✕</button>
+            </div>
+            <div style={{ padding: '0 0 1.5rem 0' }}>
+              <p style={{ color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>{confirmModal.message}</p>
+            </div>
+            <div style={styles.modalActions}>
+              <button style={styles.btnSecondary} onClick={() => setConfirmModal(null)}>Cancel</button>
+              <button
+                style={{ ...styles.btnSave, backgroundColor: confirmModal.confirmColor }}
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
+              >
+                {confirmModal.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Log Detail Modal */}
+      {modalLog && (
+        <div style={styles.modalOverlay} onClick={closeModal}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div>
+                <p style={styles.modalSubtitle}>Log Connection</p>
+                <h2 style={styles.modalTitle}>{modalLog.name}</h2>
+              </div>
+              <button style={styles.modalClose} onClick={closeModal}>✕</button>
+            </div>
+
+            <div style={styles.modalStatusRow}>
+              <span style={styles.statusBadge(modalLog.status.toLowerCase())}>
+                <span style={styles.statusDot(modalLog.status.toLowerCase())} />
+                {modalLog.status}
+              </span>
+              <span style={styles.modalTimestamp}>Last updated: {modalLog.lastUpdated}</span>
+            </div>
+
+            <div style={styles.detailGrid}>
+              {editMode ? (
+                <>
+                  <div style={styles.detailItem}>
+                    <label style={styles.detailLabel}>Log Name</label>
+                    <input name="name" value={editData.name} onChange={handleEditChange} style={styles.editInput} />
+                  </div>
+                  <div style={styles.detailItem}>
+                    <label style={styles.detailLabel}>Log Type</label>
+                    <select name="type" value={editData.type} onChange={handleEditChange} style={styles.editInput}>
+                      <option value="File based">File based</option>
+                      <option value="Syslog">Syslog</option>
+                    </select>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <label style={styles.detailLabel}>Format</label>
+                    <select name="logType" value={editData.logType} onChange={handleEditChange} style={styles.editInput}>
+                      <option value="JSON">JSON</option>
+                      <option value="TCP">TCP</option>
+                      <option value="UDP">UDP</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Log Type</span>
+                    <span style={styles.detailValue}>{modalLog.type}</span>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Format</span>
+                    <span style={styles.detailValue}>{modalLog.logType}</span>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Connection ID</span>
+                    <span style={styles.detailValue}>#{String(modalLog.id).slice(-4)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={styles.modalActions}>
+              {editMode ? (
+                <>
+                  <button style={styles.btnSave} onClick={handleSaveEdit}>Save Changes</button>
+                  <button style={styles.btnSecondary} onClick={() => setEditMode(false)}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <button style={styles.btnEdit} onClick={() => setEditMode(true)}>Edit</button>
+                  <button style={styles.btnToggle(modalLog.status)} onClick={handleToggleStatus}>
+                    {modalLog.status === 'Active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button style={styles.btnDelete} onClick={handleDeleteLog}>Remove</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.pageTitle}>Log Management</h1>
@@ -73,7 +243,7 @@ function Settings() {
             style={styles.searchInput}
           />
         </div>
-        
+
         <table style={styles.logsTable}>
           <thead>
             <tr>
@@ -86,28 +256,45 @@ function Settings() {
             </tr>
           </thead>
           <tbody>
-            {filteredLogs.map((log, index) => (
-              <tr key={index} style={styles.tr}>
-                <td style={styles.td}>{log.name}</td>
-                <td style={styles.td}>{log.type}</td>
-                <td style={styles.td}>{log.logType}</td>
-                <td style={styles.td}>
-                  <span style={styles.statusBadge(log.status.toLowerCase())}>
-                    {log.status}
-                  </span>
-                </td>
-                <td style={styles.td}>{log.lastUpdated}</td>
-                <td style={styles.td}>
-                  <button style={styles.actionBtn}>+</button>
+            {filteredLogs.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ ...styles.td, textAlign: 'center', color: '#64748b', padding: '2rem' }}>
+                  No log connections found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredLogs.map((log) => (
+                <tr
+                  key={log.id}
+                  style={hoveredRow === log.id ? styles.trHover : styles.tr}
+                  onMouseEnter={() => setHoveredRow(log.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <td style={styles.td}>{log.name}</td>
+                  <td style={styles.td}>{log.type}</td>
+                  <td style={styles.td}>{log.logType}</td>
+                  <td style={styles.td}>
+                    <span style={styles.statusBadge(log.status.toLowerCase())}>
+                      <span style={styles.statusDot(log.status.toLowerCase())} />
+                      {log.status}
+                    </span>
+                  </td>
+                  <td style={styles.td}>{log.lastUpdated}</td>
+                  <td style={styles.td}>
+                    <button style={styles.actionBtn} onClick={() => openModal(log)} title="Manage connection">
+                      ···
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* ✅ FIXED FILE INPUT FORM */}
+      {/* Add Connection Form */}
       <div style={styles.formSection}>
+        <h3 style={styles.formTitle}>Add New Connection</h3>
         <form style={styles.form} onSubmit={handleSubmit}>
           <input
             name="logName"
@@ -117,198 +304,33 @@ function Settings() {
             style={styles.input}
             required
           />
-          <select
-            name="logType"
-            value={formData.logType}
-            onChange={handleInputChange}
-            style={styles.input}
-            required
-          >
+          <select name="logType" value={formData.logType} onChange={handleInputChange} style={styles.input} required>
             <option value="">Log Type</option>
             <option value="File based">File based</option>
             <option value="Syslog">Syslog</option>
           </select>
-          <select
-            name="parsingOption"
-            value={formData.parsingOption}
-            onChange={handleInputChange}
-            style={styles.input}
-            required
-          >
+          <select name="parsingOption" value={formData.parsingOption} onChange={handleInputChange} style={styles.input} required>
             <option value="">Parsing Option</option>
             <option value="JSON">JSON</option>
             <option value="TCP">TCP</option>
             <option value="UDP">UDP</option>
           </select>
-          
-          {/* ✅ BEAUTIFUL FILE INPUT */}
+
           <div style={styles.fileInputContainer}>
-            <input
-              type="file"
-              id="logFile"
-              name="logFile"
-              onChange={handleFileChange}
-              accept=".log,.json"
-              style={styles.fileInputHidden}
-            />
+            <input type="file" id="logFile" name="logFile" onChange={handleFileChange} accept=".log,.json" style={styles.fileInputHidden} />
             <label htmlFor="logFile" style={styles.fileInputLabel(formData.logFile)}>
-              {formData.logFile ? (
-                <>
-                  <span style={styles.fileSuccessIcon}>✅</span>
-                  <span>{formData.logFile.name}</span>
-                </>
-              ) : (
-                <>
-                  <span style={styles.fileIcon}>📁</span>
-                  <span>Choose log file (.log, .json)</span>
-                </>
-              )}
+              {formData.logFile
+                ? <><span>✅</span><span>{formData.logFile.name}</span></>
+                : <><span style={{ fontSize: '1.2rem' }}>📁</span><span>Choose log file (.log, .json)</span></>
+              }
             </label>
           </div>
-          
+
           <button type="submit" style={styles.submitBtn}>Add Connection</button>
         </form>
       </div>
     </div>
   );
 }
-
-const styles = {
-  pageContainer: {
-    flex: 1,
-    padding: "2rem",
-    backgroundColor: "#0f172a",
-    color: "#f1f5f9",
-    overflowY: "auto",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-  },
-  header: {
-    marginBottom: "2rem",
-  },
-  pageTitle: {
-    fontSize: "2rem",
-    fontWeight: 700,
-    margin: "0 0 0.5rem 0",
-    color: "#f1f5f9",
-  },
-  tableSection: {
-    backgroundColor: "#1e293b",
-    padding: "1.5rem",
-    borderRadius: "12px",
-    marginBottom: "2rem",
-  },
-  tableHeader: {
-    marginBottom: "1.5rem",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "0.875rem 1rem",
-    backgroundColor: "#334155",
-    border: "1px solid #475569",
-    borderRadius: "8px",
-    color: "#f1f5f9",
-    fontSize: "0.95rem",
-  },
-  logsTable: {
-    width: "100%",
-    borderCollapse: "collapse",
-    backgroundColor: "#1e293b",
-  },
-  th: {
-    padding: "1rem",
-    textAlign: "left",
-    color: "#94a3b8",
-    fontSize: "0.85rem",
-    fontWeight: 600,
-    textTransform: "uppercase",
-    borderBottom: "1px solid #334155",
-  },
-  tr: {
-    borderBottom: "1px solid #334155",
-  },
-  td: {
-    padding: "1rem",
-    fontSize: "0.9rem",
-    color: "#f1f5f9",
-  },
-  statusBadge: (status) => ({
-    padding: "0.25rem 0.75rem",
-    borderRadius: "9999px",
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    backgroundColor: status === 'active' ? "#10b981" : "#ef4444",
-    color: "#fff",
-  }),
-  actionBtn: {
-    padding: "0.5rem 1rem",
-    backgroundColor: "#3b82f6",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "1rem",
-  },
-  formSection: {
-    backgroundColor: "#1e293b",
-    padding: "1.5rem",
-    borderRadius: "12px",
-  },
-  form: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "1rem",
-  },
-  input: {
-    padding: "0.875rem 1rem",
-    backgroundColor: "#334155",
-    border: "1px solid #475569",
-    borderRadius: "8px",
-    color: "#f1f5f9",
-    fontSize: "0.95rem",
-  },
-  // ✅ FIXED FILE INPUT STYLES
-  fileInputContainer: {
-    position: "relative",
-    gridColumn: "1 / -1",
-  },
-  fileInputHidden: {
-    display: "none",
-  },
-  fileInputLabel: (file) => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.5rem",
-    padding: "0.875rem 1rem",
-    backgroundColor: file ? "#10b981" : "#1e293b",
-    border: file ? "2px solid #059669" : "2px dashed #475569",
-    borderRadius: "8px",
-    color: file ? "#ffffff" : "#94a3b8",
-    fontSize: "0.95rem",
-    fontWeight: file ? 500 : 400,
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    minHeight: "56px",
-    textAlign: "center",
-  }),
-  fileIcon: {
-    fontSize: "1.2rem",
-  },
-  fileSuccessIcon: {
-    fontSize: "1.2rem",
-  },
-  submitBtn: {
-    padding: "0.875rem 1.5rem",
-    backgroundColor: "#10b981",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    gridColumn: "1 / -1",
-    transition: "background-color 0.2s",
-  },
-};
 
 export default Settings;

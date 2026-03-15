@@ -1,14 +1,11 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Logout() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleCancel = () => {
-    const isAdminPath = location.pathname.toLowerCase().includes("admin");
-    console.log("Current path:", location.pathname, "Is admin:", isAdminPath);
-    
-    if (isAdminPath) {
+    const role = localStorage.getItem("role");
+    if (role === "admin") {
       navigate("/Admin");
     } else {
       navigate("/dashboard");
@@ -16,7 +13,7 @@ function Logout() {
   };
 
   const handleLogout = () => {
-    localStorage.clear(); // Clear everything
+    localStorage.clear();
     navigate("/");
   };
 

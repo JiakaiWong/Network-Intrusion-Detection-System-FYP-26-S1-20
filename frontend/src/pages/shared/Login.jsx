@@ -12,13 +12,14 @@ function Login() {
     e.preventDefault();
     console.log("Logging in as:", role, email);
     if (role === "Administrator") {
+      localStorage.setItem("role", "admin");   // 
       navigate("/admin");
     } else {
+      localStorage.setItem("role", "analyst"); // 
       navigate("/dashboard");
     }
   };
 
-  // ✅ NEW: Navigate to Forgot Password page
   const handleForgotPassword = () => {
     navigate("/forgotpassword");
   };
@@ -71,7 +72,6 @@ function Login() {
                   {showPassword ? "🙈" : "👁️"}
                 </span>
               </div>
-              {/* ✅ FIXED: Now redirects to ForgotPassword page */}
               <p style={styles.forgotPassword} onClick={handleForgotPassword}>
                 Forgot password?
               </p>
@@ -109,7 +109,6 @@ function Login() {
   );
 }
 
-// ✅ Styles unchanged - just added hover effect for forgot password
 const styles = {
   page: {
     backgroundColor: "#0f172a",
@@ -152,7 +151,7 @@ const styles = {
     color: "#f1f5f9",
     fontWeight: "bold",
     fontSize: "0.95rem",
-    borderBottom: "2px solid #3b82f6",   
+    borderBottom: "2px solid #3b82f6",
     paddingBottom: "2px",
   },
   container: {
@@ -210,7 +209,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
   },
-  // ✅ Enhanced forgot password style
   forgotPassword: {
     textAlign: "right",
     fontSize: "0.8rem",

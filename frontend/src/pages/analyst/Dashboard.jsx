@@ -65,13 +65,13 @@ const Dashboard = () => {
   const sendAlertToTelegram = async (alert) => {
     const message = `IDS ALERT
 
-  Type: ${alert.type}
-  Source: ${alert.src}
-  Destination: ${alert.dst}
-  Severity: ${alert.severity}
-  IDS: ${alert.ids}
-  Time: ${alert.time}`;
-
+    Type: ${alert.signature || "-"}
+    Source: ${alert.src_ip || "-"}
+    Destination: ${alert.dest_ip || "-"}
+    Severity: ${alert.severity_label || "-"}
+    Protocol: ${alert.proto || "-"}
+    Time: ${alert.timestamp || "-"}`;
+    
     try {
       const response = await fetch(
         `https://api.telegram.org/bot${TOKEN}/sendMessage`,

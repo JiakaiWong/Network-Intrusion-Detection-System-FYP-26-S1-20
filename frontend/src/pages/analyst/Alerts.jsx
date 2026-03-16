@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiEye, FiDownload, FiSearch } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import "./Alerts.css";
-import AnalystLayout from "../../components/AnalystLayout";
+import AnalystLayout from "./AnalystLayout";
 
 const API_BASE = "http://127.0.0.1:8000";
 

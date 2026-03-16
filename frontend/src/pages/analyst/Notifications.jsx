@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AnalystLayout from "../../components/AnalystLayout";
+import AnalystLayout from "./AnalystLayout";
 
 function Notifications() {
   const navigate = useNavigate();
@@ -19,6 +19,7 @@ function Notifications() {
       channel: "MOBILE",
       read: false,
       failed: false,
+      color: "#a7b4c7"
     },
     {
       id: "NTF-0002",
@@ -29,6 +30,7 @@ function Notifications() {
       channel: "DASHBOARD",
       read: false,
       failed: true,
+      
     },
     {
       id: "NTF-0003",

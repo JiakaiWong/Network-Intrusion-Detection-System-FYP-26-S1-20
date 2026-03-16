@@ -1,146 +1,82 @@
-import React, { useState, useMemo } from "react";
-import { FiDownload, FiSearch, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import AnalystLayout from "../../components/AnalystLayout";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { FiEye, FiDownload, FiSearch } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import "./Alerts.css";
+import AnalystLayout from "./AnalystLayout";
+
+const API_BASE = "http://127.0.0.1:8000";
 
 const Alerts = () => {
-  const location = useLocation();
-  const isActive = (path) => location.pathname === path;
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  // ---------- FILTER STATE ----------
-  const [selectedSeverity, setSelectedSeverity] = useState("All Severities");
-  const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [selectedIds, setSelectedIds] = useState("All IDS Sources");
-  const [selectedTime, setSelectedTime] = useState("Time Range");
-  const [selectedSearch, setSelectedSearch] = useState("");
+  useEffect(() => {
+  const fetchAlerts = async () => {
+    try {
+      let url = `${API_BASE}/alerts`;
+      const params = new URLSearchParams();
 
-  // ---------- APPLIED FILTER STATE ----------
-  const [appliedSeverity, setAppliedSeverity] = useState("All Severities");
-  const [appliedStatus, setAppliedStatus] = useState("All Status");
-  const [appliedIds, setAppliedIds] = useState("All IDS Sources");
-  const [appliedTime, setAppliedTime] = useState("Time Range");
-  const [appliedSearch, setAppliedSearch] = useState("");
-
-  // ---------- BASE ALERTS ----------
-  const baseAlerts = [
-    {
-      id: 1,
-      severity: "High",
-      type: "SQLI",
-      src: "192.168.1.100",
-      dest: "10.0.0.12",
-      port: "443",
-      ids: "Snort",
-      time: "30s ago",
-      progress: "New",
-    },
-    {
-      id: 2,
-      severity: "High",
-      type: "Malware",
-      src: "192.168.1.120",
-      dest: "10.0.0.5",
-      port: "80",
-      ids: "Suricata",
-      time: "1m ago",
-      progress: "New",
-    },
-    {
-      id: 3,
-      severity: "Medium",
-      type: "Suspicious Login",
-      src: "203.45.67.89",
-      dest: "45.67.89.12",
-      port: "8080",
-      ids: "Zeek",
-      time: "2m ago",
-      progress: "In Progress",
-    },
-    {
-      id: 4,
-      severity: "Low",
-      type: "Phishing",
-      src: "192.168.1.92",
-      dest: "10.0.0.10",
-      port: "53",
-      ids: "Snort",
-      time: "5m ago",
-      progress: "Resolved",
-    },
-    {
-      id: 5,
-      severity: "Low",
-      type: "Port Scan",
-      src: "178.23.156.42",
-      dest: "8.8.8.8",
-      port: "Multiple",
-      ids: "Kismet",
-      time: "10m ago",
-      progress: "Resolved",
-    },
-  ];
-
-  // Generate 1000 alerts
-  const alerts = Array.from({ length: 1000 }, (_, i) => ({
-    ...baseAlerts[i % baseAlerts.length],
-    id: i + 1,
-    src: `192.168.${Math.floor(i / 10)}.${(i % 255) + 1}`,
-    time: `${i + 1}m ago`,
-  }));
-
-  // ---------- FILTERING ----------
-  const filteredAlerts = useMemo(() => {
-    return alerts.filter((alert) => {
-      if (appliedSeverity !== "All Severities" && alert.severity !== appliedSeverity) return false;
-      if (appliedStatus !== "All Status" && alert.progress !== appliedStatus) return false;
-      if (appliedIds !== "All IDS Sources" && alert.ids !== appliedIds) return false;
-      if (appliedTime === "24H" && !alert.time.includes("m")) return false;
-      if (appliedTime === "7D" && !alert.time.includes("h") && !alert.time.includes("d")) return false;
-      if (appliedSearch.trim() !== "") {
-        const lower = appliedSearch.toLowerCase();
-        return (
-          alert.src.toLowerCase().includes(lower) ||
-          alert.dest.toLowerCase().includes(lower) ||
-          alert.port.toLowerCase().includes(lower) ||
-          alert.type.toLowerCase().includes(lower)
-        );
+      if (severityFilter) {
+        if (severityFilter === "High") params.append("severity", "1");
+        if (severityFilter === "Medium") params.append("severity", "2");
+        if (severityFilter === "Low") params.append("severity", "3");
       }
-      return true;
-    });
-  }, [alerts, appliedSeverity, appliedStatus, appliedIds, appliedTime, appliedSearch]);
 
-  // ---------- APPLY FILTER ----------
+      if (statusFilter) {
+        params.append("status", statusFilter.toLowerCase());
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      setAlerts(data.items || []);
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to load alerts");
+      setLoading(false);
+    }
+  };
+
+  fetchAlerts();
+  }, [severityFilter, statusFilter]);
+  
   const [currentPage, setCurrentPage] = useState(1);
+  const filteredAlerts = alerts.filter((alert) => {
+  const text = `
+    ${alert.src_ip || ""}
+    ${alert.dest_ip || ""}
+    ${alert.signature || ""}
+    ${alert.dest_port || ""}
+    ${alert.proto || ""}
+  `.toLowerCase();
 
-  const applyFilters = () => {
-    setAppliedSeverity(selectedSeverity);
-    setAppliedStatus(selectedStatus);
-    setAppliedIds(selectedIds);
-    setAppliedTime(selectedTime);
-    setAppliedSearch(selectedSearch);
-    setCurrentPage(1);
-  };
-
-  // ---------- RESET FILTERS ----------
-  const resetFilters = () => {
-    setSelectedSeverity("All Severities");
-    setSelectedStatus("All Status");
-    setSelectedIds("All IDS Sources");
-    setSelectedTime("Time Range");
-    setSelectedSearch("");
-    setAppliedSeverity("All Severities");
-    setAppliedStatus("All Status");
-    setAppliedIds("All IDS Sources");
-    setAppliedTime("Time Range");
-    setAppliedSearch("");
-    setCurrentPage(1);
-  };
-
-  // ---------- PAGINATION ----------
+  return text.includes(search.toLowerCase());
+  });
   const alertsPerPage = 5;
-  const totalFiltered = filteredAlerts.length;
-  const totalPages = Math.ceil(totalFiltered / alertsPerPage);
+  const totalAlerts = filteredAlerts.length;
+
+  // Live severity counts from backend data
+  const highCount   = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "high").length;
+  const mediumCount = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "medium").length;
+  const lowCount    = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "low").length;
+
+  const totalPages = Math.ceil(totalAlerts / alertsPerPage);
+
+  const getSeverityClass = (severity) => {
+  if (!severity) return "low";
+  const value = severity.toLowerCase();
+  if (value === "high") return "high";
+  if (value === "medium") return "medium";
+  return "low";
+  };
 
   const indexOfLastAlert = currentPage * alertsPerPage;
   const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
@@ -172,25 +108,19 @@ const Alerts = () => {
 
   // ---------- EXPORT ----------
   const exportToCSV = () => {
-    const headers = [
-      "Severity",
-      "Alert Type",
-      "Source IP",
-      "Destination IP",
-      "Port",
-      "IDS Source",
-      "Time",
-      "Progress",
-    ];
-    const rows = filteredAlerts.map((alert) => [
-      alert.severity,
-      alert.type,
-      alert.src,
-      alert.dest,
-      alert.port,
-      alert.ids,
-      alert.time,
-      alert.progress,
+    // Define CSV headers
+    const headers = ["Severity", "Alert Type", "Source IP", "Destination IP", "Port", "IDS Source", "Time", "Progress"];
+
+    // Convert alerts to array of arrays (each alert row)
+    const rows = alerts.map(alert => [
+      alert.severity_label || "",
+      alert.signature || "",
+      alert.src_ip || "",
+      alert.dest_ip || "",
+      alert.dest_port || "",
+      alert.proto || "",
+      alert.timestamp || "",
+      alert.status || ""
     ]);
     const csvContent = [
       headers.join(","),
@@ -215,168 +145,111 @@ const Alerts = () => {
   };
 
   return (
-    <AnalystLayout>
-      <div className="dashboard-container">
-        {/* Main Content */}
-        <div className="alerts-container">
-          <div className="alerts-header">
-            <h1>Intrusion Detection Alerts</h1>
-            <button className="export-btn" onClick={exportToCSV}>
-              <FiDownload /> Export CSV
-            </button>
-          </div>
+    <AnalystLayout alerts>
+        <div className="alerts-header">
+          <h1>Intrusion Detection Alerts</h1>
+          <button className="export-btn" onClick={exportToCSV}>
+            <FiDownload /> Export
+          </button>
+        </div>
 
-          {/* Filter Panel */}
-          <div className="filter-panel">
-            <div className="filter-row">
-              <div className="filter-item">
-                <label>Severity</label>
-                <select
-                  value={selectedSeverity}
-                  onChange={(e) => setSelectedSeverity(e.target.value)}
-                >
-                  <option>All Severities</option>
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                </select>
-              </div>
-              <div className="filter-item">
-                <label>Status</label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  <option>All Status</option>
-                  <option>New</option>
-                  <option>In Progress</option>
-                  <option>Resolved</option>
-                </select>
-              </div>
-              <div className="filter-item">
-                <label>IDS Source</label>
-                <select
-                  value={selectedIds}
-                  onChange={(e) => setSelectedIds(e.target.value)}
-                >
-                  <option>All IDS Sources</option>
-                  <option>Snort</option>
-                  <option>Zeek</option>
-                  <option>Kismet</option>
-                  <option>Suricata</option>
-                </select>
-              </div>
-              <div className="filter-item">
-                <label>Time Range</label>
-                <select
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                >
-                  <option>Time Range</option>
-                  <option>24H</option>
-                  <option>7D</option>
-                  <option>30D</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="filter-row">
-              <div className="filter-item">
-                <label>Search</label>
-                <div className="search-wrapper">
-                  <FiSearch className="search-icon" />
-                  <input
-                    type="text"
-                    placeholder="IP, Port, Type"
-                    value={selectedSearch}
-                    onChange={(e) => setSelectedSearch(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="filter-actions">
-                <button className="btn-primary" onClick={applyFilters}>
-                  Apply Filter
-                </button>
-                <button className="btn-secondary" onClick={resetFilters}>
-                  Reset
-                </button>
-              </div>
-            </div>
+        <div className="summary-cards">
+          <div className="card card-total">
+            <span className="card-icon">!</span>
+            <div className="card-label">Total Alerts</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : alerts.length}</div>
           </div>
-
-          {/* Table */}
-          <div className="table-container">
-            <div className="table-header">
-              <div>Showing {totalFiltered} results</div>
-              <div>
-                Page {currentPage} of {totalPages}
-              </div>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Severity</th>
-                    <th>Alert Type</th>
-                    <th>Source IP</th>
-                    <th>Destination IP</th>
-                    <th>Port</th>
-                    <th>IDS Source</th>
-                    <th>Time</th>
-                    <th>Progress</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentAlerts.map((alert) => (
-                    <tr key={alert.id}>
-                      <td className={getSeverityClass(alert.severity)}>{alert.severity}</td>
-                      <td>{alert.type}</td>
-                      <td>{alert.src}</td>
-                      <td>{alert.dest}</td>
-                      <td>{alert.port}</td>
-                      <td>{alert.ids}</td>
-                      <td>{alert.time}</td>
-                      <td
-                        className={
-                          alert.progress === "New"
-                            ? "progress-new"
-                            : alert.progress === "In Progress"
-                            ? "progress-in-progress"
-                            : "progress-resolved"
-                        }
-                      >
-                        {alert.progress}
-                      </td>
-                      <td>
-                        <Link
-                          to={`/alert/${alert.id}`}
-                          state={{ alert }}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <button className="small-btn">View</button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                  {totalFiltered === 0 && (
-                    <tr>
-                      <td
-                        colSpan="9"
-                        style={{
-                          textAlign: "center",
-                          padding: "2rem",
-                          color: "#94a3b8",
-                        }}
-                      >
-                        No alerts match the selected filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="card card-high">
+            <span className="card-icon">!</span>
+            <div className="card-label">High Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : highCount}</div>
           </div>
+          <div className="card card-medium">
+            <span className="card-icon">!</span>
+            <div className="card-label">Medium Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : mediumCount}</div>
+          </div>
+          <div className="card card-low">
+            <span className="card-icon">!</span>
+            <div className="card-label">Low Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : lowCount}</div>
+          </div>
+        </div>
+
+        <div className="filters">
+          <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
+            <option value="">All Severities</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select>
+            <option>All IDS Sources</option>
+            <option>Snort</option>
+            <option>Zeek</option>
+            <option>Kismet</option>
+            <option>Suricata</option>
+          </select>
+          <select>
+            <option>Time Range</option>
+            <option>24H</option>
+            <option>7D</option>
+            <option>30D</option>
+          </select>
+          <div className="search-box">
+            <FiSearch />
+            <input placeholder="Search IP, Port, Type" value={search}onChange={(e) => setSearch(e.target.value)}/>
+          </div>
+        </div>
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>Alert Type</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Port</th>
+                <th>IDS Source</th>
+                <th>Time</th>
+                <th>Progress</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentAlerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td className={getSeverityClass(alert.severity_label)}>
+                    {alert.severity_label || "-"}
+                  </td>
+                  <td>{alert.signature || "-"}</td>
+                  <td>{alert.src_ip || "-"}</td>
+                  <td>{alert.dest_ip || "-"}</td>
+                  <td>{alert.dest_port || "-"}</td>
+                  <td>{alert.proto || "-"}</td>
+                  <td>{alert.timestamp || "-"}</td>
+                  <td>{alert.status || "new"}</td>
+                  <td>
+                    <Link to={`/alert/${alert.id}`} state={{ alert }}>
+                      <FiEye className="view-icon" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
           {/* Pagination (clean and compact) */}
           {totalFiltered > 0 && (
@@ -418,7 +291,6 @@ const Alerts = () => {
             </div>
           )}
         </div>
-      </div>
     </AnalystLayout>
   );
 };

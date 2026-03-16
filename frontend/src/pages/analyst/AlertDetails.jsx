@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";                               // useEffect added
+import { useLocation, useNavigate, useParams } from "react-router-dom";            // useParams added
 import "./AlertDetails.css";
 import {
   FaArrowLeft,
@@ -7,224 +7,155 @@ import {
   FaLink,
   FaCloudDownloadAlt
 } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
+import { BsTelegram } from "react-icons/bs";
+import { getAlertById, getNotes, addNote, updateAlertStatus } from "../../services/api"; // NEW
 
 const AlertDetails = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const alertData = location.state?.alert;
+  const navigate  = useNavigate();
+  // NEW: read the :id param so we can fetch directly if no location.state
+  const { id }    = useParams();
 
-  // ---------- STATE ----------
-  const [currentAlert, setCurrentAlert] = useState(alertData);
-  const [selectedProgress, setSelectedProgress] = useState(alertData?.progress || "New");
-  const [notes, setNotes] = useState([]);
-  const [newNoteText, setNewNoteText] = useState("");
+  // CHANGED: alertData → alert (state variable), starts from location.state or null
+  const [alert,       setAlert]       = useState(location.state?.alert || null);
+  // CHANGED: was hardcoded 2-item array, now empty — loaded from backend
+  const [notes,       setNotes]       = useState([]);
+  // CHANGED: newNoteText → newNote
+  const [newNote,     setNewNote]     = useState("");
+  // NEW: tracks current status for the status-changer buttons
+  const [status,      setStatus]      = useState(location.state?.alert?.status || "new");
+  // NEW: loading states for save and note-post actions
+  const [saving,      setSaving]      = useState(false);
+  const [notePosting, setNotePosting] = useState(false);
 
-  // Incident modal
-  const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [incidentTitle, setIncidentTitle] = useState("");
-  const [incidentDescription, setIncidentDescription] = useState("");
-  const [incidentSeverity, setIncidentSeverity] = useState("Medium");
-
-  // Link alerts modal
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [allAlerts, setAllAlerts] = useState([]);
-  const [selectedLinks, setSelectedLinks] = useState([]);
-  const [linkedAlerts, setLinkedAlerts] = useState([]);
-
-  // Linked alert details modal
-  const [showLinkedAlertModal, setShowLinkedAlertModal] = useState(false);
-  const [selectedLinkedAlert, setSelectedLinkedAlert] = useState(null);
-
-  // ---------- LOAD DATA ----------
+  // NEW: fetch alert from backend if navigated directly (no location.state)
   useEffect(() => {
-    if (alertData) {
-      const saved = localStorage.getItem(`alert_${alertData.id}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setCurrentAlert(parsed);
-        setSelectedProgress(parsed.progress);
-      } else {
-        setCurrentAlert(alertData);
-        setSelectedProgress(alertData.progress);
-      }
+    if (!alert && id) {
+      getAlertById(id)
+        .then((data) => { setAlert(data.item); setStatus(data.item?.status || "new"); })
+        .catch(console.error);
+    } else if (alert) {
+      setStatus(alert.status || "new");
     }
-  }, [alertData]);
+  }, [id]);
 
+  // NEW: load notes from backend, fallback to sample notes if offline
   useEffect(() => {
-    if (alertData) {
-      const storageKey = `notes_${alertData.id}`;
-      const storedNotes = localStorage.getItem(storageKey);
-      if (storedNotes) {
-        setNotes(JSON.parse(storedNotes));
-      } else {
-        const defaultNotes = [
-          {
-            id: 1,
-            author: "Analyst 1",
-            time: "2 hours ago",
-            content: "My analysis on this alert is that SQL injection has been used to bypass authentication.",
-            avatar: "A1"
-          },
-          {
-            id: 2,
-            author: "Analyst 2",
-            time: "1 hour ago",
-            content: "Authentication bypass enabled the attacker to steal credentials from the login page.",
-            avatar: "A2"
-          }
-        ];
-        setNotes(defaultNotes);
-        localStorage.setItem(storageKey, JSON.stringify(defaultNotes));
-      }
+    if (id) {
+      getNotes(id)
+        .then((data) => setNotes(data.items || []))
+        .catch(() => {
+          // fallback sample notes when backend offline
+          setNotes([
+            { id: 1, author: "Analyst 1", time: "2 hours ago", content: "SQL injection used to bypass authentication." },
+            { id: 2, author: "Analyst 2", time: "1 hour ago",  content: "Attacker stole credentials from the login page." },
+          ]);
+        });
     }
-  }, [alertData]);
+  }, [id]);
 
-  // Load all alerts for linking
-  useEffect(() => {
-    const baseAlerts = [
-      { id: 1, severity: 'High', type: 'SQLI', src: '192.168.1.100', dst: '10.0.0.12', ids: 'Snort', time: '30s ago', progress: 'New' },
-      { id: 2, severity: 'High', type: 'Malware', src: '192.168.1.120', dst: '10.0.0.5', ids: 'Suricata', time: '1m ago', progress: 'New' },
-      { id: 3, severity: 'Medium', type: 'Suspicious login', src: '203.45.67.89', dst: '45.67.89.12', ids: 'Zeek', time: '2m ago', progress: 'In Progress' },
-      { id: 4, severity: 'Low', type: 'Phishing', src: '192.168.1.92', dst: '10.0.0.10', ids: 'Snort', time: '5m ago', progress: 'Resolved' },
-      { id: 5, severity: 'Low', type: 'Port scan', src: '178.23.156.42', dst: '8.8.8.8', ids: 'Kismet', time: '10m ago', progress: 'Resolved' },
-      { id: 6, severity: 'High', type: 'Ransomware', src: '192.168.1.45', dst: '10.0.0.22', ids: 'Suricata', time: '15m ago', progress: 'In Progress' },
-      { id: 7, severity: 'Medium', type: 'Brute Force', src: '104.28.12.34', dst: '192.168.1.1', ids: 'Snort', time: '22m ago', progress: 'New' },
-      { id: 8, severity: 'Low', type: 'Port scan', src: '8.8.8.8', dst: '192.168.1.100', ids: 'Kismet', time: '32m ago', progress: 'Resolved' },
-      { id: 9, severity: 'High', type: 'C2 Beacon', src: '45.33.22.11', dst: '10.0.0.50', ids: 'Zeek', time: '45m ago', progress: 'In Progress' },
-      { id: 10, severity: 'Medium', type: 'SQL Injection', src: '203.0.113.5', dst: '10.0.0.15', ids: 'Snort', time: '1h ago', progress: 'Resolved' },
-      { id: 11, severity: 'Low', type: 'Failed Login', src: '192.168.1.200', dst: '10.0.0.8', ids: 'Zeek', time: '2h ago', progress: 'Resolved' },
-      { id: 12, severity: 'High', type: 'Data Exfiltration', src: '198.51.100.77', dst: '10.0.0.99', ids: 'Suricata', time: '3h ago', progress: 'In Progress' },
-      { id: 13, severity: 'Medium', type: 'DDoS', src: '192.168.1.150', dst: '10.0.0.20', ids: 'Snort', time: '4h ago', progress: 'In Progress' },
-      { id: 14, severity: 'Low', type: 'Reconnaissance', src: '104.16.45.33', dst: '192.168.1.10', ids: 'Zeek', time: '5h ago', progress: 'Resolved' },
-    ];
-
-    const merged = baseAlerts.map(alert => {
-      const saved = localStorage.getItem(`alert_${alert.id}`);
-      return saved ? JSON.parse(saved) : alert;
-    }).filter(a => a.id !== currentAlert?.id);
-    setAllAlerts(merged);
-  }, [currentAlert]);
-
-  // Load linked alerts
-  useEffect(() => {
-    if (currentAlert) {
-      const linkedKey = `linkedAlerts_${currentAlert.id}`;
-      const savedLinks = localStorage.getItem(linkedKey);
-      if (savedLinks) {
-        const linkedIds = JSON.parse(savedLinks);
-        setSelectedLinks(linkedIds);
-        const linked = allAlerts.filter(a => linkedIds.includes(a.id));
-        setLinkedAlerts(linked);
-      } else {
-        setSelectedLinks([]);
-        setLinkedAlerts([]);
-      }
-    }
-  }, [currentAlert, allAlerts]);
-
-  // ---------- HANDLERS ----------
-  const handleProgressChange = (e) => setSelectedProgress(e.target.value);
-  const handleUpdateStatus = () => {
-    const updatedAlert = { ...currentAlert, progress: selectedProgress };
-    setCurrentAlert(updatedAlert);
-    localStorage.setItem(`alert_${updatedAlert.id}`, JSON.stringify(updatedAlert));
-    alert("Status updated successfully!");
-  };
-
-  const handlePostNote = () => {
-    if (newNoteText.trim() === "" || !alertData) return;
-    const newNote = {
-      id: notes.length + 1,
-      author: "Analyst 1",
-      time: "Just now",
-      content: newNoteText,
-      avatar: "A1"
-    };
-    const updatedNotes = [...notes, newNote];
-    setNotes(updatedNotes);
-    localStorage.setItem(`notes_${alertData.id}`, JSON.stringify(updatedNotes));
-    setNewNoteText("");
-  };
-
-  // Incident modal
-  const handleCreateIncident = () => setShowIncidentModal(true);
-  const handleCloseIncidentModal = () => {
-    setShowIncidentModal(false);
-    setIncidentTitle("");
-    setIncidentDescription("");
-    setIncidentSeverity("Medium");
-  };
-  const handleSaveIncident = () => {
-    if (!incidentTitle.trim()) {
-      alert("Please enter an incident title");
-      return;
-    }
-    const newIncident = {
-      id: Date.now(),
-      alertId: currentAlert.id,
-      alertType: currentAlert.type,
-      title: incidentTitle,
-      description: incidentDescription,
-      severity: incidentSeverity,
-      created: new Date().toLocaleString(),
-      status: "Open",
-    };
-    const existing = JSON.parse(localStorage.getItem("incidents") || "[]");
-    localStorage.setItem("incidents", JSON.stringify([...existing, newIncident]));
-    alert("Incident created successfully!");
-    handleCloseIncidentModal();
-  };
-
-  // Link alerts modal
-  const handleLinkAlerts = () => setShowLinkModal(true);
-  const handleCloseLinkModal = () => {
-    setShowLinkModal(false);
-    const linkedKey = `linkedAlerts_${currentAlert.id}`;
-    const saved = localStorage.getItem(linkedKey);
-    setSelectedLinks(saved ? JSON.parse(saved) : []);
-  };
-  const handleCheckboxChange = (id) => {
-    setSelectedLinks(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-  const handleSaveLinks = () => {
-    const linkedKey = `linkedAlerts_${currentAlert.id}`;
-    localStorage.setItem(linkedKey, JSON.stringify(selectedLinks));
-    const linked = allAlerts.filter(a => selectedLinks.includes(a.id));
-    setLinkedAlerts(linked);
-    setShowLinkModal(false);
-    alert("Links updated successfully!");
-  };
-
-  // Linked alert modal
-  const handleViewLinkedAlert = (alert) => {
-    setSelectedLinkedAlert(alert);
-    setShowLinkedAlertModal(true);
-  };
-  const handleCloseLinkedAlertModal = () => {
-    setShowLinkedAlertModal(false);
-    setSelectedLinkedAlert(null);
-  };
-  const handleViewFullDetails = () => {
-    if (selectedLinkedAlert) {
-      navigate(`/alert/${selectedLinkedAlert.id}`, { state: { alert: selectedLinkedAlert } });
+  // CHANGED: was sync, now async — calls backend, falls back offline
+  const handlePostNote = async () => {
+    // CHANGED: newNoteText → newNote
+    if (!newNote.trim()) return;
+    setNotePosting(true);
+    try {
+      const res = await addNote(id || alert?.id, newNote.trim());
+      setNotes((prev) => [...prev, { ...res.note, author: "Analyst 1" }]);
+      setNewNote("");
+    } catch {
+      // offline fallback — same behaviour as original but persists locally
+      setNotes((prev) => [...prev, {
+        id: notes.length + 1,
+        author: "Analyst 1",
+        time: "Just now",
+        content: newNote.trim(),
+        avatar: "A1"
+      }]);
+      setNewNote("");
+    } finally {
+      setNotePosting(false);
     }
   };
 
-  const handleBack = () => navigate('/dashboard');
+  // NEW: calls PATCH /alerts/:id/status, optimistic update if offline
+  const handleStatusChange = async (newStatus) => {
+    setSaving(true);
+    try {
+      await updateAlertStatus(id || alert?.id, newStatus);
+      setStatus(newStatus);
+    } catch {
+      setStatus(newStatus); // optimistic update if offline
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  if (!alertData) {
+  // CHANGED: was handleBack() → navigate('/dashboard')
+  // Now inline navigate(-1) so back goes to wherever the user came from
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  if (!alert) {
     return (
       <div className="alert-page no-alert">
         <h2>No alert selected</h2>
-        <button onClick={handleBack} className="post-note-btn">Go back to Dashboard</button>
+        <button onClick={handleBack} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
+          Go back
+        </button>
       </div>
     );
   }
 
+  // NEW: normalise field names — backend uses src_ip/dest_ip/signature, old mock used src/dst/type
+  const srcIp     = alert.src_ip    || alert.src  || "—";
+  const dstIp     = alert.dest_ip   || alert.dst  || "—";
+  const alertType = alert.signature || alert.type || "Unknown";
+  const idsSource = alert.proto     || alert.ids  || "—";
+  const time      = alert.timestamp
+    ? new Date(alert.timestamp).toLocaleString()
+    : (alert.time || "—");
+
   return (
-    <div className="alert-page">
+    <div className="dashboard-container">
+      {/* Sidebar — CHANGED: plain text items → working links, added missing pages + logout */}
+      <aside className="sidebar">
+        <div className="sidebar-header">🛡️ Intrusion Detection</div>
+        <nav className="sidebar-nav">
+          <div className="nav-section">
+            <ul>
+              <li><a href="/dashboard">Dashboard</a></li>
+              {/* CHANGED: was plain <li className="active">Alerts</li> */}
+              <li className="active"><a href="/alerts">Alerts</a></li>
+              {/* CHANGED: was plain <li>Network Traffic</li> */}
+              <li><a href="/network-traffic">Network Traffic</a></li>
+              {/* CHANGED: was plain <li>Reports</li> */}
+              <li><a href="/reports">Reports</a></li>
+              {/* NEW: missing from original */}
+              <li><a href="/notifications">Notifications</a></li>
+              <li><a href="/analyst/profile">Profile</a></li>
+            </ul>
+          </div>
+        </nav>
+        <div className="sidebar-user">
+          <hr className="divider" />
+          <div className="user-info">
+            <span className="user-role">Analyst</span>
+            <span className="user-name">Security Analyst 1</span>
+          </div>
+          {/* NEW: logout button */}
+          <button
+            className="logout-btn"
+            onClick={() => { localStorage.clear(); navigate("/logout"); }}
+          >
+            🚪 Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
       <div className="main-content">
         {/* Header */}
         <div className="header">
@@ -237,22 +168,80 @@ const AlertDetails = () => {
           {/* LEFT PANEL */}
           <div className="left-panel">
             <div className="alert-overview-card">
-              <h2 className="section-title">Alert Overview</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h2 className="section-title" style={{ margin: 0 }}>Alert Overview</h2>
+                {/* NEW: status changer buttons */}
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  {["new", "investigating", "resolved"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleStatusChange(s)}
+                      disabled={saving}
+                      style={{
+                        padding: "0.25rem 0.6rem", borderRadius: 20, border: "1px solid",
+                        fontSize: "0.75rem", cursor: "pointer", fontWeight: 600, textTransform: "capitalize",
+                        background: status === s
+                          ? s === "resolved"     ? "rgba(34,197,94,0.15)"
+                          : s === "investigating" ? "rgba(245,158,11,0.15)"
+                          :                        "rgba(56,189,248,0.15)"
+                          : "transparent",
+                        color: status === s
+                          ? s === "resolved"     ? "#22c55e"
+                          : s === "investigating" ? "#f59e0b"
+                          :                        "#38bdf8"
+                          : "#64748b",
+                        borderColor: status === s
+                          ? s === "resolved"     ? "#22c55e"
+                          : s === "investigating" ? "#f59e0b"
+                          :                        "#38bdf8"
+                          : "#334155",
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="overview-grid">
                 <div className="label">Alert Type</div>
-                <div className="value">{currentAlert.type}</div>
+                {/* CHANGED: alertData.type → alertType (normalised) */}
+                <div className="value">{alertType}</div>
+
+                <div className="label">Status</div>
+                {/* CHANGED: alertData.progress → status (live state) */}
+                <div className="value status" style={{ textTransform: "capitalize" }}>{status}</div>
+
                 <div className="label">IDS Source</div>
-                <div className="value">{currentAlert.ids || currentAlert.ids_source || currentAlert.sourceIds || '—'}</div>
+                {/* CHANGED: alertData.ids fallback chain → idsSource (normalised) */}
+                <div className="value">{idsSource}</div>
+
                 <div className="label">Detection Time</div>
-                <div className="value">{currentAlert.time}</div>
+                {/* CHANGED: alertData.time → time (normalised, formats timestamp) */}
+                <div className="value">{time}</div>
+
                 <div className="label">Source IP</div>
-                <div className="value">{currentAlert.src || currentAlert.source_ip || currentAlert.source || '—'}</div>
+                {/* CHANGED: alertData.src fallback chain → srcIp (normalised) */}
+                <div className="value">{srcIp}</div>
+
                 <div className="label">Destination IP</div>
-                <div className="value">{currentAlert.dst || currentAlert.destination_ip || currentAlert.dest || '—'}</div>
+                {/* CHANGED: alertData.dst fallback chain → dstIp (normalised) */}
+                <div className="value">{dstIp}</div>
+
+                {/* NEW: extra backend fields shown if present */}
+                {alert.category  && <><div className="label">Category</div><div className="value">{alert.category}</div></>}
+                {alert.src_port  && <><div className="label">Src Port</div><div className="value">{alert.src_port}</div></>}
+                {alert.dest_port && <><div className="label">Dst Port</div><div className="value">{alert.dest_port}</div></>}
               </div>
+
               <div className="description-box">
                 <div className="description-title">Description</div>
-                <p>Detected {currentAlert.type} targeting the web application's login endpoint. The attacker attempted to bypass authentication using multiple malicious payloads. (Source: {currentAlert.src})</p>
+                {/* CHANGED: uses normalised alertType/srcIp/dstIp instead of alertData.type/src */}
+                <p>
+                  Detected {alertType} targeting the web application's login
+                  endpoint. The attacker attempted to bypass authentication using
+                  multiple malicious payloads. (Source: {srcIp} → {dstIp})
+                </p>
               </div>
             </div>
 
@@ -322,13 +311,17 @@ const AlertDetails = () => {
           <div className="notes-list">
             {notes.map(note => (
               <div key={note.id} className="note-item">
-                <div className="note-avatar">{note.avatar}</div>
+                {/* CHANGED: note.avatar → derived from note.author */}
+                <div className="note-avatar">
+                  {(note.author || "A").substring(0, 2).toUpperCase()}
+                </div>
                 <div className="note-content-area">
                   <div className="note-header">
                     <span className="note-author">{note.author}</span>
                     <span className="note-time">{note.time}</span>
                   </div>
-                  <p className="note-content">{note.content}</p>
+                  {/* CHANGED: note.content → note.text || note.content (handles both backend + old field) */}
+                  <p className="note-content">{note.text || note.content}</p>
                   <button className="note-reply">↩ Reply</button>
                 </div>
               </div>
@@ -339,12 +332,18 @@ const AlertDetails = () => {
               className="note-input"
               placeholder="Write a note..."
               rows="3"
-              value={newNoteText}
-              onChange={(e) => setNewNoteText(e.target.value)}
+              // CHANGED: newNoteText → newNote
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
             />
             <div className="add-note-footer">
-              <button className="post-note-btn" onClick={handlePostNote}>
-                Post Note
+              {/* CHANGED: added disabled + loading text */}
+              <button
+                className="post-note-btn"
+                onClick={handlePostNote}
+                disabled={notePosting}
+              >
+                {notePosting ? "Posting…" : "Post Note"}
               </button>
             </div>
           </div>

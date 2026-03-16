@@ -1,22 +1,43 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { loginUser } from "../../services/api";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("Security Analyst");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Logging in as:", role, email);
-    if (role === "Administrator") {
-      localStorage.setItem("role", "admin");   // 
-      navigate("/admin");
-    } else {
-      localStorage.setItem("role", "analyst"); // 
-      navigate("/dashboard");
+    setError("");
+    setLoading(true);
+ 
+    try {
+      const data = await loginUser(email, password);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+ 
+      const userRole = data.user?.role || role;
+      if (userRole === "Administrator") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      // If backend is offline, fall back to role-based demo navigation
+      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+        console.warn("Backend offline – using demo navigation");
+        if (role === "Administrator") navigate("/admin");
+        else navigate("/dashboard");
+      } else {
+        setError(err.message || "Login failed. Please check your credentials.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,6 +64,9 @@ function Login() {
         <div style={styles.card}>
           <h2 style={styles.title}>Sign in</h2>
           <p style={styles.subtitle}>Access the Intrusion Detection Dashboard</p>
+
+
+          {error && <div style={styles.errorBanner}>{error}</div>}
 
           <form onSubmit={handleLogin}>
             <div style={styles.inputGroup}>
@@ -72,7 +96,8 @@ function Login() {
                   {showPassword ? "🙈" : "👁️"}
                 </span>
               </div>
-              <p style={styles.forgotPassword} onClick={handleForgotPassword}>
+              
+              <p style={styles.forgotPassword} onClick={() => navigate("/forgotpassword")}>
                 Forgot password?
               </p>
             </div>
@@ -89,7 +114,10 @@ function Login() {
               </select>
             </div>
 
-            <button type="submit" style={styles.button}>Log In</button>
+           
+           <button type="submit" style={styles.button} disabled={loading}>
+              {loading ? "Signing in…" : "Log In"}
+            </button>
           </form>
 
           <hr style={styles.divider} />
@@ -176,6 +204,16 @@ const styles = {
     color: "#94a3b8",
     fontSize: "0.9rem",
     marginBottom: "2rem",
+  },
+   errorBanner: {
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    color: "#f87171",
+    borderRadius: "8px",
+    padding: "0.65rem 1rem",
+    marginBottom: "1rem",
+    fontSize: "0.875rem",
+    textAlign: "left",
   },
   inputGroup: {
     marginBottom: "1.25rem",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { styles } from "./Register.styles";
+import { registerUser } from "../../services/api";
+
 
 function Register() {
   const [name, setName] = useState("");
@@ -10,21 +11,59 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("Security Analyst");
   const [agreed, setAgreed] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+
+  const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match.");
       return;
     }
     if (!agreed) {
-      alert("Please agree to the Terms & Privacy Policy.");
+      setError("Please agree to the Terms & Privacy Policy.");
       return;
     }
-    alert("Registration submitted! Awaiting admin approval.");
-    navigate("/login");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await registerUser(email, password, name);
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+
+    if (success) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.successCard}>
+          <div style={styles.successIcon}>✅</div>
+          <h2 style={styles.successTitle}>Registration Submitted</h2>
+          <p style={styles.successText}>
+            Your account has been created and is{" "}
+            <strong>pending administrator approval</strong>. You'll be able to
+            log in once an admin approves your account.
+          </p>
+          <button style={styles.button} onClick={() => navigate("/login")}>
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
@@ -44,6 +83,8 @@ function Register() {
       <div style={styles.container}>
         <h2 style={styles.title}>Register your account</h2>
         <p style={styles.subtitle}>Request access to the intrusion detection dashboard</p>
+
+        {error && <div style={styles.errorBanner}>{error}</div>}
 
         <form onSubmit={handleRegister} style={styles.form}>
           {/* Row 1: Name + Email */}
@@ -140,14 +181,153 @@ function Register() {
             </span>
           </div>
 
-          <button type="submit" style={styles.button}>Register</button>
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Submitting…" : "Register"}
+          </button>
         </form>
       </div>
+
+      
 
       {/* Footer */}
       <footer style={styles.footer}>© 2026 Intrusion Detection Dashboard</footer>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    backgroundColor: "#0f172a",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: "sans-serif",
+    color: "#f1f5f9",
+  },
+  navbar: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1e293b",
+    padding: "1rem 2rem",
+  },
+  logo: {
+    color: "#38bdf8",
+    fontSize: "1.2rem",
+    margin: 0,
+  },
+  navLinks: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "0.5rem",
+    margin: 0,
+  },
+  navLink: {
+    padding: "0.5rem 1rem",
+    borderRadius: "6px",
+    cursor: "pointer",
+    color: "#94a3b8",
+    fontSize: "0.95rem",
+  },
+  container: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "3rem 2rem",
+  },
+  title: { fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem" },
+  subtitle: { color: "#94a3b8", fontSize: "0.9rem", marginBottom: "2rem" },
+
+  errorBanner: {
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    color: "#f87171",
+    borderRadius: "8px",
+    padding: "0.65rem 1rem",
+    marginBottom: "1rem",
+    fontSize: "0.875rem",
+    width: "100%",
+    maxWidth: "660px",
+    boxSizing: "border-box",
+    textAlign: "left",
+  },
+  form: { width: "100%", maxWidth: "660px" },
+  row: { display: "flex", gap: "1.5rem", marginBottom: "1.25rem" },
+  inputGroup: { flex: 1 },
+  label: {
+    fontSize: "0.75rem",
+    color: "#94a3b8",
+    letterSpacing: "0.1em",
+    display: "block",
+    marginBottom: "0.4rem",
+  },
+  input: {
+    width: "100%",
+    padding: "0.65rem 0.75rem",
+    borderRadius: "4px",
+    border: "1px solid #334155",
+    backgroundColor: "#f1f5f9",
+    color: "#0f172a",
+    fontSize: "0.9rem",
+    boxSizing: "border-box",
+  },
+  passwordWrapper: { position: "relative" },
+  eyeIcon: {
+    position: "absolute",
+    right: "0.75rem",
+    top: "50%",
+    transform: "translateY(-50%)",
+    cursor: "pointer",
+    fontSize: "1rem",
+  },
+  select: {
+    width: "100%",
+    padding: "0.65rem 0.75rem",
+    borderRadius: "4px",
+    border: "1px solid #334155",
+    backgroundColor: "#1e293b",
+    color: "#f1f5f9",
+    fontSize: "0.9rem",
+    boxSizing: "border-box",
+  },
+  divider: { borderColor: "#334155", margin: "1.5rem 0" },
+  notice: { color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1rem" },
+  checkboxRow: { display: "flex", alignItems: "center", marginBottom: "1.5rem" },
+  checkboxLabel: { color: "#94a3b8", fontSize: "0.85rem" },
+  link: { color: "#f1f5f9", textDecoration: "underline", cursor: "pointer" },
+  button: {
+    display: "block",
+    margin: "0 auto",
+    padding: "0.75rem 2.5rem",
+    backgroundColor: "#16a34a",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+  },
+  footer: {
+    textAlign: "right",
+    padding: "1rem 2rem",
+    color: "#475569",
+    fontSize: "0.8rem",
+    borderTop: "1px solid #1e293b",
+  },
+  successCard: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "3rem",
+    textAlign: "center",
+  },
+  successIcon: { fontSize: "3rem", marginBottom: "1rem" },
+  successTitle: { fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem", color: "#f1f5f9" },
+  successText: { color: "#94a3b8", maxWidth: "400px", lineHeight: 1.7, marginBottom: "2rem" },
+
+};
 
 export default Register;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import AnalystLayout from "../../components/AnalystLayout";
+import AnalystLayout from "./AnalystLayout";
 
 function Reports() {
   const [from, setFrom] = useState("2024-04-01");

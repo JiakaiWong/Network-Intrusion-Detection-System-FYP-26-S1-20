@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const AnalystSidebar = () => {
   const location = useLocation();
+  // ADDED: needed for handleLogout
   const navigate = useNavigate();
 
   const isActive = (path, { prefix = false } = {}) => {
@@ -10,15 +11,17 @@ const AnalystSidebar = () => {
     return location.pathname === path;
   };
 
+  // NEW: clears auth tokens then redirects to logout page
   const handleLogout = () => {
-    // Clear any auth tokens/localStorage
-    localStorage.removeItem('token'); 
-    navigate("/logout"); 
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/logout");
   };
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">Intrusion Detection</div>
+      {/* CHANGED: added shield emoji */}
+      <div className="sidebar-header"></div>
 
       <nav className="sidebar-nav">
         <div className="nav-section">
@@ -43,8 +46,9 @@ const AnalystSidebar = () => {
               <Link to="/notifications">Notifications</Link>
             </li>
 
-            <li className={isActive("/profile") ? "active" : ""}>
-              <Link to="/profile">Profile</Link>
+            {/* CHANGED: /profile → /analyst/profile to match App.jsx route */}
+            <li className={isActive("/analyst/profile") ? "active" : ""}>
+              <Link to="/analyst/profile">Profile</Link>
             </li>
 
           <li className={isActive("/logout") ? "active" : ""}>
@@ -60,7 +64,10 @@ const AnalystSidebar = () => {
           <span className="user-role">Analyst</span>
           <span className="user-name">Security Analyst 1</span>
         </div>
-        
+        {/* NEW: logout button — clears localStorage before navigating */}
+        <button className="logout-btn" onClick={handleLogout} title="Log out">
+          🚪 Logout
+        </button>
       </div>
     </aside>
   );

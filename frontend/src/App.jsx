@@ -64,10 +64,9 @@ function App() {
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/network-traffic" element={<NetworkTraffic />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<AnalystProfile />} />
+        <Route path="/usermanagement" element={<Usermanagement />} />
         <Route path="/alert/:id" element={<AlertDetails />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/logout" element={<Logout />} />
+        <Route path="/analyst/profile" element={<Profile />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

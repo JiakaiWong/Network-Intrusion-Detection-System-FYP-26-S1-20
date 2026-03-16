@@ -46,24 +46,21 @@ const AnalystSidebar = () => {
             <li className={isActive("/profile") ? "active" : ""}>
               <Link to="/profile">Profile</Link>
             </li>
+
+          <li className={isActive("/logout") ? "active" : ""}>
+              <Link to="/logout">Logout</Link>
+            </li>
+            
           </ul>
         </div>
       </nav>
 
       <div className="sidebar-user">
-        <hr className="divider" />
         <div className="user-info">
           <span className="user-role">Analyst</span>
           <span className="user-name">Security Analyst 1</span>
         </div>
         
-        <button 
-          className="logout-btn" 
-          onClick={handleLogout}
-          title="Log out of your account"
-        >
-          🚪 Logout
-        </button>
       </div>
     </aside>
   );

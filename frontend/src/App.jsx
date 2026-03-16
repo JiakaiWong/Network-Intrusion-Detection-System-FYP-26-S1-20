@@ -15,21 +15,14 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProfile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
 import Usermanagement from "./pages/admin/UserManagement";
-import Admin from "./pages/admin/AdminDashboard";
+
+import Dashboard from "./pages/analyst/Dashboard";
 import Alerts from "./pages/analyst/Alerts";
 import Reports from "./pages/analyst/Reports";
+import AnalystProfile from "./pages/analyst/Profile";
 import AlertDetails from "./pages/analyst/AlertDetails";
-import Profile from "./pages/analyst/Profile";
-														  
-										 
-											   
-									   
 import NetworkTraffic from "./pages/analyst/NetworkTraffic";
 import Notifications from "./pages/analyst/Notifications";
-											  
-														
-
-
 
 // Shared logs state lives here so Settings and AdminDashboard stay in sync
 const INITIAL_LOGS = [
@@ -69,17 +62,12 @@ function App() {
         {/* Analyst Routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/alerts" element={<Alerts />} />
-		<Route path="/reports" element={<Reports />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/admin" element={<Admin />} />											   										   
         <Route path="/network-traffic" element={<NetworkTraffic />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/analyst/profile" element={<AnalystProfile />} />															 
+        <Route path="/profile" element={<AnalystProfile />} />
         <Route path="/alert/:id" element={<AlertDetails />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/logout" element={<Logout />} />
-		
-  
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

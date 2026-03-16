@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { FiDownload, FiSearch, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import AnalystLayout from "../../components/AnalystLayout";
 import { Link, useLocation } from "react-router-dom";
 import "./Alerts.css";
 
@@ -110,6 +111,8 @@ const Alerts = () => {
   }, [alerts, appliedSeverity, appliedStatus, appliedIds, appliedTime, appliedSearch]);
 
   // ---------- APPLY FILTER ----------
+  const [currentPage, setCurrentPage] = useState(1);
+
   const applyFilters = () => {
     setAppliedSeverity(selectedSeverity);
     setAppliedStatus(selectedStatus);
@@ -135,7 +138,6 @@ const Alerts = () => {
   };
 
   // ---------- PAGINATION ----------
-  const [currentPage, setCurrentPage] = useState(1);
   const alertsPerPage = 5;
   const totalFiltered = filteredAlerts.length;
   const totalPages = Math.ceil(totalFiltered / alertsPerPage);
@@ -144,30 +146,25 @@ const Alerts = () => {
   const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
   const currentAlerts = filteredAlerts.slice(indexOfFirstAlert, indexOfLastAlert);
 
-  // Generate minimal page numbers: first, current-1, current, current+1, last, with ellipsis
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      // Always show first
       pages.push(1);
-      
+
       if (currentPage > 3) pages.push("...");
-      
-      // Show current-1, current, current+1
+
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
       for (let i = start; i <= end; i++) {
         if (!pages.includes(i) && i !== 1 && i !== totalPages) pages.push(i);
       }
-      
+
       if (currentPage < totalPages - 2) pages.push("...");
-      
-      // Always show last
+
       pages.push(totalPages);
     }
-    // Remove duplicates and sort
     return pages.filter((v, i, a) => a.indexOf(v) === i);
   };
 
@@ -175,19 +172,35 @@ const Alerts = () => {
 
   // ---------- EXPORT ----------
   const exportToCSV = () => {
-    const headers = ["Severity", "Alert Type", "Source IP", "Destination IP", "Port", "IDS Source", "Time", "Progress"];
-    const rows = filteredAlerts.map(alert => [
-      alert.severity, alert.type, alert.src, alert.dest, alert.port, alert.ids, alert.time, alert.progress
+    const headers = [
+      "Severity",
+      "Alert Type",
+      "Source IP",
+      "Destination IP",
+      "Port",
+      "IDS Source",
+      "Time",
+      "Progress",
+    ];
+    const rows = filteredAlerts.map((alert) => [
+      alert.severity,
+      alert.type,
+      alert.src,
+      alert.dest,
+      alert.port,
+      alert.ids,
+      alert.time,
+      alert.progress,
     ]);
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', 'alerts_export.csv');
+    link.setAttribute("download", "alerts_export.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -202,209 +215,211 @@ const Alerts = () => {
   };
 
   return (
-    <div className="dashboard-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">Intrusion Detection</div>
-        <nav className="sidebar-nav">
-          <ul>
-            <li className={isActive('/') ? 'active' : ''}>
-              <Link to="/dashboard">Dashboard</Link>
-            </li>
-            <li className={isActive('/alerts') ? 'active' : ''}>
-              <Link to="/alerts">Alerts</Link>
-            </li>
-            <li className={isActive('/network-traffic') ? 'active' : ''}>
-              <Link to="/network-traffic">Network Traffic</Link>
-            </li>
-            <li className={isActive('/reports') ? 'active' : ''}>
-              <Link to="/reports">Reports</Link>
-            </li>
-            <li className={isActive('/notifications') ? 'active' : ''}>
-              <Link to="/notifications">Notifications</Link>
-            </li>
-            <li className={isActive('/profile') ? 'active' : ''}>
-              <Link to="/profile">Profile</Link>
-            </li>
-          </ul>
-        </nav>
-        <div className="sidebar-user">
-          <hr className="divider" />
-          <div className="user-info">
-            <span className="user-role">Analyst</span>
-            <span className="user-name">Security Analyst 1</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="alerts-container">
-        <div className="alerts-header">
-          <h1>Intrusion Detection Alerts</h1>
-          <button className="export-btn" onClick={exportToCSV}>
-            <FiDownload /> Export CSV
-          </button>
-        </div>
-
-        {/* Filter Panel */}
-        <div className="filter-panel">
-          <div className="filter-row">
-            <div className="filter-item">
-              <label>Severity</label>
-              <select value={selectedSeverity} onChange={(e) => setSelectedSeverity(e.target.value)}>
-                <option>All Severities</option>
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-              </select>
-            </div>
-            <div className="filter-item">
-              <label>Status</label>
-              <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
-                <option>All Status</option>
-                <option>New</option>
-                <option>In Progress</option>
-                <option>Resolved</option>
-              </select>
-            </div>
-            <div className="filter-item">
-              <label>IDS Source</label>
-              <select value={selectedIds} onChange={(e) => setSelectedIds(e.target.value)}>
-                <option>All IDS Sources</option>
-                <option>Snort</option>
-                <option>Zeek</option>
-                <option>Kismet</option>
-                <option>Suricata</option>
-              </select>
-            </div>
-            <div className="filter-item">
-              <label>Time Range</label>
-              <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-                <option>Time Range</option>
-                <option>24H</option>
-                <option>7D</option>
-                <option>30D</option>
-              </select>
-            </div>
+    <AnalystLayout>
+      <div className="dashboard-container">
+        {/* Main Content */}
+        <div className="alerts-container">
+          <div className="alerts-header">
+            <h1>Intrusion Detection Alerts</h1>
+            <button className="export-btn" onClick={exportToCSV}>
+              <FiDownload /> Export CSV
+            </button>
           </div>
 
-          <div className="filter-row">
-            <div className="filter-item">
-              <label>Search</label>
-              <div className="search-wrapper">
-                <FiSearch className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="IP, Port, Type"
-                  value={selectedSearch}
-                  onChange={(e) => setSelectedSearch(e.target.value)}
-                />
+          {/* Filter Panel */}
+          <div className="filter-panel">
+            <div className="filter-row">
+              <div className="filter-item">
+                <label>Severity</label>
+                <select
+                  value={selectedSeverity}
+                  onChange={(e) => setSelectedSeverity(e.target.value)}
+                >
+                  <option>All Severities</option>
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </select>
+              </div>
+              <div className="filter-item">
+                <label>Status</label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option>All Status</option>
+                  <option>New</option>
+                  <option>In Progress</option>
+                  <option>Resolved</option>
+                </select>
+              </div>
+              <div className="filter-item">
+                <label>IDS Source</label>
+                <select
+                  value={selectedIds}
+                  onChange={(e) => setSelectedIds(e.target.value)}
+                >
+                  <option>All IDS Sources</option>
+                  <option>Snort</option>
+                  <option>Zeek</option>
+                  <option>Kismet</option>
+                  <option>Suricata</option>
+                </select>
+              </div>
+              <div className="filter-item">
+                <label>Time Range</label>
+                <select
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                >
+                  <option>Time Range</option>
+                  <option>24H</option>
+                  <option>7D</option>
+                  <option>30D</option>
+                </select>
               </div>
             </div>
-            <div className="filter-actions">
-              <button className="btn-primary" onClick={applyFilters}>Apply Filter</button>
-              <button className="btn-secondary" onClick={resetFilters}>Reset</button>
-            </div>
-          </div>
-        </div>
 
-        {/* Table */}
-        <div className="table-container">
-          <div className="table-header">
-            <div>Showing {totalFiltered} results</div>
-            <div>Page {currentPage} of {totalPages}</div>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Severity</th>
-                  <th>Alert Type</th>
-                  <th>Source IP</th>
-                  <th>Destination IP</th>
-                  <th>Port</th>
-                  <th>IDS Source</th>
-                  <th>Time</th>
-                  <th>Progress</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentAlerts.map((alert) => (
-                  <tr key={alert.id}>
-                    <td className={getSeverityClass(alert.severity)}>{alert.severity}</td>
-                    <td>{alert.type}</td>
-                    <td>{alert.src}</td>
-                    <td>{alert.dest}</td>
-                    <td>{alert.port}</td>
-                    <td>{alert.ids}</td>
-                    <td>{alert.time}</td>
-                    <td className={
-                      alert.progress === 'New' ? 'progress-new' :
-                      alert.progress === 'In Progress' ? 'progress-in-progress' :
-                      'progress-resolved'
-                    }>
-                      {alert.progress}
-                    </td>
-                    <td>
-                      <Link to={`/alert/${alert.id}`} state={{ alert }} style={{ textDecoration: 'none' }}>
-                        <button className="small-btn">View</button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {totalFiltered === 0 && (
-                  <tr>
-                    <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                      No alerts match the selected filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination (clean and compact) */}
-        {totalFiltered > 0 && (
-          <div className="pagination">
-            <p>
-              Showing {indexOfFirstAlert + 1} to {Math.min(indexOfLastAlert, totalFiltered)} of {totalFiltered} results
-            </p>
-            <div className="pages">
-              <button
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="page-nav"
-              >
-                <FiChevronLeft />
-              </button>
-              
-              {pageNumbers.map((page, index) => (
-                <button
-                  key={index}
-                  className={`page-number ${page === currentPage ? "active" : ""} ${
-                    page === "..." ? "dots" : ""
-                  }`}
-                  onClick={() => page !== "..." && setCurrentPage(page)}
-                  disabled={page === "..."}
-                >
-                  {page}
+            <div className="filter-row">
+              <div className="filter-item">
+                <label>Search</label>
+                <div className="search-wrapper">
+                  <FiSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="IP, Port, Type"
+                    value={selectedSearch}
+                    onChange={(e) => setSelectedSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="filter-actions">
+                <button className="btn-primary" onClick={applyFilters}>
+                  Apply Filter
                 </button>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="page-nav"
-              >
-                <FiChevronRight />
-              </button>
+                <button className="btn-secondary" onClick={resetFilters}>
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Table */}
+          <div className="table-container">
+            <div className="table-header">
+              <div>Showing {totalFiltered} results</div>
+              <div>
+                Page {currentPage} of {totalPages}
+              </div>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Severity</th>
+                    <th>Alert Type</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Port</th>
+                    <th>IDS Source</th>
+                    <th>Time</th>
+                    <th>Progress</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentAlerts.map((alert) => (
+                    <tr key={alert.id}>
+                      <td className={getSeverityClass(alert.severity)}>{alert.severity}</td>
+                      <td>{alert.type}</td>
+                      <td>{alert.src}</td>
+                      <td>{alert.dest}</td>
+                      <td>{alert.port}</td>
+                      <td>{alert.ids}</td>
+                      <td>{alert.time}</td>
+                      <td
+                        className={
+                          alert.progress === "New"
+                            ? "progress-new"
+                            : alert.progress === "In Progress"
+                            ? "progress-in-progress"
+                            : "progress-resolved"
+                        }
+                      >
+                        {alert.progress}
+                      </td>
+                      <td>
+                        <Link
+                          to={`/alert/${alert.id}`}
+                          state={{ alert }}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <button className="small-btn">View</button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                  {totalFiltered === 0 && (
+                    <tr>
+                      <td
+                        colSpan="9"
+                        style={{
+                          textAlign: "center",
+                          padding: "2rem",
+                          color: "#94a3b8",
+                        }}
+                      >
+                        No alerts match the selected filters.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination (clean and compact) */}
+          {totalFiltered > 0 && (
+            <div className="pagination">
+              <p>
+                Showing {indexOfFirstAlert + 1} to{" "}
+                {Math.min(indexOfLastAlert, totalFiltered)} of {totalFiltered} results
+              </p>
+              <div className="pages">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="page-nav"
+                >
+                  <FiChevronLeft />
+                </button>
+
+                {pageNumbers.map((page, index) => (
+                  <button
+                    key={index}
+                    className={`page-number ${
+                      page === currentPage ? "active" : ""
+                    } ${page === "..." ? "dots" : ""}`}
+                    onClick={() => page !== "..." && setCurrentPage(page)}
+                    disabled={page === "..."}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="page-nav"
+                >
+                  <FiChevronRight />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </AnalystLayout>
   );
 };
 

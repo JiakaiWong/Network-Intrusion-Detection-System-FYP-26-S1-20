@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 
-
 import AnalystLayout from "../../components/AnalystLayout";
 
 function NetworkTraffic() {

@@ -1,3 +1,5 @@
+/* RESET */
+
 * {
   margin: 0;
   padding: 0;
@@ -6,105 +8,103 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f5f5f5;
+  background-color: #1a1a2e;
 }
+
+/* LAYOUT */
 
 .dashboard-container {
   display: flex;
   min-height: 100vh;
+  background-color: #1a1a2e;
 }
 
-/* Sidebar container */
+.dashboard-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: #0b1224;
+}
+
+/* SIDEBAR */
+
 .sidebar {
   width: 260px;
-  background-color: #ffffff;
+  background-color: white;
   border-right: 1px solid #000;
   display: flex;
   flex-direction: column;
-  height: 100vh;          /* full viewport height */
-  position: sticky;        /* optional: keeps sidebar fixed while scrolling */
+  height: 100vh;
+  position: sticky;
   top: 0;
 }
 
-/* Header */
 .sidebar-header {
   padding: 1.5rem 1.2rem;
   font-size: 1.2rem;
   font-weight: 600;
   border-bottom: 1px solid #000;
-  letter-spacing: 0.5px;
 }
 
-/* Navigation area – takes remaining space */
 .sidebar-nav {
   flex: 1;
   padding: 1rem 0;
 }
 
-.nav-section-title {
-  padding: 0.5rem 1.2rem;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #555;
-  font-weight: 600;
-}
-
 .sidebar-nav ul {
   list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
-.sidebar-nav li {
-  padding: 0.7rem 1.2rem 0.7rem 2rem;
-  margin: 0.2rem 0;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: #000;
-  transition: background-color 0.2s;
-  border-left: 3px solid transparent; /* for active indicator */
+.sidebar-nav li a {
+  display: block;
+  padding: 10px 20px;
+  color: #94a3b8;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.sidebar-nav li:hover {
-  background-color: #f5f5f5;
+/* Subtle hover effect with left border */
+.sidebar-nav li a::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #16a34a;
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+  border-radius: 0 2px 2px 0;
 }
 
-.sidebar-nav li.active {
-  background-color: #f0f0f0;
-  border-left-color: #28a745; /* green accent for active */
-  font-weight: 600;
+.sidebar-nav li:hover a {
+  background: rgba(30, 41, 59, 0.6);  /* soft #1e293b with transparency */
+  color: #e2e8f0;
 }
 
-/* User section at bottom */
+.sidebar-nav li:hover a::before {
+  transform: scaleY(0.7);  /* subtle green line appears on hover */
+}
+
+.sidebar-nav li.active a {
+  background: #1e293b;      /* solid for active */
+  color: white;
+  font-weight: 500;
+  border-left: 3px solid #16a34a;  /* solid green accent */
+}
+
+.sidebar-nav li.active a::before {
+  display: none;  /* remove pseudo-element on active */
+}
+
+/* USER INFO */
+
 .sidebar-user {
   padding: 1.2rem;
-  border-top: none; /* divider already provides the line */
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid #000;
-  margin: 0 0 1rem 0;
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.user-role {
-  font-size: 0.9rem;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.user-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #000;
 }
 
 .divider {
@@ -113,52 +113,24 @@ body {
   margin-bottom: 1rem;
 }
 
-.user-info div:first-child {
-  font-weight: 600;
+.user-info {
+  display: flex;
+  flex-direction: column;
 }
-.user-info div:last-child {
-  color: #555;
+
+.user-role {
   font-size: 0.9rem;
-}
-.nav-section {
-  margin-bottom: 1.5rem;
-}
-
-.nav-section-title {
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.8rem;
   color: #555;
+  text-transform: uppercase;
 }
 
-.nav-section ul {
-  list-style: none;
+.user-name {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-.nav-section li {
-  padding: 0.5rem 1rem 0.5rem 2rem;
-  cursor: pointer;
-  color: #000;
-}
+/* SUMMARY CARDS */
 
-.nav-section li:hover {
-  background-color: #f0f0f0;
-}
-
-.nav-section li.active {
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-/* Main content */
-.dashboard-main {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-}
-
-/* Summary cards */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -167,202 +139,235 @@ body {
 }
 
 .card {
-  position: relative;         /* so the icon can be positioned absolutely inside */
-  background: white;
-  border: 1px solid #000;
-  padding: 1.5rem 1rem;
+  position: relative;
+  background: #111c33;
+  border: 1px solid #24324f;
+  border-radius: 12px;
+  padding: 1.5rem;
   text-align: center;
+  color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
 }
 
 .card-icon {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
+  top: 10px;
+  left: 10px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: #000;     /* default black, can be overridden per card */
+  background:navy;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1rem;
-  line-height: 1;
-}
-
-/* Optional: color the icon to match severity */
-.card-total .card-icon {
-  background-color: #6c757d;  /* gray */
-}
-.card-high .card-icon {
-  background-color: #dc3545;  /* red */
-}
-.card-medium .card-icon {
-  background-color: #ffc107;  /* yellow – use black text for contrast */
-  color: #000;
-}
-.card-low .card-icon {
-  background-color: #28a745;  /* green */
 }
 
 .card-label {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  color: #a7b4c7;
 }
 
 .card-value {
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: bold;
+  margin-top: 5px;
+  color: #f1f5f9;
 }
 
-.card-total {
-  background-color: #f8f9fa;
+.card hr {
+  width: 200px;
+  margin: 12px auto 8px;   /* top:12px, left/right:auto, bottom:8px */
+  border: 0;
+  border-top: 1px solid white;
+}
+/* Base icon style */
+.card-icon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;          /* ensures text fits well */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3); /* subtle depth */
 }
 
-.card-high {
-  background-color: #f8d7da;
+/* Severity-specific icon backgrounds */
+.card-high .card-icon {
+  background: #dc3545;
+  color: white;
 }
 
-.card-medium {
-  background-color: #fff3cd;
+.card-medium .card-icon {
+  background: #ffc107;
+  color: black;              /* high contrast on yellow */
 }
 
-.card-low {
-  background-color: #d4edda;
+.card-low .card-icon {
+  background: #28a745;
+  color: white;
 }
-/* Trends and distribution row */
+
+/* Optional: icon for the Total Alerts card (if it doesn't have one yet) */
+.card-total .card-icon {
+  background: #6c757d;        /* neutral gray */
+  color: white;
+}
+/* TRENDS + DISTRIBUTION */
+
 .trends-distribution-row {
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
 }
 
-.trends-card, .distribution-card {
+.trends-card,
+.distribution-card {
   flex: 1;
-  background: white;
-  border: 1px solid #000;
-  padding: 1rem;
+  background: #111c33;
+  border: 1px solid #24324f;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-.trends-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+.trends-header,
+.distribution-header {
   font-weight: 600;
-  color:#000
+  margin-bottom: 1rem;
 }
 
 .time-filter {
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #000;
-  background: white;
-  font-size: 0.9rem;
+  padding: 4px 8px;
+  border: 1px solid #24324f;
+  background: #0b1224;
+  color: #e2e8f0;
 }
+
+/* CHART PLACEHOLDER */
 
 .chart-placeholder {
   height: 150px;
-  background-color: #e0e0e0;
-  border: 1px solid #aaa;
+  background-color: #0b1224;
+  border: 1px solid #24324f;
   display: flex;
   align-items: center;
   justify-content: center;
-  color:black;
+  color: #94a3b8;
 }
-/* Card Header */
-.distribution-header {
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
-  color: #000; /* ensures visibility on white background */
-}
-/* Pie chart placeholder (simple box with colored labels) */
-.pie-chart-placeholder {
+
+/* PIE CHART */
+
+.pie-chart-container {
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  height: 150px;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  color:#000;
+  gap: 2rem;
 }
 
-.pie-segment {
-  padding: 0.5rem;
-  border: 1px solid #000;
+.pie-chart-container svg {
+  width: 120px;
+  height: 120px;
+}
+
+.pie-legend {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.9rem;
-  background-color: white;
 }
 
-.pie-segment.low { border-color: #28a745; color: #28a745; }
-.pie-segment.medium { border-color: #ffc107; color: #ffc107; }
-.pie-segment.high { border-color: #dc3545; color: #dc3545; }
+.legend-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
 
-/* Recent alerts table */
+/* RECENT ALERTS */
+
 .recent-alerts-section h2 {
-  font-size: 1.3rem;
+  color: #f1f5f9;
   margin-bottom: 1rem;
-  font-weight: 600;
-  color: white;
 }
 
 .alerts-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border: 1px solid #000;
-  color:black
-}
-
-.alerts-table th,
-.alerts-table td {
-  border: 1px solid #000;
-  padding: 0.75rem;
-  text-align: left;
-  font-size: 0.9rem;
+  background: #0b1224;
+  border: 1px solid #24324f;
+  color: #e2e8f0;
 }
 
 .alerts-table th {
-  background-color: #f0f0f0;
+  background-color: #0c1630;
+  color: #a7b4c7;
+  text-align: left;
+  padding: 10px;
+}
+
+.alerts-table td {
+  padding: 10px;
+  border-bottom: 1px solid #152545;
+}
+
+/* BADGES */
+
+/* Severity badges – colored circle + white text (dashboard style) */
+.high, .medium, .low {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #e2e8f0;        /* white text for readability */
   font-weight: 600;
 }
 
-.severity-badge {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
+.high::before,
+.medium::before,
+.low::before {
+  content: "●";           /* solid circle */
+  font-size: 1.2rem;      /* large enough to stand out */
+  line-height: 1;
 }
 
-.severity-badge.high {
-  border-color: #dc3545;
-  color: #dc3545;
+.high::before {
+  color: #f44336;         /* bright red for high severity */
 }
 
-.severity-badge.medium {
-  border-color: #ffc107;
-  color: #ffc107;
+.medium::before {
+  color: #ffa500;         /* orange for medium */
 }
 
-.severity-badge.low {
-  border-color: #28a745;
-  color: #28a745;
+.low::before {
+  color: #4caf50;         /* green for low */
 }
-
 .progress-badge {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #000;
+  padding: 3px 8px;
   font-size: 0.8rem;
+  border: 1px solid;
 }
 
 .progress-badge.new {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 .progress-badge.in-progress {
@@ -375,180 +380,19 @@ body {
   color: #28a745;
 }
 
-/* Analyst footer */
-.analyst-footer {
-  margin-top: 2rem;
-  text-align: center;
-  padding: 1rem;
-  border-top: 1px solid #000;
-  font-size: 0.9rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-container {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #000;
-  }
-  .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .trends-distribution-row {
-    flex-direction: column;
-  }
-  .alerts-table {
-    font-size: 0.8rem;
-  }
-  .alerts-table th, .alerts-table td {
-    padding: 0.5rem;
-  }
-
-
-.pie-chart-container {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  height: 120px;
-}
-
-.pie-chart-container svg {
-  flex: 1;
-  max-width: 120px;
-  height: auto;
-}
-
-.pie-chart-container {
-  display: flex;
-  flex-direction: row;       /* chart and legend side by side */
-  align-items: center;
-  gap: 2rem;
-  height: 120px;
-}
-
-.pie-chart-container svg {
-  width: 120px;
-  height: 120px;
-}
-
-.pie-legend {
-  display: flex;
-  flex-direction: row;       /* horizontal legend */
-  gap: 1.5rem;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  text-transform: uppercase;
-}
-
-.legend-dot {
-  width: 20px;
-  height: 20px;
-  border: 1px solid #000;
-  border-radius: 2px;        /* slightly rounded square */
-}
-
-/* Optional: adjust for smaller screens */
-@media (max-width: 500px) {
-  .pie-legend {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-}
-}
-.distribution-card {
-  flex: 1;
-  background: white;
-  border: 1px solid #000;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.distribution-header {
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
-}
-
-.trends-header span,
-.distribution-header {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
-}
-
-/* Navy background for the entire dashboard */
-.dashboard-container {
-  background-color: #1a1a2e;  /* deep navy */
-}
-
-/* Optional: if you want the body itself to be navy (for consistent scrolling) */
-body {
-  background-color: #1a1a2e;
-}
-
-/* Cards remain white with black borders – they'll stand out on navy */
-.card,
-.trends-card,
-.distribution-card,
-.alerts-table,
-.stats-table-container {
-  background-color: white;
-  border-color: #000;
-}
-
-/* Sidebar – you can keep it white or make it semi-transparent; here it's white */
-.sidebar {
-  background-color: white;
-}
-
-/* Adjust text colors as needed (default text on white cards is fine) */
-
+/* FOOTER */
 
 .footer {
   text-align: center;
-  padding: 1.5rem;
-  background-color: white;
-  color: #000;
-  font-size: 0.85rem;
+  padding: 1 rem;
+  background: white;
+  color:#000;
   border-top: 1px solid #000;
   margin-top: 2rem;
-}
-
-
-.trend-down, .trend-up, .trend-neutral {
   font-size: 0.85rem;
-  margin-top: 0.5rem;
 }
-.trend-down { color: #dc3545; }
-.trend-up { color: #28a745; }
-.trend-neutral { color: #6c757d; }
 
-/* Pagination styling (if not already) */
-.page {
-  border: 1px solid #000;
-  padding: 0.2rem 0.6rem;
-  cursor: default;
-  background: white;
-}
-.page.active {
-  background: #000;
-  color: white;
-}
-.page.ellipsis {
-  border: none;
-  background: transparent;
-}
+/* TELEGRAM SECTION */
 
 .telegram-section {
   margin-top: 30px;
@@ -583,4 +427,151 @@ body {
 
 .telegram-btn:hover {
   background: #2563eb;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #000;
+  }
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trends-distribution-row {
+    flex-direction: column;
+  }
+  
+.card-high {
+  background-color: rgba(220, 53, 69, 0.15) !important;
+  border-color: #dc3545 !important;
+}
+
+.card-medium {
+  background-color: rgba(255, 193, 7, 0.15) !important;
+  border-color: #ffc107 !important;
+}
+
+.card-low {
+  background-color: rgba(40, 167, 69, 0.15) !important;
+  border-color: #28a745 !important;
+}
+}
+/* SUMMARY CARDS – enhanced */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  position: relative;
+  background: #111c33;               /* base dark card background */
+  border: 1px solid #24324f;
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+/* Subtle gradient overlay */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 80%);
+  pointer-events: none;
+  border-radius: 16px;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.6);
+  border-color: #3b82f6;
+}
+
+/* Severity-specific backgrounds (semi‑transparent for depth) */
+.card-high {
+  background: rgba(220, 53, 69, 0.15);
+  border-color: #dc3545;
+}
+.card-medium {
+  background: rgba(255, 193, 7, 0.15);
+  border-color: #ffc107;
+}
+.card-low {
+  background: rgba(40, 167, 69, 0.15);
+  border-color: #28a745;
+}
+.card-total {
+  background: #111c33;  /* neutral */
+  border-color: #6c757d;
+}
+
+/* Icon (if used) */
+.card-icon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.3);
+  color: white;
+}
+
+/* Card content */
+.card-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #a7b4c7;
+  margin-top: 0.5rem;
+}
+
+.card-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 0.25rem;
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .card-value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
 }

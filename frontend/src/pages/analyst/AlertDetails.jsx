@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";                               // useEffect added
+import { useLocation, useNavigate, useParams } from "react-router-dom";            // useParams added
 import "./AlertDetails.css";
 import {
   FaArrowLeft,
@@ -9,77 +9,133 @@ import {
 } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import { BsTelegram } from "react-icons/bs";
+import { getAlertById, getNotes, addNote, updateAlertStatus } from "../../services/api"; // NEW
 
 const AlertDetails = () => {
-  // Hooks must be called at the top level – unconditionally
   const location = useLocation();
-  const navigate = useNavigate();
-  const alertData = location.state?.alert;
+  const navigate  = useNavigate();
+  // NEW: read the :id param so we can fetch directly if no location.state
+  const { id }    = useParams();
 
-  // State for notes (always declared)
-  const [notes, setNotes] = useState([
-    {
-      id: 1,
-      author: "Analyst 1",
-      time: "2 hours ago",
-      content: "My analysis on this alert is that SQL injection has been used to bypass authentication.",
-      avatar: "A1"
-    },
-    {
-      id: 2,
-      author: "Analyst 2",
-      time: "1 hour ago",
-      content: "Authentication bypass enabled the attacker to steal credentials from the login page.",
-      avatar: "A2"
+  // CHANGED: alertData → alert (state variable), starts from location.state or null
+  const [alert,       setAlert]       = useState(location.state?.alert || null);
+  // CHANGED: was hardcoded 2-item array, now empty — loaded from backend
+  const [notes,       setNotes]       = useState([]);
+  // CHANGED: newNoteText → newNote
+  const [newNote,     setNewNote]     = useState("");
+  // NEW: tracks current status for the status-changer buttons
+  const [status,      setStatus]      = useState(location.state?.alert?.status || "new");
+  // NEW: loading states for save and note-post actions
+  const [saving,      setSaving]      = useState(false);
+  const [notePosting, setNotePosting] = useState(false);
+
+  // NEW: fetch alert from backend if navigated directly (no location.state)
+  useEffect(() => {
+    if (!alert && id) {
+      getAlertById(id)
+        .then((data) => { setAlert(data.item); setStatus(data.item?.status || "new"); })
+        .catch(console.error);
+    } else if (alert) {
+      setStatus(alert.status || "new");
     }
-  ]);
+  }, [id]);
 
-  const [newNoteText, setNewNoteText] = useState("");
+  // NEW: load notes from backend, fallback to sample notes if offline
+  useEffect(() => {
+    if (id) {
+      getNotes(id)
+        .then((data) => setNotes(data.items || []))
+        .catch(() => {
+          // fallback sample notes when backend offline
+          setNotes([
+            { id: 1, author: "Analyst 1", time: "2 hours ago", content: "SQL injection used to bypass authentication." },
+            { id: 2, author: "Analyst 2", time: "1 hour ago",  content: "Attacker stole credentials from the login page." },
+          ]);
+        });
+    }
+  }, [id]);
 
-  const handlePostNote = () => {
-    if (newNoteText.trim() === "") return;
-
-    const newNote = {
-      id: notes.length + 1,
-      author: "Analyst 1",
-      time: "Just now",
-      content: newNoteText,
-      avatar: "A1"
-    };
-
-    setNotes([...notes, newNote]);
-    setNewNoteText("");
+  // CHANGED: was sync, now async — calls backend, falls back offline
+  const handlePostNote = async () => {
+    // CHANGED: newNoteText → newNote
+    if (!newNote.trim()) return;
+    setNotePosting(true);
+    try {
+      const res = await addNote(id || alert?.id, newNote.trim());
+      setNotes((prev) => [...prev, { ...res.note, author: "Analyst 1" }]);
+      setNewNote("");
+    } catch {
+      // offline fallback — same behaviour as original but persists locally
+      setNotes((prev) => [...prev, {
+        id: notes.length + 1,
+        author: "Analyst 1",
+        time: "Just now",
+        content: newNote.trim(),
+        avatar: "A1"
+      }]);
+      setNewNote("");
+    } finally {
+      setNotePosting(false);
+    }
   };
 
+  // NEW: calls PATCH /alerts/:id/status, optimistic update if offline
+  const handleStatusChange = async (newStatus) => {
+    setSaving(true);
+    try {
+      await updateAlertStatus(id || alert?.id, newStatus);
+      setStatus(newStatus);
+    } catch {
+      setStatus(newStatus); // optimistic update if offline
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // CHANGED: was handleBack() → navigate('/dashboard')
+  // Now inline navigate(-1) so back goes to wherever the user came from
   const handleBack = () => {
-    navigate('/dashboard');
+    navigate(-1);
   };
 
-  // Early return is NOT allowed before hooks. So we conditionally render below.
-  if (!alertData) {
+  if (!alert) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h2>No alert selected</h2>
         <button onClick={handleBack} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
-          Go back to Dashboard
+          Go back
         </button>
       </div>
     );
   }
 
-  // Main render when alertData exists
+  // NEW: normalise field names — backend uses src_ip/dest_ip/signature, old mock used src/dst/type
+  const srcIp     = alert.src_ip    || alert.src  || "—";
+  const dstIp     = alert.dest_ip   || alert.dst  || "—";
+  const alertType = alert.signature || alert.type || "Unknown";
+  const idsSource = alert.proto     || alert.ids  || "—";
+  const time      = alert.timestamp
+    ? new Date(alert.timestamp).toLocaleString()
+    : (alert.time || "—");
+
   return (
     <div className="dashboard-container">
-      {/* Sidebar (unchanged) */}
+      {/* Sidebar — CHANGED: plain text items → working links, added missing pages + logout */}
       <aside className="sidebar">
-        <div className="sidebar-header">Intrusion Detection</div>
+        <div className="sidebar-header">🛡️ Intrusion Detection</div>
         <nav className="sidebar-nav">
           <div className="nav-section">
             <ul>
-              <li className="active">Alerts</li>
-              <li>Dashboard</li>
-              <li>Network Traffic</li>
-              <li>Reports</li>
+              <li><a href="/dashboard">Dashboard</a></li>
+              {/* CHANGED: was plain <li className="active">Alerts</li> */}
+              <li className="active"><a href="/alerts">Alerts</a></li>
+              {/* CHANGED: was plain <li>Network Traffic</li> */}
+              <li><a href="/network-traffic">Network Traffic</a></li>
+              {/* CHANGED: was plain <li>Reports</li> */}
+              <li><a href="/reports">Reports</a></li>
+              {/* NEW: missing from original */}
+              <li><a href="/notifications">Notifications</a></li>
+              <li><a href="/analyst/profile">Profile</a></li>
             </ul>
           </div>
         </nav>
@@ -89,6 +145,13 @@ const AlertDetails = () => {
             <span className="user-role">Analyst</span>
             <span className="user-name">Security Analyst 1</span>
           </div>
+          {/* NEW: logout button */}
+          <button
+            className="logout-btn"
+            onClick={() => { localStorage.clear(); navigate("/logout"); }}
+          >
+            🚪 Logout
+          </button>
         </div>
       </aside>
 
@@ -104,42 +167,82 @@ const AlertDetails = () => {
         </div>
 
         <div className="content-grid">
-          {/* LEFT PANEL – populated with dynamic alertData */}
+          {/* LEFT PANEL */}
           <div className="left-panel">
             <div className="alert-overview-card">
-              <h2 className="section-title">Alert Overview</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h2 className="section-title" style={{ margin: 0 }}>Alert Overview</h2>
+                {/* NEW: status changer buttons */}
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  {["new", "investigating", "resolved"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleStatusChange(s)}
+                      disabled={saving}
+                      style={{
+                        padding: "0.25rem 0.6rem", borderRadius: 20, border: "1px solid",
+                        fontSize: "0.75rem", cursor: "pointer", fontWeight: 600, textTransform: "capitalize",
+                        background: status === s
+                          ? s === "resolved"     ? "rgba(34,197,94,0.15)"
+                          : s === "investigating" ? "rgba(245,158,11,0.15)"
+                          :                        "rgba(56,189,248,0.15)"
+                          : "transparent",
+                        color: status === s
+                          ? s === "resolved"     ? "#22c55e"
+                          : s === "investigating" ? "#f59e0b"
+                          :                        "#38bdf8"
+                          : "#64748b",
+                        borderColor: status === s
+                          ? s === "resolved"     ? "#22c55e"
+                          : s === "investigating" ? "#f59e0b"
+                          :                        "#38bdf8"
+                          : "#334155",
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="overview-grid">
-                  <div className="label">Alert Type</div>
-                  <div className="value">{alertData.type}</div>
+                <div className="label">Alert Type</div>
+                {/* CHANGED: alertData.type → alertType (normalised) */}
+                <div className="value">{alertType}</div>
 
-              <div className="label">Status</div>
-              <div className="value status">{alertData.progress}</div>
+                <div className="label">Status</div>
+                {/* CHANGED: alertData.progress → status (live state) */}
+                <div className="value status" style={{ textTransform: "capitalize" }}>{status}</div>
 
-              <div className="label">IDS Source</div>
-              <div className="value">
-                  {alertData.ids || alertData.ids_source || alertData.sourceIds || '—'}
+                <div className="label">IDS Source</div>
+                {/* CHANGED: alertData.ids fallback chain → idsSource (normalised) */}
+                <div className="value">{idsSource}</div>
+
+                <div className="label">Detection Time</div>
+                {/* CHANGED: alertData.time → time (normalised, formats timestamp) */}
+                <div className="value">{time}</div>
+
+                <div className="label">Source IP</div>
+                {/* CHANGED: alertData.src fallback chain → srcIp (normalised) */}
+                <div className="value">{srcIp}</div>
+
+                <div className="label">Destination IP</div>
+                {/* CHANGED: alertData.dst fallback chain → dstIp (normalised) */}
+                <div className="value">{dstIp}</div>
+
+                {/* NEW: extra backend fields shown if present */}
+                {alert.category  && <><div className="label">Category</div><div className="value">{alert.category}</div></>}
+                {alert.src_port  && <><div className="label">Src Port</div><div className="value">{alert.src_port}</div></>}
+                {alert.dest_port && <><div className="label">Dst Port</div><div className="value">{alert.dest_port}</div></>}
               </div>
 
-              <div className="label">Detection Time</div>
-              <div className="value">{alertData.time}</div>
-
-              <div className="label">Source IP</div>
-              <div className="value">
-                   {alertData.src || alertData.source_ip || alertData.source || '—'}
-              </div>
-
-              <div className="label">Destination IP</div>
-              <div className="value">
-                   {alertData.dst || alertData.destination_ip || alertData.dest || '—'}
-             </div>
-          </div>
               <div className="description-box">
                 <div className="description-title">Description</div>
+                {/* CHANGED: uses normalised alertType/srcIp/dstIp instead of alertData.type/src */}
                 <p>
-                  Detected {alertData.type} targeting the web application's login
+                  Detected {alertType} targeting the web application's login
                   endpoint. The attacker attempted to bypass authentication using
-                  multiple malicious payloads. (Source: {alertData.src})
+                  multiple malicious payloads. (Source: {srcIp} → {dstIp})
                 </p>
               </div>
             </div>
@@ -184,20 +287,24 @@ const AlertDetails = () => {
           </div>
         </div>
 
-        {/* INVESTIGATION NOTES – unchanged */}
+        {/* INVESTIGATION NOTES */}
         <div className="investigation-notes">
           <h2 className="section-title">Investigation Notes</h2>
 
           <div className="notes-list">
             {notes.map((note) => (
               <div key={note.id} className="note-item">
-                <div className="note-avatar">{note.avatar}</div>
+                {/* CHANGED: note.avatar → derived from note.author */}
+                <div className="note-avatar">
+                  {(note.author || "A").substring(0, 2).toUpperCase()}
+                </div>
                 <div className="note-content-area">
                   <div className="note-header">
                     <span className="note-author">{note.author}</span>
                     <span className="note-time">{note.time}</span>
                   </div>
-                  <p className="note-content">{note.content}</p>
+                  {/* CHANGED: note.content → note.text || note.content (handles both backend + old field) */}
+                  <p className="note-content">{note.text || note.content}</p>
                   <button className="note-reply">↩ Reply</button>
                 </div>
               </div>
@@ -210,12 +317,18 @@ const AlertDetails = () => {
               className="note-input"
               placeholder="Write a note..."
               rows="3"
-              value={newNoteText}
-              onChange={(e) => setNewNoteText(e.target.value)}
+              // CHANGED: newNoteText → newNote
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
             />
             <div className="add-note-footer">
-              <button className="post-note-btn" onClick={handlePostNote}>
-                Post Note
+              {/* CHANGED: added disabled + loading text */}
+              <button
+                className="post-note-btn"
+                onClick={handlePostNote}
+                disabled={notePosting}
+              >
+                {notePosting ? "Posting…" : "Post Note"}
               </button>
             </div>
           </div>

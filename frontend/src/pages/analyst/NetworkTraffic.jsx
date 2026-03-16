@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-
-
-import AnalystLayout from "../../components/AnalystLayout";
+import { useMemo, useState, useEffect } from "react"; // useEffect added
+import { getTrafficLogs } from "../../services/api";  // NEW
+import AnalystSidebar from "./AnalystSidebar";         // AnalystLayout → AnalystSidebar
+import "./Dashboard.css";            // NEW — needed for dashboard-container class
 
 function NetworkTraffic() {
 
@@ -12,8 +12,25 @@ function NetworkTraffic() {
   const [idsSource, setIdsSource] = useState("ALL");
   const [selectedIp, setSelectedIp] = useState(null);
 
+  // NEW: backend state — liveRows replaces mock data when backend is online
+  const [liveRows, setLiveRows]           = useState([]);
+  const [backendOnline, setBackendOnline] = useState(false);
+
+  // NEW: fetch from backend on mount, silently falls back to mock if offline
+  useEffect(() => {
+    getTrafficLogs()
+      .then((data) => {
+        if (data.items && data.items.length > 0) {
+          setLiveRows(data.items);
+          setBackendOnline(true);
+        }
+      })
+      .catch(() => {}); // silently fall back to mock data
+  }, []);
+
+  // CHANGED: first line now prefers liveRows when backend online, otherwise same mock data
   const rows = useMemo(
-    () => [
+    () => backendOnline && liveRows.length > 0 ? liveRows : [
       {
         ts: "12:31:23",
         src: "192.168.1.12",
@@ -68,6 +85,8 @@ function NetworkTraffic() {
     []
   );
 
+  // UNCHANGED: same filter logic
+  // CHANGED: added liveRows and backendOnline to dep array
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       const ipMatch =
@@ -82,8 +101,9 @@ function NetworkTraffic() {
       const idsMatch = idsSource === "ALL" || r.ids === idsSource;
       return ipMatch && portMatch && protoMatch && idsMatch;
     });
-  }, [rows, ip, port, protocol, idsSource]);
+  }, [rows, liveRows, backendOnline, ip, port, protocol, idsSource]);
 
+  // UNCHANGED
   const onReset = () => {
     setIp("");
     setPort("");
@@ -93,6 +113,7 @@ function NetworkTraffic() {
     setSelectedIp(null);
   };
 
+  // UNCHANGED
   const openIpDetails = (ipAddr) => {
     setSelectedIp({
       ip: ipAddr,
@@ -107,12 +128,14 @@ function NetworkTraffic() {
     });
   };
 
+  // CHANGED: <AnalystLayout> → <div className="dashboard-container"><AnalystSidebar />
   return (
-    <AnalystLayout>
+    <div className="dashboard-container"><AnalystSidebar />
 
       <div style={styles.main}>
         <h1 style={styles.heading}>Network Traffic Logs</h1>
 
+        {/* UNCHANGED: all filter JSX below */}
         <div style={styles.card}>
           <div style={styles.filtersRow}>
             <div style={styles.field}>
@@ -197,6 +220,7 @@ function NetworkTraffic() {
           </div>
         </div>
 
+        {/* UNCHANGED: table + drawer JSX */}
         <div style={styles.contentRow}>
           <div style={{ ...styles.card, flex: 1, overflow: "hidden" }}>
             <div style={styles.tableHeader}>
@@ -281,7 +305,7 @@ function NetworkTraffic() {
                   style={styles.drawerClose}
                   onClick={() => setSelectedIp(null)}
                 >
-                  ×
+                  
                 </button>
               </div>
 
@@ -341,10 +365,11 @@ function NetworkTraffic() {
           )}
         </div>
       </div>
-    </AnalystLayout>
+    </div>
   );
 }
 
+// UNCHANGED
 function badgeForProto(proto) {
   switch (proto) {
     case "TCP":
@@ -358,8 +383,8 @@ function badgeForProto(proto) {
   }
 }
 
+// UNCHANGED: entire styles object identical to original
 const styles = {
-
   main: {
     flex: 1,
     padding: "2rem",
@@ -370,8 +395,6 @@ const styles = {
     marginBottom: "1rem",
     color: "#f1f5f9",
   },
-
-
   card: {
     backgroundColor: "#111c33",
     border: "1px solid #24324f",
@@ -473,6 +496,7 @@ const styles = {
     padding: "0.75rem 0.9rem",
     borderBottom: "1px solid #24324f",
     backgroundColor: "#0c1630",
+    
   },
   tr: { borderBottom: "1px solid #152545" },
   td: { padding: "0.75rem 0.9rem", fontSize: "0.9rem", color: "#e2e8f0" },

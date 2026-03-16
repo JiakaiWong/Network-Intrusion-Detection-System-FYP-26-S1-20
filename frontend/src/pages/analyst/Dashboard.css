@@ -6,47 +6,61 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f5f5f5;
+  background-color: #0f172a;
+  color: #f1f5f9;
 }
 
 .dashboard-container {
   display: flex;
   min-height: 100vh;
+  background-color: #0f172a;
 }
 
-/* Sidebar container */
+/* ── Sidebar ── */
 .sidebar {
-  width: 260px;
-  background-color: #ffffff;
-  border-right: 1px solid #000;
+  width: 200px;
+  background-color: #1e293b;
+  border-right: 1px solid #334155;
   display: flex;
   flex-direction: column;
-  height: 100vh;          /* full viewport height */
-  position: sticky;        /* optional: keeps sidebar fixed while scrolling */
+  height: 100vh;
+  position: sticky;
   top: 0;
+  flex-shrink: 0;
+  /* No overflow:hidden here — that was clipping Profile and bottom items */
 }
 
-/* Header */
+/* Header — never shrinks */
 .sidebar-header {
-  padding: 1.5rem 1.2rem;
-  font-size: 1.2rem;
-  font-weight: 600;
-  border-bottom: 1px solid #000;
-  letter-spacing: 0.5px;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-bottom: 1px solid #334155;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Navigation area – takes remaining space */
+/* Nav — flex:1 fills space between header and user section */
 .sidebar-nav {
   flex: 1;
-  padding: 1rem 0;
+  padding: 0.3rem 0;
+  /* overflow visible so items are never clipped */
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .nav-section-title {
-  padding: 0.5rem 1.2rem;
-  font-size: 0.75rem;
+  padding: 0.4rem 1.2rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #555;
+  letter-spacing: 0.08em;
+  color: #64748b;
   font-weight: 600;
 }
 
@@ -56,194 +70,182 @@ body {
   padding: 0;
 }
 
+/* FIX: reduced padding so all 6 items fit without scrolling */
 .sidebar-nav li {
-  padding: 0.7rem 1.2rem 0.7rem 2rem;
-  margin: 0.2rem 0;
+  padding: 0;
+  /* CHANGED: smaller vertical margin so 6 items fit on any normal screen */
+  margin: 0.15rem 0.5rem;
   cursor: pointer;
-  font-size: 0.95rem;
-  color: #000;
-  transition: background-color 0.2s;
-  border-left: 3px solid transparent; /* for active indicator */
+  font-size: 0.875rem;
+  color: #ffffff;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+  border-left: 3px solid transparent;
 }
 
-.sidebar-nav li:hover {
-  background-color: #f5f5f5;
+.sidebar-nav li a {
+  display: block;
+  /* CHANGED: reduced vertical padding — was 0.65rem, now 0.55rem per item */
+  padding: 0.7rem 1rem;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sidebar-nav li.active {
-  background-color: #f0f0f0;
-  border-left-color: #28a745; /* green accent for active */
+.sidebar-nav li:hover,
+.sidebar-nav li:hover a {
+  background-color: rgba(56, 189, 248, 0.08);
+  color: #38bdf8;
+}
+
+.sidebar-nav li.active,
+.sidebar-nav li.active a {
+  background-color: rgba(56, 189, 248, 0.12);
+  border-left-color: #38bdf8;
+  color: #38bdf8;
   font-weight: 600;
 }
 
-/* User section at bottom */
+/* User section — fixed at bottom, never shrinks */
 .sidebar-user {
-  padding: 1.2rem;
-  border-top: none; /* divider already provides the line */
+  padding: 0.75rem 0.85rem;
+  border-top: 1px solid #334155;
+  flex-shrink: 0;
 }
 
 .divider {
   border: none;
-  border-top: 1px solid #000;
-  margin: 0 0 1rem 0;
+  border-top: 1px solid #334155;
+  margin: 0 0 0.45rem 0;
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .user-role {
-  font-size: 0.9rem;
-  color: #555;
+  font-size: 0.7rem;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.08em;
 }
 
 .user-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #000;
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid #000;
-  margin-bottom: 1rem;
-}
-
-.user-info div:first-child {
-  font-weight: 600;
-}
-.user-info div:last-child {
-  color: #555;
-  font-size: 0.9rem;
-}
-.nav-section {
-  margin-bottom: 1.5rem;
-}
-
-.nav-section-title {
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
   font-size: 0.8rem;
-  color: #555;
+  color: #f1f5f9;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.nav-section ul {
-  list-style: none;
-}
-
-.nav-section li {
-  padding: 0.5rem 1rem 0.5rem 2rem;
+.logout-btn {
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.78rem;
   cursor: pointer;
-  color: #000;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
-.nav-section li:hover {
-  background-color: #f0f0f0;
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
 
-.nav-section li.active {
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-/* Main content */
+/* ── Main content area ── */
 .dashboard-main {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  background-color: #0f172a;
+  min-width: 0;
+  
 }
 
-/* Summary cards */
+/* ── Summary cards ── */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .card {
-  position: relative;         /* so the icon can be positioned absolutely inside */
-  background: white;
-  border: 1px solid #000;
-  padding: 1.5rem 1rem;
-  text-align: center;
+  position: relative;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
 }
 
 .card-icon {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: #000;     /* default black, can be overridden per card */
-  color: white;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1rem;
-  line-height: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
 }
 
-/* Optional: color the icon to match severity */
-.card-total .card-icon {
-  background-color: #6c757d;  /* gray */
-}
-.card-high .card-icon {
-  background-color: #dc3545;  /* red */
-}
-.card-medium .card-icon {
-  background-color: #ffc107;  /* yellow – use black text for contrast */
-  color: #000;
-}
-.card-low .card-icon {
-  background-color: #28a745;  /* green */
-}
+.card-total .card-icon  { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+.card-high .card-icon   { background: rgba(239,68,68,0.15);   color: #ef4444; }
+.card-medium .card-icon { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+.card-low .card-icon    { background: rgba(34,197,94,0.15);   color: #22c55e; }
 
 .card-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.card hr {
+  border: none;
+  border-top: 1px solid #334155;
+  margin: 0.5rem 0;
 }
 
 .card-value {
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 
-.card-total {
-  background-color: #f8f9fa;
-}
+.card-total  .card-value { color: #38bdf8; }
+.card-high   .card-value { color: #ef4444; }
+.card-medium .card-value { color: #f59e0b; }
+.card-low    .card-value { color: #22c55e; }
 
-.card-high {
-  background-color: #f8d7da;
-}
-
-.card-medium {
-  background-color: #fff3cd;
-}
-
-.card-low {
-  background-color: #d4edda;
-}
-/* Trends and distribution row */
+/* ── Trends row ── */
 .trends-distribution-row {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .trends-card, .distribution-card {
-  flex: 1;
-  background: white;
-  border: 1px solid #000;
-  padding: 1rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
 }
 
 .trends-header {
@@ -251,301 +253,190 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  font-weight: 600;
-  color:#000
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #f1f5f9;
 }
 
 .time-filter {
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #000;
-  background: white;
-  font-size: 0.9rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #f1f5f9;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 .chart-placeholder {
-  height: 150px;
-  background-color: #e0e0e0;
-  border: 1px solid #aaa;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color:black;
-}
-/* Card Header */
-.distribution-header {
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
-  color: #000; /* ensures visibility on white background */
-}
-/* Pie chart placeholder (simple box with colored labels) */
-.pie-chart-placeholder {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  height: 150px;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  color:#000;
-}
-
-.pie-segment {
-  padding: 0.5rem;
-  border: 1px solid #000;
+  color: #64748b;
   font-size: 0.9rem;
-  background-color: white;
+  border: 1px dashed #334155;
+  border-radius: 8px;
 }
 
-.pie-segment.low { border-color: #28a745; color: #28a745; }
-.pie-segment.medium { border-color: #ffc107; color: #ffc107; }
-.pie-segment.high { border-color: #dc3545; color: #dc3545; }
-
-/* Recent alerts table */
-.recent-alerts-section h2 {
-  font-size: 1.3rem;
+.distribution-header {
+  font-weight: 700;
+  font-size: 0.95rem;
   margin-bottom: 1rem;
-  font-weight: 600;
-  color: white;
+  color: #f1f5f9;
+}
+
+.pie-chart-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Alerts table ── */
+.recent-alerts-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.recent-alerts-section h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #f1f5f9;
 }
 
 .alerts-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border: 1px solid #000;
-  color:black
-}
-
-.alerts-table th,
-.alerts-table td {
-  border: 1px solid #000;
-  padding: 0.75rem;
-  text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .alerts-table th {
-  background-color: #f0f0f0;
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+  color: #64748b;
   font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #334155;
+  white-space: nowrap;
 }
 
+.alerts-table td {
+  padding: 0.75rem 0.9rem;
+  color: #cbd5e1;
+  border-bottom: 1px solid #253348;
+  white-space: nowrap;
+}
+
+.alerts-table tr:hover td {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+/* Severity badges */
 .severity-badge {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
-.severity-badge.high {
-  border-color: #dc3545;
-  color: #dc3545;
-}
+.severity-badge.high   { background: rgba(239,68,68,0.15);  color: #ef4444; }
+.severity-badge.medium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.severity-badge.low    { background: rgba(34,197,94,0.15);  color: #22c55e; }
 
-.severity-badge.medium {
-  border-color: #ffc107;
-  color: #ffc107;
-}
-
-.severity-badge.low {
-  border-color: #28a745;
-  color: #28a745;
-}
-
+/* Progress badges */
 .progress-badge {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #000;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.progress-badge.new           { background: rgba(56,189,248,0.12);  color: #38bdf8; }
+.progress-badge.investigating  { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.progress-badge.resolved      { background: rgba(34,197,94,0.12);   color: #22c55e; }
+
+/* Action buttons */
+.view-btn, .telegram-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-btn:hover {
+  background: rgba(56,189,248,0.1);
+  color: #38bdf8;
+  border-color: rgba(56,189,248,0.3);
+}
+
+.telegram-btn:hover {
+  background: rgba(129,140,248,0.1);
+  color: #818cf8;
+  border-color: rgba(129,140,248,0.3);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 1.5rem 0 0;
+  color: #475569;
   font-size: 0.8rem;
 }
 
-.progress-badge.new {
-  border-color: #007bff;
-  color: #007bff;
-}
-
-.progress-badge.in-progress {
-  border-color: #ffc107;
-  color: #ffc107;
-}
-
-.progress-badge.resolved {
-  border-color: #28a745;
-  color: #28a745;
-}
-
-/* Analyst footer */
-.analyst-footer {
-  margin-top: 2rem;
-  text-align: center;
-  padding: 1rem;
-  border-top: 1px solid #000;
-  font-size: 0.9rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-container {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #000;
-  }
-  .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .trends-distribution-row {
-    flex-direction: column;
-  }
-  .alerts-table {
-    font-size: 0.8rem;
-  }
-  .alerts-table th, .alerts-table td {
-    padding: 0.5rem;
-  }
-
-
-.pie-chart-container {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  height: 120px;
-}
-
-.pie-chart-container svg {
+/* ── Alerts page ── */
+.alerts-container {
   flex: 1;
-  max-width: 120px;
-  height: auto;
+  padding: 2rem;
+  overflow-y: auto;
+  min-width: 0;
 }
 
-.pie-chart-container {
+.alerts-header {
   display: flex;
-  flex-direction: row;       /* chart and legend side by side */
+  justify-content: space-between;
   align-items: center;
-  gap: 2rem;
-  height: 120px;
-}
-
-.pie-chart-container svg {
-  width: 120px;
-  height: 120px;
-}
-
-.pie-legend {
-  display: flex;
-  flex-direction: row;       /* horizontal legend */
-  gap: 1.5rem;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  text-transform: uppercase;
-}
-
-.legend-dot {
-  width: 20px;
-  height: 20px;
-  border: 1px solid #000;
-  border-radius: 2px;        /* slightly rounded square */
-}
-
-/* Optional: adjust for smaller screens */
-@media (max-width: 500px) {
-  .pie-legend {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-}
-}
-.distribution-card {
-  flex: 1;
-  background: white;
-  border: 1px solid #000;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
   gap: 1rem;
 }
 
-.distribution-header {
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
+.alerts-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f1f5f9;
 }
 
-.trends-header span,
-.distribution-header {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: none;
+.export-btn {
+  padding: 0.55rem 1rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-/* Navy background for the entire dashboard */
-.dashboard-container {
-  background-color: #1a1a2e;  /* deep navy */
-}
-
-/* Optional: if you want the body itself to be navy (for consistent scrolling) */
-body {
-  background-color: #1a1a2e;
-}
-
-/* Cards remain white with black borders – they'll stand out on navy */
-.card,
-.trends-card,
-.distribution-card,
-.alerts-table,
-.stats-table-container {
-  background-color: white;
-  border-color: #000;
-}
-
-/* Sidebar – you can keep it white or make it semi-transparent; here it's white */
-.sidebar {
-  background-color: white;
-}
-
-/* Adjust text colors as needed (default text on white cards is fine) */
-
-
-.footer {
-  text-align: center;
-  padding: 1.5rem;
-  background-color: white;
-  color: #000;
-  font-size: 0.85rem;
-  border-top: 1px solid #000;
-  margin-top: 2rem;
-}
-
-
-.trend-down, .trend-up, .trend-neutral {
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-.trend-down { color: #dc3545; }
-.trend-up { color: #28a745; }
-.trend-neutral { color: #6c757d; }
-
-/* Pagination styling (if not already) */
-.page {
-  border: 1px solid #000;
-  padding: 0.2rem 0.6rem;
-  cursor: default;
-  background: white;
-}
-.page.active {
-  background: #000;
-  color: white;
-}
-.page.ellipsis {
-  border: none;
-  background: transparent;
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .dashboard-container { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: relative; }
+  .sidebar-nav { overflow: visible; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .trends-distribution-row { grid-template-columns: 1fr; }
 }

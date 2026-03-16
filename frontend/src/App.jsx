@@ -33,9 +33,9 @@ function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/network-traffic" element={<NetworkTraffic />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<Profile />} />
         <Route path="/usermanagement" element={<Usermanagement />} />
         <Route path="/alert/:id" element={<AlertDetails />} />
+        <Route path="/analyst/profile" element={<Profile />} />
 
 
         

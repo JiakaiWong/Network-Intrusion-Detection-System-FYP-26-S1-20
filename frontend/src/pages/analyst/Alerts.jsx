@@ -1,94 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiEye, FiDownload, FiSearch } from "react-icons/fi";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Alerts.css";
+import AnalystLayout from "./AnalystLayout";
+
+const API_BASE = "http://127.0.0.1:8000";
 
 const Alerts = () => {
-  const location = useLocation();
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  const isActive = (path) => location.pathname === path;
+  useEffect(() => {
+  const fetchAlerts = async () => {
+    try {
+      let url = `${API_BASE}/alerts`;
+      const params = new URLSearchParams();
 
-  // Base alerts with unique id
-  const baseAlerts = [
-    {
-      id: 1,
-      severity: "High",
-      type: "SQLI",
-      src: "192.168.1.100",
-      dest: "10.0.0.12",
-      port: "443",
-      ids: "Snort",
-      time: "30s ago",
-      progress: "New",
-    },
-    {
-      id: 2,
-      severity: "High",
-      type: "Malware",
-      src: "192.168.1.120",
-      dest: "10.0.0.5",
-      port: "80",
-      ids: "Suricata",
-      time: "1m ago",
-      progress: "New",
-    },
-    {
-      id: 3,
-      severity: "Medium",
-      type: "Suspicious Login",
-      src: "203.45.67.89",
-      dest: "45.67.89.12",
-      port: "8080",
-      ids: "Zeek",
-      time: "2m ago",
-      progress: "In Progress",
-    },
-    {
-      id: 4,
-      severity: "Low",
-      type: "Phishing",
-      src: "192.168.1.92",
-      dest: "10.0.0.10",
-      port: "53",
-      ids: "Snort",
-      time: "5m ago",
-      progress: "Resolved",
-    },
-    {
-      id: 5,
-      severity: "Low",
-      type: "Port Scan",
-      src: "178.23.156.42",
-      dest: "8.8.8.8",
-      port: "Multiple",
-      ids: "Kismet",
-      time: "10m ago",
-      progress: "Resolved",
-    },
-  ];
+      if (severityFilter) {
+        if (severityFilter === "High") params.append("severity", "1");
+        if (severityFilter === "Medium") params.append("severity", "2");
+        if (severityFilter === "Low") params.append("severity", "3");
+      }
 
-  // Create 1000 alerts (repeat the base set) with unique ids
-  const alerts = Array.from({ length: 1000 }, (_, i) => ({
-    ...baseAlerts[i % baseAlerts.length],
-    id: i + 1,
-    src: `192.168.${Math.floor(i / 10)}.${(i % 255) + 1}`,
-    time: `${i + 1}m ago`,
-  }));
+      if (statusFilter) {
+        params.append("status", statusFilter.toLowerCase());
+      }
 
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      setAlerts(data.items || []);
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to load alerts");
+      setLoading(false);
+    }
+  };
+
+  fetchAlerts();
+  }, [severityFilter, statusFilter]);
+  
   const [currentPage, setCurrentPage] = useState(1);
+  const filteredAlerts = alerts.filter((alert) => {
+  const text = `
+    ${alert.src_ip || ""}
+    ${alert.dest_ip || ""}
+    ${alert.signature || ""}
+    ${alert.dest_port || ""}
+    ${alert.proto || ""}
+  `.toLowerCase();
+
+  return text.includes(search.toLowerCase());
+  });
   const alertsPerPage = 5;
-  const totalAlerts = alerts.length;
+  const totalAlerts = filteredAlerts.length;
+
+  // Live severity counts from backend data
+  const highCount   = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "high").length;
+  const mediumCount = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "medium").length;
+  const lowCount    = alerts.filter((a) => (a.severity_label || a.severity || "").toLowerCase() === "low").length;
+
   const totalPages = Math.ceil(totalAlerts / alertsPerPage);
 
   const getSeverityClass = (severity) => {
-    if (severity === "High") return "high";
-    if (severity === "Medium") return "medium";
-    return "low";
+  if (!severity) return "low";
+  const value = severity.toLowerCase();
+  if (value === "high") return "high";
+  if (value === "medium") return "medium";
+  return "low";
   };
 
   const indexOfLastAlert = currentPage * alertsPerPage;
   const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
-  const currentAlerts = alerts.slice(indexOfFirstAlert, indexOfLastAlert);
+  const currentAlerts = filteredAlerts.slice(indexOfFirstAlert, indexOfLastAlert);
 
   // Generate page numbers with ellipsis
   const getPageNumbers = () => {
@@ -127,14 +119,14 @@ const Alerts = () => {
 
     // Convert alerts to array of arrays (each alert row)
     const rows = alerts.map(alert => [
-      alert.severity,
-      alert.type,
-      alert.src,
-      alert.dest,
-      alert.port,
-      alert.ids,
-      alert.time,
-      alert.progress
+      alert.severity_label || "",
+      alert.signature || "",
+      alert.src_ip || "",
+      alert.dest_ip || "",
+      alert.dest_port || "",
+      alert.proto || "",
+      alert.timestamp || "",
+      alert.status || ""
     ]);
 
     // Combine headers and rows
@@ -156,37 +148,7 @@ const Alerts = () => {
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">Intrusion Detection</div>
-        <nav className="sidebar-nav">
-          <div className="nav-section">
-            <ul>
-              <li className={isActive('/') ? 'active' : ''}>
-                <Link to="/dashboard">Dashboard</Link>
-              </li>
-              <li className={isActive('/alerts') ? 'active' : ''}>
-                <Link to="/alerts">Alerts</Link>
-              </li>
-              <li className={isActive('/network-traffic') ? 'active' : ''}>
-                <Link to="/network-traffic">Network Traffic</Link>
-              </li>
-              <li className={isActive('/reports') ? 'active' : ''}>
-                <Link to="/reports">Reports</Link>
-              </li>
-            </ul>
-          </div>
-        </nav>
-        <div className="sidebar-user">
-          <hr className="divider" />
-          <div className="user-info">
-            <span className="user-role">Analyst</span>
-            <span className="user-name">Security Analyst 1</span>
-          </div>
-        </div>
-      </aside>
-
-      <div className="alerts-container">
+    <AnalystLayout alerts>
         <div className="alerts-header">
           <h1>Intrusion Detection Alerts</h1>
           <button className="export-btn" onClick={exportToCSV}>
@@ -195,40 +157,44 @@ const Alerts = () => {
         </div>
 
         <div className="summary-cards">
-          <div className="card total">
-            <h3>Total Alerts</h3>
-            <h2>1000</h2>
-            <p className="green">(12% down from last week)</p>
+          <div className="card card-total">
+            <span className="card-icon">!</span>
+            <div className="card-label">Total Alerts</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : alerts.length}</div>
           </div>
-          <div className="card high-card">
-            <h3>High Severity</h3>
-            <h2>100</h2>
-            <p className="green">(10% down from last week)</p>
+          <div className="card card-high">
+            <span className="card-icon">!</span>
+            <div className="card-label">High Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : highCount}</div>
           </div>
-          <div className="card medium-card">
-            <h3>Medium Severity</h3>
-            <h2>300</h2>
-            <p className="red">(2% up from last week)</p>
+          <div className="card card-medium">
+            <span className="card-icon">!</span>
+            <div className="card-label">Medium Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : mediumCount}</div>
           </div>
-          <div className="card low-card">
-            <h3>Low Severity</h3>
-            <h2>600</h2>
-            <p className="orange">(60% of alerts this week)</p>
+          <div className="card card-low">
+            <span className="card-icon">!</span>
+            <div className="card-label">Low Severity</div>
+            <hr />
+            <div className="card-value">{loading ? "…" : lowCount}</div>
           </div>
         </div>
 
         <div className="filters">
-          <select>
-            <option>All Severities</option>
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
+          <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
+            <option value="">All Severities</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
           </select>
-          <select>
-            <option>All Status</option>
-            <option>New</option>
-            <option>In Progress</option>
-            <option>Resolved</option>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
           </select>
           <select>
             <option>All IDS Sources</option>
@@ -245,7 +211,7 @@ const Alerts = () => {
           </select>
           <div className="search-box">
             <FiSearch />
-            <input placeholder="Search IP, Port, Type" />
+            <input placeholder="Search IP, Port, Type" value={search}onChange={(e) => setSearch(e.target.value)}/>
           </div>
         </div>
 
@@ -267,16 +233,16 @@ const Alerts = () => {
             <tbody>
               {currentAlerts.map((alert) => (
                 <tr key={alert.id}>
-                  <td className={getSeverityClass(alert.severity)}>
-                    {alert.severity}
+                  <td className={getSeverityClass(alert.severity_label)}>
+                    {alert.severity_label || "-"}
                   </td>
-                  <td>{alert.type}</td>
-                  <td>{alert.src}</td>
-                  <td>{alert.dest}</td>
-                  <td>{alert.port}</td>
-                  <td>{alert.ids}</td>
-                  <td>{alert.time}</td>
-                  <td>{alert.progress}</td>
+                  <td>{alert.signature || "-"}</td>
+                  <td>{alert.src_ip || "-"}</td>
+                  <td>{alert.dest_ip || "-"}</td>
+                  <td>{alert.dest_port || "-"}</td>
+                  <td>{alert.proto || "-"}</td>
+                  <td>{alert.timestamp || "-"}</td>
+                  <td>{alert.status || "new"}</td>
                   <td>
                     <Link to={`/alert/${alert.id}`} state={{ alert }}>
                       <FiEye className="view-icon" />
@@ -324,8 +290,7 @@ const Alerts = () => {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </AnalystLayout>
   );
 };
 

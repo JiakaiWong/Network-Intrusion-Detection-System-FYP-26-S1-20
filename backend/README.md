@@ -92,6 +92,7 @@ Run ingestion script :
 ```bash
 cd backend
 python eve_ingestor.py
+#if there's error "no module named 'requests', run this script : 'pip3 install requests'
 ```
 This script will reads IDS events from eve.json and sends them to the backend API.
 

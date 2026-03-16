@@ -51,9 +51,7 @@ const AnalystSidebar = () => {
               <Link to="/analyst/profile">Profile</Link>
             </li>
 
-          <li className={isActive("/logout") ? "active" : ""}>
-              <Link to="/logout">Logout</Link>
-            </li>
+
             
           </ul>
         </div>

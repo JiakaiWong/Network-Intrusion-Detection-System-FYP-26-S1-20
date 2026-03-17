@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from enum import Enum
+from typing import Optional
 
 class RoleEnum(str, Enum):
     ANALYST = "Security Analyst"
@@ -21,11 +22,13 @@ class UserOut(BaseModel):
     id: str
     email: EmailStr
     full_name: str
+    telegram_id: Optional[str] = None
     role: str
     status: str
 
 class EditProfileIn(BaseModel):
     full_name: str
+    telegram_id: Optional[str] = None 
     
     @field_validator('full_name', mode='before')
     def trim_strings(cls, v):
@@ -61,5 +64,6 @@ class UserListOut(BaseModel):
     id: str
     email: EmailStr
     full_name: str
+    telegram_id: Optional[str] = None
     role: str
     status: str

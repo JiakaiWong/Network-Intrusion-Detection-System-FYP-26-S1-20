@@ -1,6 +1,7 @@
 import re
 from database import db
 from core.security import hash_password, verify_password
+from typing import Optional
 
 def validate_password_strength(password: str) -> None:
     # Validate password meets complexity requirements
@@ -60,6 +61,7 @@ async def create_user(email: str, password: str, full_name: str, role: str):
         "email": email,
         "hashed_password": hashed_password,
         "full_name": full_name,
+        "telegram_id": None,
         "role": role,
         "status": "pending"
     }
@@ -89,20 +91,29 @@ async def get_all_users():
             "id": str(user["_id"]),
             "email": user["email"],
             "full_name": user["full_name"],
+            "telegram_id": user.get("telegram_id"),
             "role": user["role"],
             "status": user.get("status", "pending")
         })
     return users
 
-async def update_user_profile(user_id: str, full_name: str):
+async def update_user_profile(user_id: str, full_name: str, telegram_id: Optional[str] = None) -> Optional[dict]:
     from bson import ObjectId
     try:
         validate_full_name(full_name)
         full_name = full_name.strip()
+
+        update_data: dict[str, Optional[str]] = {"full_name": full_name}
+        if telegram_id is not None:
+            stripped = telegram_id.strip()
+            if stripped:
+                update_data["telegram_id"] = stripped
+            else:
+                update_data["telegram_id"] = None
         
         result = await db.users.find_one_and_update(
             {"_id": ObjectId(user_id)},
-            {"$set": {"full_name": full_name}},
+            {"$set": update_data},
             return_document=True
         )
         return result

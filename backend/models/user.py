@@ -22,6 +22,26 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str
     role: str
+    status: str
+
+class EditProfileIn(BaseModel):
+    full_name: str
+    
+    @field_validator('full_name', mode='before')
+    def trim_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str
+    
+    @field_validator('current_password', 'new_password', mode='before')
+    def trim_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -36,3 +56,10 @@ class LoginIn(BaseModel):
 class LoginOut(BaseModel):
     token: str
     user: UserOut
+
+class UserListOut(BaseModel):
+    id: str
+    email: EmailStr
+    full_name: str
+    role: str
+    status: str

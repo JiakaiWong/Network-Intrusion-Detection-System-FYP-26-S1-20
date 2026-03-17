@@ -1,6 +1,6 @@
 import re
 from database import db
-from core.security import hash_password
+from core.security import hash_password, verify_password
 
 def validate_password_strength(password: str) -> None:
     # Validate password meets complexity requirements
@@ -60,7 +60,8 @@ async def create_user(email: str, password: str, full_name: str, role: str):
         "email": email,
         "hashed_password": hashed_password,
         "full_name": full_name,
-        "role": role
+        "role": role,
+        "status": "pending"
     }
     result = await db.users.insert_one(user_doc)
     
@@ -69,5 +70,65 @@ async def create_user(email: str, password: str, full_name: str, role: str):
         "id": str(result.inserted_id),
         "email": email,
         "full_name": full_name,
-        "role": role
+        "role": role,
+        "status": "pending"
     }
+
+async def get_user_by_id(user_id: str):
+    from bson import ObjectId
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        return user
+    except:
+        return None
+
+async def get_all_users():
+    users = []
+    async for user in db.users.find({}):
+        users.append({
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "status": user.get("status", "pending")
+        })
+    return users
+
+async def update_user_profile(user_id: str, full_name: str):
+    from bson import ObjectId
+    try:
+        validate_full_name(full_name)
+        full_name = full_name.strip()
+        
+        result = await db.users.find_one_and_update(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"full_name": full_name}},
+            return_document=True
+        )
+        return result
+    except:
+        return None
+
+async def change_password(user_id: str, old_password: str, new_password: str):
+    from bson import ObjectId
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return None
+        
+        if not verify_password(old_password, user["hashed_password"]):
+            raise ValueError("Current password is incorrect")
+        
+        validate_password_strength(new_password)
+        new_hashed = hash_password(new_password)
+        
+        result = await db.users.find_one_and_update(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"hashed_password": new_hashed}},
+            return_document=True
+        )
+        return result
+    except ValueError as e:
+        raise e
+    except:
+        return None

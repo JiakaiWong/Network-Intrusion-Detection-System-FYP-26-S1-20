@@ -46,7 +46,7 @@ MONGODB_URL=mongodb://<your‑host>:<port>
 3. **Run the API**
 
 ```bash
-uvicorn main:app --reload
+uvicorn app:app --reload
 ```
 
 The server will listen on http://127.0.0.1:8000 by default.

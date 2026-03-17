@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 from services.user_service import (
     create_user, 
     get_user_by_email,
@@ -18,33 +20,16 @@ from models.user import (
     ChangePasswordIn,
     UserListOut
 )
-from typing import Optional
 from bson import ObjectId
 
 router = APIRouter()
+security = HTTPBearer()
 
-def get_current_user(token: Optional[str] = None):
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+    token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return payload
-
-def get_current_user_from_header(authorization: Optional[str] = None) -> dict:
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-    
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     return payload
 
 @router.post("/api/auth/register", response_model=UserOut, status_code=201)
@@ -82,9 +67,7 @@ async def login(login_data: LoginIn):
     return LoginOut(token=token, user=user_out)
 
 @router.get("/api/users", response_model=list[UserListOut])
-async def get_users(authorization: Optional[str] = None):
-    current_user = get_current_user_from_header(authorization)
-    
+async def get_users(current_user: dict = Security(get_current_user)):
     if current_user.get("role") != "Administrator":
         raise HTTPException(status_code=403, detail="Only administrators can view all users")
     
@@ -92,9 +75,7 @@ async def get_users(authorization: Optional[str] = None):
     return users
 
 @router.get("/api/users/profile", response_model=UserOut)
-async def get_profile(authorization: Optional[str] = None):
-    current_user = get_current_user_from_header(authorization)
-    
+async def get_profile(current_user: dict = Security(get_current_user)):
     user_id = current_user.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -112,9 +93,7 @@ async def get_profile(authorization: Optional[str] = None):
     )
 
 @router.put("/api/users/profile", response_model=UserOut)
-async def edit_profile(profile_data: EditProfileIn, authorization: Optional[str] = None):
-    current_user = get_current_user_from_header(authorization)
-    
+async def edit_profile(profile_data: EditProfileIn, current_user: dict = Security(get_current_user)):
     user_id = current_user.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -135,9 +114,7 @@ async def edit_profile(profile_data: EditProfileIn, authorization: Optional[str]
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/api/users/change-password")
-async def change_user_password(password_data: ChangePasswordIn, authorization: Optional[str] = None):
-    current_user = get_current_user_from_header(authorization)
-    
+async def change_user_password(password_data: ChangePasswordIn, current_user: dict = Security(get_current_user)):
     user_id = current_user.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")

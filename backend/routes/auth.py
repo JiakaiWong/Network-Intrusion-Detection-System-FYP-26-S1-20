@@ -99,7 +99,7 @@ async def edit_profile(profile_data: EditProfileIn, current_user: dict = Securit
         raise HTTPException(status_code=401, detail="Invalid token")
     
     try:
-        user = await update_user_profile(user_id, profile_data.full_name, profile_data.telegram_id)
+        user = await update_user_profile(user_id, profile_data.full_name)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -107,7 +107,6 @@ async def edit_profile(profile_data: EditProfileIn, current_user: dict = Securit
             id=str(user["_id"]),
             email=user["email"],
             full_name=user["full_name"],
-            telegram_id=user.get("telegram_id"),
             role=user["role"],
             status=user.get("status", "pending")
         )

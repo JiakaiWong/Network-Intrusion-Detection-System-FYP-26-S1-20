@@ -6,7 +6,7 @@ from pymongo import MongoClient
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DATABASE_NAME", "fyp_ids")
+DB_NAME = os.getenv("DATABASE_NAME", "seamless_db")
 COLLECTION_NAME = "alerts"
 
 SEVERITY_LABELS = {1: "high", 2: "medium", 3: "low"}

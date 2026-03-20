@@ -58,14 +58,20 @@ function SeverityBar({ label, count, max, color }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-function AdminDashboard({ logs = [] }) {
-  const [alerts, setAlerts]       = useState([]);
-  const [summary, setSummary]     = useState({ total: 0, severity_summary: { high: 0, medium: 0, low: 0 } });
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
+function AdminDashboard({ logs: logsProp = [], onRefreshLogs }) {
+  const [alerts, setAlerts]         = useState([]);
+  const [summary, setSummary]       = useState({ total: 0, severity_summary: { high: 0, medium: 0, low: 0 } });
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // Local logs state so the component always reflects the latest value,
+  // even if the parent's logsProp was still empty on first render.
+  const [logs, setLogs]             = useState(logsProp);
   const PAGE_SIZE = 10;
+
+  // Keep local logs in sync whenever the parent updates logsProp after mount
+  useEffect(() => { setLogs(logsProp); }, [logsProp]);
 
   // ── Fetch alerts + summary ─────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -86,7 +92,13 @@ function AdminDashboard({ logs = [] }) {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // On mount: fetch dashboard data AND ask the parent to refresh logs so the
+  // NIDS status reflects the current state immediately without needing
+  // the user to navigate away and back.
+  useEffect(() => {
+    fetchData();
+    if (typeof onRefreshLogs === "function") onRefreshLogs();
+  }, [fetchData, onRefreshLogs]);
 
   // ── NIDS service status from logs prop ─────────────────────────────────────
   const nidsServices = ["Suricata", "Snort", "Zeek", "Kismet"];

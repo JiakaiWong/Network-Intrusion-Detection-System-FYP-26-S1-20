@@ -24,10 +24,11 @@ function AdminSidebar() {
   const adminEmail = user.email     || "";
 
   const navItems = [
-    { path: ".",        label: "Dashboard"       },
-    { path: "users",    label: "User Management" },
-    { path: "profile",  label: "Profile"         },
-    { path: "settings", label: "Settings"        },
+    { path: ".",           label: "Dashboard"       },
+    { path: "users",       label: "User Management" },
+    { path: "maintenance", label: "Maintenance"  },
+    { path: "settings",    label: "Settings"        },
+    { path: "profile",     label: "Profile"         },
   ];
 
   const isActive = (path) => {

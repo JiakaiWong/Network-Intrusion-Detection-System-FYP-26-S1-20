@@ -116,7 +116,8 @@ async def get_profile(current_user: dict = Security(get_current_user)):
         email=user["email"],
         full_name=user["full_name"],
         role=user["role"],
-        status=user.get("status", "pending")
+        status=user.get("status", "pending"),
+        telegram_id=user.get("telegram_id")
     )
 
 @router.put("/api/users/profile", response_model=UserOut)
@@ -135,7 +136,8 @@ async def edit_profile(profile_data: EditProfileIn, current_user: dict = Securit
             email=user["email"],
             full_name=user["full_name"],
             role=user["role"],
-            status=user.get("status", "pending")
+            status=user.get("status", "pending"),
+            telegram_id=user.get("telegram_id")
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

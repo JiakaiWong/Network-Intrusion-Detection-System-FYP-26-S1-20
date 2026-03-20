@@ -7,6 +7,7 @@ import AnalystLayout from "./AnalystLayout";
 const TG_TOKEN   = import.meta.env.VITE_TG_TOKEN  || "";
 const TG_CHAT_ID = import.meta.env.VITE_TG_CHAT_ID || "";
 
+
 // ── PieChart ─────────────────────────────────────────────────────────────────
 const PieChart = ({ high = 0, medium = 0, low = 0 }) => {
   const data = [
@@ -44,6 +45,7 @@ const PieChart = ({ high = 0, medium = 0, low = 0 }) => {
   );
 };
 
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -52,6 +54,7 @@ const Dashboard = () => {
   const [loading, setLoading]             = useState(true);
   const [backendStatus, setBackendStatus] = useState("Connecting…");
   const [tgMessage, setTgMessage]         = useState("");
+  const [telegramId, setTelegramId] = useState("");
 
   // Summary counts derived from live data
   const high   = alerts.filter(a => a.severity_label === "high").length;
@@ -74,28 +77,105 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+    
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:8000/api/users/profile", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        setTelegramId(data.telegram_id);
+        console.log("User profile response:", data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
+    fetchUser();
+  }, []);
+
 
   const handleViewAlert = (alert) => navigate(`/alert/${alert.id}`, { state: { alert } });
 
-  const sendToTelegram = async (text) => {
-    if (!TG_TOKEN || !TG_CHAT_ID) {
-      alert("Telegram not configured. Set VITE_TG_TOKEN and VITE_TG_CHAT_ID in .env");
+  const BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"; // (temporary for testing)
+
+const sendTelegramMessage = async (alertData) => {
+    if (!telegramId) {
+      alert("No Telegram ID set in profile!");
       return;
     }
+    const message = `🚨 IDS ALERT
+
+  Type: ${alertData.signature}
+  Source: ${alertData.src_ip}
+  Destination: ${alertData.dest_ip}
+  Severity: ${alertData.severity_label}
+  IDS: ${alertData.proto}
+  Time: ${alertData.timestamp ? new Date(alertData.timestamp).toLocaleString() : '—'}`;
+
     try {
-      await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      // 🔹 Send to your backend instead of Telegram directly
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8000/api/alerts/send-telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: TG_CHAT_ID, text }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          chat_id: telegramId,  // From backend profile
+          text: message         // Formatted message
+        })
       });
-      alert("Telegram alert sent!");
-    } catch { alert("Failed to send Telegram message."); }
+
+      const data = await res.json();
+      if (data.ok) {
+        alert("Telegram message sent!");
+        console.log("Telegram API response:", data.telegram_response);
+      } else {
+        alert("Failed to send Telegram message");
+        console.error(data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send Telegram message");
+    }
   };
 
-  const sendAlertToTelegram = (alert) => sendToTelegram(
-    `🚨 IDS ALERT\n\nType: ${alert.signature}\nSource: ${alert.src_ip}\nDest: ${alert.dest_ip}\nSeverity: ${alert.severity_label}\nProtocol: ${alert.proto}\nTime: ${alert.timestamp}`
-  );
+  const sendAlertToTelegram = async (alert) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const res = await fetch("http://localhost:8000/ingest/alerts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          type: alert.type,
+          src: alert.src,
+          dst: alert.dst,
+          severity: alert.severity,
+          ids: alert.ids,
+          time: alert.time
+        })
+      });
+
+      const data = await res.json();
+      console.log(data);
+
+      alert("Alert sent to backend!");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <AnalystLayout>
@@ -203,7 +283,7 @@ const Dashboard = () => {
                       </button>
                     </td>
                     <td>
-                      <button className="telegram-btn" onClick={() => sendAlertToTelegram(alert)}>Send</button>
+                      <button className="telegram-btn" onClick={() => sendTelegramMessage(alert)}>Send</button>
                     </td>
                   </tr>
                 ))}
@@ -222,14 +302,6 @@ const Dashboard = () => {
       <div style={{ marginTop:'1.5rem', padding:'1.25rem', background:'#1e293b', borderRadius:12, border:'1px solid #334155' }}>
         <h2 style={{ fontSize:'0.95rem', fontWeight:700, marginBottom:'0.75rem', color:'#f1f5f9' }}>Telegram Alert Test</h2>
         <div style={{ display:'flex', gap:'0.75rem' }}>
-          <input type="text" placeholder="Type a message to send to Telegram…"
-            value={tgMessage} onChange={(e) => setTgMessage(e.target.value)}
-            style={{ flex:1, padding:'0.65rem 0.9rem', borderRadius:8, border:'1px solid #334155', background:'#0f172a', color:'#f1f5f9', fontSize:'0.875rem', outline:'none' }}
-          />
-          <button onClick={() => { if (tgMessage.trim()) { sendToTelegram(tgMessage); setTgMessage(""); } }}
-            style={{ padding:'0.65rem 1.25rem', background:'#3b82f6', border:'none', borderRadius:8, color:'#fff', cursor:'pointer', fontWeight:600 }}>
-            Send
-          </button>
         </div>
         <p style={{ color:'#475569', fontSize:'0.75rem', marginTop:'0.5rem' }}>
           Set VITE_TG_TOKEN and VITE_TG_CHAT_ID in <code>.env</code> to enable.

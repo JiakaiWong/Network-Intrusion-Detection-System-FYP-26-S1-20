@@ -3,8 +3,13 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from dotenv import load_dotenv
+from fastapi import APIRouter, HTTPException, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import httpx
 
 load_dotenv()  # ← loads your .env file
+
+security = HTTPBearer()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -30,3 +35,10 @@ def verify_token(token: str) -> dict | None:
         return payload
     except JWTError:
         return None
+    
+def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+    token = credentials.credentials
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return payload

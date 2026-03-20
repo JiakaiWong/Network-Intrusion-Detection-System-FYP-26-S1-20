@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import "./Dashboard.css";
 
@@ -15,6 +15,7 @@ function Profile() {
   const [notifTelegram, setNotifTelegram] = useState(true);
   const [notifEmail, setNotifEmail]   = useState(false);
   const [severityPref, setSeverityPref] = useState("HIGH_ONLY");
+  const [telegramId, setTelegramId] = useState("");
 
   const sessions = useMemo(() => [
     { when: "04/23/2024 14:45", ip: "192.168.1.12", agent: "Chrome • Singapore" },
@@ -23,6 +24,55 @@ function Profile() {
   ], []);
 
   const save = () => alert("Saved (mock). Hook this up to your backend later.");
+
+  const saveProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId"); // or store user ID on login
+
+      const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          phone: phone,
+          telegram_id: telegramId
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to update profile");
+
+      const data = await res.json();
+      console.log("Updated profile:", data);
+      alert("Profile saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Error saving profile: " + err.message);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:8000/api/users/profile", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Failed to fetch user");
+        const data = await res.json();
+
+        setFullName(data.full_name);
+        setPhone(data.phone || "");
+        setTelegramId(data.telegram_id || "");  // <-- set Telegram ID
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="dashboard-container">
@@ -138,8 +188,16 @@ function Profile() {
                     <input style={styles.input} defaultValue="SOC" />
                   </div>
                 </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Telegram ID</label>
+                  <input
+                    style={styles.input}
+                    value={telegramId}
+                    onChange={(e) => setTelegramId(e.target.value)}
+                  />
+                </div>
                 <div style={styles.actions}>
-                  <button style={styles.primaryBtn} onClick={save}>Save Changes</button>
+                  <button style={styles.primaryBtn} onClick={saveProfile}>Save Changes</button>
                 </div>
               </div>
             )}

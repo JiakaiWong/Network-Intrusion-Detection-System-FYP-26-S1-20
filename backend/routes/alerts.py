@@ -1,13 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Security
+import httpx  # async HTTP client
+from core.security import get_current_user 
+
 from pydantic import BaseModel
 
 from services.alert_service import get_collection, SEVERITY_LABELS, ALLOWED_STATUS
 
 router = APIRouter(tags=["Alerts"])
 
+BOT_TOKEN = "8500029016:AAG13AhvWboYuAQSG4CmTh8RppPgu8G2aKI"
 
 class AlertIn(BaseModel):
     timestamp: str
@@ -173,3 +177,19 @@ def summary():
         "total": len(alerts),
         "severity_summary": result
     }
+
+@router.post("/api/alerts/send-telegram")
+async def send_telegram(alert: dict, current_user: dict = Security(get_current_user)):
+    chat_id = alert.get("chat_id")
+    text = alert.get("text")
+    if not chat_id or not text:
+        raise HTTPException(status_code=400, detail="chat_id and text required")
+
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url, json={"chat_id": chat_id, "text": text})
+    
+    if res.status_code != 200:
+        raise HTTPException(status_code=res.status_code, detail=res.text)
+    
+    return {"ok": True, "telegram_response": res.json()}

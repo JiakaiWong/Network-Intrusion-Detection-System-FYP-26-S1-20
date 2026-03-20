@@ -21,6 +21,8 @@ from models.user import (
     UserListOut
 )
 from bson import ObjectId
+from pydantic import BaseModel
+from database import db  # adjust this import to match your actual db import
 
 router = APIRouter()
 security = HTTPBearer()
@@ -127,3 +129,77 @@ async def change_user_password(password_data: ChangePasswordIn, current_user: di
         return {"ok": True, "message": "Password changed successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── NEW: Update user status (Approve / Reject / Suspend / Activate) ──────────
+class StatusUpdate(BaseModel):
+    status: str
+
+@router.put("/api/users/{user_id}/status")
+async def update_user_status(
+    user_id: str,
+    body: StatusUpdate,
+    current_user: dict = Security(get_current_user)
+):
+    if current_user.get("role") != "Administrator":
+        raise HTTPException(status_code=403, detail="Only administrators can update user status")
+
+    # Prevent an admin from suspending or rejecting their own account
+    if str(current_user.get("user_id")) == user_id and body.status in {"suspended", "rejected"}:
+        raise HTTPException(status_code=403, detail="You cannot suspend or reject your own account")
+
+    allowed = {"active", "suspended", "rejected", "pending"}
+    if body.status not in allowed:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {allowed}")
+
+    try:
+        object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+    result = await db["users"].update_one(
+        {"_id": object_id},
+        {"$set": {"status": body.status}}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"ok": True, "message": f"User status updated to {body.status}"}
+
+
+# ── NEW: Edit any user's name and role (admin only) ───────────────────────────
+class UserUpdate(BaseModel):
+    full_name: str
+    role: str
+
+@router.put("/api/users/{user_id}")
+async def update_user(
+    user_id: str,
+    body: UserUpdate,
+    current_user: dict = Security(get_current_user)
+):
+    if current_user.get("role") != "Administrator":
+        raise HTTPException(status_code=403, detail="Only administrators can edit users")
+
+    # Prevent an admin from changing their own role
+    if str(current_user.get("user_id")) == user_id:
+        # Allow name update but lock the role to their current role
+        existing = await db["users"].find_one({"_id": ObjectId(user_id)})
+        if existing:
+            body.role = existing["role"]
+
+    try:
+        object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+    result = await db["users"].update_one(
+        {"_id": object_id},
+        {"$set": {"full_name": body.full_name, "role": body.role}}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"ok": True, "message": "User updated successfully"}

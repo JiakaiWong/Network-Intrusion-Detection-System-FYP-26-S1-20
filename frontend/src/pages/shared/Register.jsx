@@ -1,21 +1,73 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/api";
+import { styles } from "./Register.styles";
 
+// ── Password strength checker ─────────────────────────────────────────────────
+function getPasswordStrength(password) {
+  if (!password) return null;
+  const checks = {
+    "8+ characters":     password.length >= 8,
+    "Uppercase":         /[A-Z]/.test(password),
+    "Lowercase":         /[a-z]/.test(password),
+    "Number":            /[0-9]/.test(password),
+    "Special character": /[^A-Za-z0-9]/.test(password),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  if (score <= 2) return { label: "Weak",   color: "#ef4444", width: "20%",  checks };
+  if (score === 3) return { label: "Fair",   color: "#f97316", width: "50%",  checks };
+  if (score === 4) return { label: "Good",   color: "#eab308", width: "75%",  checks };
+  return             { label: "Strong", color: "#10b981", width: "100%", checks };
+}
 
+function PasswordStrength({ password }) {
+  const strength = getPasswordStrength(password);
+  if (!strength) return null;
+  return (
+    <div style={{ marginTop: "8px" }}>
+      {/* Bar */}
+      <div style={{ height: "4px", backgroundColor: "#1e293b", borderRadius: "2px", overflow: "hidden", marginBottom: "6px" }}>
+        <div style={{
+          height: "100%", width: strength.width,
+          backgroundColor: strength.color, borderRadius: "2px",
+          transition: "width 0.3s ease, background-color 0.3s ease",
+        }} />
+      </div>
+      {/* Label */}
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: "6px" }}>
+        <span style={{ color: "#64748b" }}>Password strength</span>
+        <span style={{ color: strength.color, fontWeight: 600 }}>{strength.label}</span>
+      </div>
+      {/* Requirement chips */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+        {Object.entries(strength.checks).map(([label, ok]) => (
+          <span key={label} style={{
+            fontSize: "0.7rem", padding: "2px 7px", borderRadius: "9999px",
+            backgroundColor: ok ? "rgba(16,185,129,0.1)" : "rgba(100,116,139,0.1)",
+            color: ok ? "#10b981" : "#64748b",
+            border: `1px solid ${ok ? "rgba(16,185,129,0.25)" : "rgba(100,116,139,0.15)"}`,
+          }}>
+            {ok ? "✓" : "○"} {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 function Register() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName]                     = useState("");
+  const [email, setEmail]                   = useState("");
+  const [password, setPassword]             = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("Security Analyst");
-  const [agreed, setAgreed] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword]     = useState(false);
+  const [role, setRole]                     = useState("Security Analyst");
+  const [agreed, setAgreed]                 = useState(true);
+  const [error, setError]                   = useState("");
+  const [success, setSuccess]               = useState(false);
+  const [loading, setLoading]               = useState(false);
   const navigate = useNavigate();
-
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -36,7 +88,8 @@ function Register() {
 
     setLoading(true);
     try {
-      await registerUser(email, password, name);
+      // Normalise email to lowercase before storing
+      await registerUser(email.trim().toLowerCase(), password, name, role);
       setSuccess(true);
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
@@ -45,8 +98,7 @@ function Register() {
     }
   };
 
-
-    if (success) {
+  if (success) {
     return (
       <div style={styles.page}>
         <div style={styles.successCard}>
@@ -87,6 +139,7 @@ function Register() {
         {error && <div style={styles.errorBanner}>{error}</div>}
 
         <form onSubmit={handleRegister} style={styles.form}>
+
           {/* Row 1: Name + Email */}
           <div style={styles.row}>
             <div style={styles.inputGroup}>
@@ -127,25 +180,60 @@ function Register() {
                   required
                 />
                 <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? "🙈" : "👁️"}
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </span>
               </div>
+              {/* Password strength — shown below the password field */}
+              <PasswordStrength password={password} />
             </div>
+
             <div style={styles.inputGroup}>
               <label style={styles.label}>CONFIRM PASSWORD</label>
               <div style={styles.passwordWrapper}>
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••••"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   style={styles.input}
                   required
                 />
                 <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? "🙈" : "👁️"}
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </span>
               </div>
+              {/* Match indicator — shown once user starts typing confirm password */}
+              {confirmPassword && (
+                <div style={{ marginTop: "8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: "5px" }}>
+                  {password === confirmPassword ? (
+                    <span style={{ color: "#10b981" }}>✓ Passwords match</span>
+                  ) : (
+                    <span style={{ color: "#ef4444" }}>✕ Passwords do not match</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -187,147 +275,10 @@ function Register() {
         </form>
       </div>
 
-      
-
       {/* Footer */}
       <footer style={styles.footer}>© 2026 Intrusion Detection Dashboard</footer>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    backgroundColor: "#0f172a",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    fontFamily: "sans-serif",
-    color: "#f1f5f9",
-  },
-  navbar: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1e293b",
-    padding: "1rem 2rem",
-  },
-  logo: {
-    color: "#38bdf8",
-    fontSize: "1.2rem",
-    margin: 0,
-  },
-  navLinks: {
-    display: "flex",
-    flexDirection: "row",
-    gap: "0.5rem",
-    margin: 0,
-  },
-  navLink: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#94a3b8",
-    fontSize: "0.95rem",
-  },
-  container: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "3rem 2rem",
-  },
-  title: { fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem" },
-  subtitle: { color: "#94a3b8", fontSize: "0.9rem", marginBottom: "2rem" },
-
-  errorBanner: {
-    background: "rgba(239,68,68,0.1)",
-    border: "1px solid rgba(239,68,68,0.3)",
-    color: "#f87171",
-    borderRadius: "8px",
-    padding: "0.65rem 1rem",
-    marginBottom: "1rem",
-    fontSize: "0.875rem",
-    width: "100%",
-    maxWidth: "660px",
-    boxSizing: "border-box",
-    textAlign: "left",
-  },
-  form: { width: "100%", maxWidth: "660px" },
-  row: { display: "flex", gap: "1.5rem", marginBottom: "1.25rem" },
-  inputGroup: { flex: 1 },
-  label: {
-    fontSize: "0.75rem",
-    color: "#94a3b8",
-    letterSpacing: "0.1em",
-    display: "block",
-    marginBottom: "0.4rem",
-  },
-  input: {
-    width: "100%",
-    padding: "0.65rem 0.75rem",
-    borderRadius: "4px",
-    border: "1px solid #334155",
-    backgroundColor: "#f1f5f9",
-    color: "#0f172a",
-    fontSize: "0.9rem",
-    boxSizing: "border-box",
-  },
-  passwordWrapper: { position: "relative" },
-  eyeIcon: {
-    position: "absolute",
-    right: "0.75rem",
-    top: "50%",
-    transform: "translateY(-50%)",
-    cursor: "pointer",
-    fontSize: "1rem",
-  },
-  select: {
-    width: "100%",
-    padding: "0.65rem 0.75rem",
-    borderRadius: "4px",
-    border: "1px solid #334155",
-    backgroundColor: "#1e293b",
-    color: "#f1f5f9",
-    fontSize: "0.9rem",
-    boxSizing: "border-box",
-  },
-  divider: { borderColor: "#334155", margin: "1.5rem 0" },
-  notice: { color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1rem" },
-  checkboxRow: { display: "flex", alignItems: "center", marginBottom: "1.5rem" },
-  checkboxLabel: { color: "#94a3b8", fontSize: "0.85rem" },
-  link: { color: "#f1f5f9", textDecoration: "underline", cursor: "pointer" },
-  button: {
-    display: "block",
-    margin: "0 auto",
-    padding: "0.75rem 2.5rem",
-    backgroundColor: "#16a34a",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-  },
-  footer: {
-    textAlign: "right",
-    padding: "1rem 2rem",
-    color: "#475569",
-    fontSize: "0.8rem",
-    borderTop: "1px solid #1e293b",
-  },
-  successCard: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "3rem",
-    textAlign: "center",
-  },
-  successIcon: { fontSize: "3rem", marginBottom: "1rem" },
-  successTitle: { fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem", color: "#f1f5f9" },
-  successText: { color: "#94a3b8", maxWidth: "400px", lineHeight: 1.7, marginBottom: "2rem" },
-
-};
 
 export default Register;

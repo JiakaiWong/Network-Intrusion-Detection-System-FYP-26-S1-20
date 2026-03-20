@@ -1,13 +1,15 @@
-
 export const styles = {
   content: {
     flex: 1,
     padding: "2rem",
-    overflowY: "auto",
+    // Changed: 'initial' prevents the main container from creating 
+    // nested scrollbars unless the whole page overflows.
+    overflowY: "initial", 
     backgroundColor: "#0f172a",
     color: "#f1f5f9",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     position: "relative",
+    minHeight: "100vh",
   },
   header: { marginBottom: "2rem" },
   pageTitle: { fontSize: "2rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#f1f5f9" },
@@ -87,7 +89,16 @@ export const styles = {
     margin: "0 0 1rem 0",
   },
 
-  tableSection: { backgroundColor: "#1e293b", padding: "1.5rem", borderRadius: "12px" },
+  // ── Table Section Updated ──────────────────────────────────
+  tableSection: { 
+    backgroundColor: "#1e293b", 
+    padding: "1.5rem", 
+    borderRadius: "12px",
+    // Added paddingBottom: ensures the last row's dropdown has room to exist
+    // without cutting off or forcing a scrollbar immediately.
+    paddingBottom: "120px", 
+    marginBottom: "2rem" 
+  },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     padding: "1rem",
@@ -102,48 +113,42 @@ export const styles = {
   tr: { borderBottom: "1px solid #334155" },
   trHover: { backgroundColor: "#253549", borderBottom: "1px solid #334155" },
   td: { padding: "1rem", fontSize: "0.9rem", color: "#f1f5f9" },
-  emptyTd: { padding: "3rem", textAlign: "center", color: "#94a3b8", fontStyle: "italic" },
-  userInfo: { display: "flex", alignItems: "center", gap: "0.75rem" },
-  avatar: (id) => ({
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    backgroundColor: `hsl(${(id * 137) % 360}, 50%, 45%)`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    color: "white",
-    flexShrink: 0,
-  }),
+  
   roleBadge: (role) => ({
     padding: "0.25rem 0.75rem",
     borderRadius: "9999px",
     fontSize: "0.8rem",
     fontWeight: 600,
-    backgroundColor: role === "Admin" ? "#3b82f6" : "#10b981",
+    backgroundColor: role === "Administrator" ? "#3b82f6" : "#10b981",
     color: "#fff",
   }),
-  statusBadge: (status) => ({
-    padding: "0.25rem 0.75rem",
-    borderRadius: "9999px",
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    backgroundColor:
-      status === "Active" ? "rgba(16,185,129,0.15)" :
-      status === "Pending" ? "rgba(245,158,11,0.15)" :
-      "rgba(239,68,68,0.15)",
-    color:
-      status === "Active" ? "#10b981" :
-      status === "Pending" ? "#f59e0b" :
-      "#ef4444",
-    border: `1px solid ${
-      status === "Active" ? "rgba(16,185,129,0.3)" :
-      status === "Pending" ? "rgba(245,158,11,0.3)" :
-      "rgba(239,68,68,0.3)"
-    }`,
-  }),
+  statusBadge: (status) => {
+    const s = status?.toLowerCase();
+    let color = "#94a3b8";
+    let bg = "rgba(148, 163, 184, 0.1)";
+
+    if (s === "active") {
+      color = "#10b981";
+      bg = "rgba(16, 185, 129, 0.1)";
+    } else if (s === "pending") {
+      color = "#f59e0b";
+      bg = "rgba(245, 158, 11, 0.1)";
+    } else if (s === "suspended" || s === "rejected") {
+      color = "#ef4444";
+      bg = "rgba(239, 68, 68, 0.1)";
+    }
+
+    return {
+      color,
+      backgroundColor: bg,
+      padding: "4px 8px",
+      borderRadius: "4px",
+      fontSize: "0.85rem",
+      textTransform: "capitalize",
+    };
+  },
+
+  // ── Dropdown Fixes ────────────────────────────────────────
   menuTrigger: {
     padding: "0.4rem 0.85rem",
     backgroundColor: "#334155",
@@ -153,34 +158,35 @@ export const styles = {
     cursor: "pointer",
     fontSize: "1.1rem",
     fontWeight: 700,
-    letterSpacing: "0.05em",
   },
   dropdown: {
     position: "absolute",
     right: 0,
-    top: "calc(100% + 6px)",
+    // Using top: 100% ensures it drops down relative to the trigger
+    top: "100%", 
     backgroundColor: "#1e293b",
-    border: "1px solid #334155",
-    borderRadius: "10px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-    zIndex: 100,
+    border: "1px solid #475569",
+    borderRadius: "8px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+    zIndex: 1000,
     minWidth: "160px",
     overflow: "hidden",
+    marginTop: "4px",
   },
   dropdownItem: {
     display: "block",
     width: "100%",
-    padding: "0.65rem 1rem",
+    padding: "0.75rem 1rem",
     background: "none",
     border: "none",
     borderBottom: "1px solid #334155",
     textAlign: "left",
     fontSize: "0.88rem",
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "inherit",
     color: "#f1f5f9",
+    cursor: "pointer",
   },
+
+  // ── Toast & Modals (Rest of styles) ────────────────────────
   toast: (type) => ({
     position: "fixed",
     top: "1.5rem",
@@ -231,15 +237,7 @@ export const styles = {
     gap: "0.75rem",
     justifyContent: "flex-end",
   },
-  formGroup: { marginBottom: "1.25rem", display: "flex", flexDirection: "column", gap: "0.4rem" },
-  fieldLabel: {
-    fontSize: "0.75rem",
-    fontWeight: 700,
-    color: "#60a5fa",
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-  },
-  input: {
+  inputField: { // Unified with your component's usage
     width: "100%",
     padding: "0.75rem 1rem",
     backgroundColor: "#0f172a",
@@ -247,27 +245,16 @@ export const styles = {
     borderRadius: "8px",
     color: "#f1f5f9",
     fontSize: "0.95rem",
+    marginBottom: "1rem",
     boxSizing: "border-box",
   },
-  errorText: { fontSize: "0.8rem", color: "#f87171" },
-  infoBox: {
-    padding: "0.875rem 1rem",
-    backgroundColor: "rgba(59,130,246,0.1)",
-    border: "1px solid rgba(59,130,246,0.3)",
-    borderRadius: "8px",
-    fontSize: "0.85rem",
-    color: "#93c5fd",
-    lineHeight: 1.5,
-  },
-  resetEmailBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.875rem 1rem",
-    backgroundColor: "#0f172a",
-    borderRadius: "8px",
-    border: "1px solid #334155",
-    fontSize: "0.95rem",
+  fieldLabel: {
+    fontSize: "0.75rem",
+    fontWeight: 700,
+    color: "#60a5fa",
+    textTransform: "uppercase",
+    marginBottom: "0.4rem",
+    display: "block",
   },
   saveBtn: {
     padding: "0.75rem 1.5rem",
@@ -287,14 +274,5 @@ export const styles = {
     borderRadius: "8px",
     fontSize: "0.9rem",
     cursor: "pointer",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    fontSize: "1.5rem",
-    color: "#94a3b8",
-    cursor: "pointer",
-    lineHeight: 1,
-    padding: "0 0.25rem",
   },
 };

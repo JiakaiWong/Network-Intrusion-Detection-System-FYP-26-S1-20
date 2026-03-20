@@ -1,15 +1,74 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import axios from "axios";
 import { styles } from "./UserManagement.styles";
 
-const INITIAL_USERS = [
-  { id: 1, name: "John Wong", email: "john.wong@company.com", role: "Analyst", status: "Active", lastLogin: "2026-02-25" },
-  { id: 2, name: "Sarah Lim", email: "sarah.lim@company.com", role: "Admin", status: "Active", lastLogin: "2026-02-24" },
-  { id: 3, name: "Mike Tan", email: "mike.tan@company.com", role: "Analyst", status: "Pending", lastLogin: "-" },
-  { id: 4, name: "Lisa Chen", email: "lisa.chen@company.com", role: "Admin", status: "Pending", lastLogin: "-" },
-];
+// ── Config ────────────────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
-// ── Hamburger Menu ─────────────────────────────────────────
-function ActionMenu({ user, onApprove, onReject, onSuspend, onActivate, onEdit, onResetPassword }) {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const getId = (user) => user._id || user.id;
+
+const getAuthHeader = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+});
+
+// ── Close button style ────────────────────────────────────────────────────────
+const closeBtnStyle = {
+  background: "none", border: "none", color: "#64748b",
+  fontSize: "1.1rem", cursor: "pointer", padding: "4px 8px",
+  borderRadius: "6px", lineHeight: 1, marginLeft: "auto",
+};
+
+// ── Password strength checker ─────────────────────────────────────────────────
+function getPasswordStrength(password) {
+  if (!password) return null;
+  const checks = {
+    "8+ characters":     password.length >= 8,
+    "Uppercase":         /[A-Z]/.test(password),
+    "Lowercase":         /[a-z]/.test(password),
+    "Number":            /[0-9]/.test(password),
+    "Special character": /[^A-Za-z0-9]/.test(password),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  if (score <= 2) return { label: "Weak",   color: "#ef4444", width: "20%",  checks };
+  if (score === 3) return { label: "Fair",   color: "#f97316", width: "50%",  checks };
+  if (score === 4) return { label: "Good",   color: "#eab308", width: "75%",  checks };
+  return             { label: "Strong", color: "#10b981", width: "100%", checks };
+}
+
+function PasswordStrength({ password }) {
+  const strength = getPasswordStrength(password);
+  if (!strength) return null;
+  return (
+    <div style={{ marginTop: "8px" }}>
+      {/* Bar */}
+      <div style={{ height: "4px", backgroundColor: "#334155", borderRadius: "2px", overflow: "hidden", marginBottom: "6px" }}>
+        <div style={{ height: "100%", width: strength.width, backgroundColor: strength.color, borderRadius: "2px", transition: "width 0.3s ease, background-color 0.3s ease" }} />
+      </div>
+      {/* Label */}
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: "6px" }}>
+        <span style={{ color: "#64748b" }}>Password strength</span>
+        <span style={{ color: strength.color, fontWeight: 600 }}>{strength.label}</span>
+      </div>
+      {/* Requirement chips */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+        {Object.entries(strength.checks).map(([label, ok]) => (
+          <span key={label} style={{
+            fontSize: "0.7rem", padding: "2px 7px", borderRadius: "9999px",
+            backgroundColor: ok ? "rgba(16,185,129,0.1)" : "rgba(100,116,139,0.1)",
+            color: ok ? "#10b981" : "#475569",
+            border: `1px solid ${ok ? "rgba(16,185,129,0.2)" : "rgba(100,116,139,0.15)"}`,
+          }}>
+            {ok ? "✓" : "○"} {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Hamburger Menu Component ──────────────────────────────────────────────────
+function ActionMenu({ user, isSelf, onApprove, onReject, onSuspend, onActivate, onEdit, onResetPassword }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -22,26 +81,31 @@ function ActionMenu({ user, onApprove, onReject, onSuspend, onActivate, onEdit, 
   }, []);
 
   const items = [];
-  if (user.status === "Pending") {
-    items.push({ label: "Approve", action: onApprove });
-    items.push({ label: "Reject", action: onReject });
+  if (user.status === "pending") {
+    items.push({ label: "✓ Approve", action: onApprove });
+    items.push({ label: "✕ Reject",  action: onReject  });
   }
-  if (user.status === "Active") {
-    items.push({ label: "Edit", action: onEdit });
+  if (user.status === "active") {
+    items.push({ label: "Edit",           action: onEdit          });
     items.push({ label: "Reset Password", action: onResetPassword });
-    items.push({ label: "Suspend", action: onSuspend });
+    if (!isSelf) {
+      items.push({ label: "Suspend", action: onSuspend });
+    }
   }
-  if (user.status === "Suspended") {
-    items.push({ label: "Activate", action: onActivate });
-    items.push({ label: "Edit", action: onEdit });
+  if (!isSelf && (user.status === "suspended" || user.status === "rejected")) {
+    items.push({ label: "Reactivate", action: onActivate });
   }
-  if (user.status === "Rejected") {
-    items.push({ label: "Re-approve", action: onActivate });
-  }
+
+  if (items.length === 0)
+    return <span style={{ color: "#475569", fontSize: "0.8rem" }}>—</span>;
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button style={styles.menuTrigger} onClick={() => setOpen((o) => !o)} title="Actions">
+      <button
+        style={styles.menuTrigger}
+        onClick={() => setOpen((o) => !o)}
+        title="Actions"
+      >
         ···
       </button>
       {open && (
@@ -61,529 +125,486 @@ function ActionMenu({ user, onApprove, onReject, onSuspend, onActivate, onEdit, 
   );
 }
 
-// ── Filter/Sort Dropdown ───────────────────────────────────
-function SelectDropdown({ value, onChange, options, placeholder }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} style={styles.selectDropdown}>
-      <option value="">{placeholder}</option>
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────────────────
 function UserManagement() {
+  const [users, setUsers]           = useState([]);
+  const [loading, setLoading]       = useState(true);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [activeTab, setActiveTab]   = useState("analysts");
 
-  // ── Filter & Sort state ───────────────────────────────────
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterRole, setFilterRole] = useState("");
-  const [filterLogin, setFilterLogin] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  // Modal state
+  const [editingUser, setEditingUser]           = useState(null);
+  const [editForm, setEditForm]                 = useState({ full_name: "", role: "", isSelf: false });
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
 
-  // Modal states
-  const [editingUser, setEditingUser] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: "", email: "", role: "Analyst", status: "Active" });
-  const [addErrors, setAddErrors] = useState({});
+  const [showAddModal, setShowAddModal]         = useState(false);
+  const [addForm, setAddForm]                   = useState({ full_name: "", email: "", role: "Security Analyst", password: "" });
+  const [isAddSubmitting, setIsAddSubmitting]   = useState(false);
+
   const [confirmModal, setConfirmModal] = useState(null);
-  const [resetModal, setResetModal] = useState(null);
+
+  const [resetPwdTarget, setResetPwdTarget]       = useState(null);
+  const [newPassword, setNewPassword]             = useState("");
+  const [confirmPassword, setConfirmPassword]     = useState("");
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = "success") => {
+  // Decode logged-in admin's ID from JWT
+  const currentAdminId = useMemo(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.user_id ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
-  const activeFiltersCount = [filterStatus, filterRole, filterLogin, sortBy].filter(Boolean).length;
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_BASE}/api/users`, getAuthHeader());
+      setUsers(response.data);
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Failed to fetch users", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
 
-  const clearFilters = () => {
-    setFilterStatus("");
-    setFilterRole("");
-    setFilterLogin("");
-    setSortBy("");
-  };
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  // ── Filter + Sort logic ───────────────────────────────────
-  const processedUsers = (() => {
+  // ── Derived data ───────────────────────────────────────────────────────────
+  const processedUsers = useMemo(() => {
     let result = [...users];
 
-    // Search
+    if (activeTab === "pending") {
+      result = result.filter((u) => u.status === "pending");
+    } else if (activeTab === "admins") {
+      result = result.filter((u) => u.role === "Administrator" && u.status !== "pending");
+    } else {
+      result = result.filter((u) => u.role === "Security Analyst" && u.status !== "pending");
+    }
+
     if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
       result = result.filter(
         (u) =>
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase())
+          u.full_name?.toLowerCase().includes(lower) ||
+          u.email?.toLowerCase().includes(lower)
       );
     }
 
-    // Filter by status
-    if (filterStatus) result = result.filter((u) => u.status === filterStatus);
-
-    // Filter by role
-    if (filterRole) result = result.filter((u) => u.role === filterRole);
-
-    // Filter by last login
-    if (filterLogin) {
-      result = result.filter((u) => {
-        if (filterLogin === "never") return u.lastLogin === "-";
-        if (filterLogin === "today") return u.lastLogin === new Date().toISOString().split("T")[0];
-        if (filterLogin === "week") {
-          if (u.lastLogin === "-") return false;
-          const diff = (new Date() - new Date(u.lastLogin)) / (1000 * 60 * 60 * 24);
-          return diff <= 7;
-        }
-        return true;
-      });
-    }
-
-    // Sort
-    if (sortBy) {
-      result.sort((a, b) => {
-        switch (sortBy) {
-          case "name_asc": return a.name.localeCompare(b.name);
-          case "name_desc": return b.name.localeCompare(a.name);
-          case "login_newest":
-            if (a.lastLogin === "-") return 1;
-            if (b.lastLogin === "-") return -1;
-            return new Date(b.lastLogin) - new Date(a.lastLogin);
-          case "login_oldest":
-            if (a.lastLogin === "-") return 1;
-            if (b.lastLogin === "-") return -1;
-            return new Date(a.lastLogin) - new Date(b.lastLogin);
-          case "role": return a.role.localeCompare(b.role);
-          case "status": return a.status.localeCompare(b.status);
-          default: return 0;
-        }
-      });
-    }
-
     return result;
-  })();
+  }, [users, activeTab, searchTerm]);
 
-  // ── Actions ───────────────────────────────────────────────
-  const handleApprove = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    setConfirmModal({
-      title: "Approve User",
-      message: `Approve ${user.name}? This will grant them full access.`,
-      confirmLabel: "Approve",
-      confirmColor: "#10b981",
-      onConfirm: () => {
-        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: "Active" } : u));
-        showToast(`${user.name} approved successfully`);
-      },
-    });
+  const pendingCount = useMemo(
+    () => users.filter((u) => u.status === "pending").length,
+    [users]
+  );
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleUpdateStatus = async (userId, newStatus) => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/users/${userId}/status`,
+        { status: newStatus },
+        getAuthHeader()
+      );
+      showToast(`User marked as ${newStatus}`);
+      fetchUsers();
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Update failed", "error");
+    }
   };
 
-  const handleReject = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    setConfirmModal({
-      title: "Reject Registration",
-      message: `Reject ${user.name}'s registration? Their account will be marked as rejected.`,
-      confirmLabel: "Reject",
-      confirmColor: "#ef4444",
-      onConfirm: () => {
-        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: "Rejected" } : u));
-        showToast(`${user.name}'s registration rejected`, "error");
-      },
-    });
+  const handleEditSave = async () => {
+    setIsEditSubmitting(true);
+    try {
+      await axios.put(
+        `${API_BASE}/api/users/${getId(editingUser)}`,
+        editForm,
+        getAuthHeader()
+      );
+
+      if (getId(editingUser) === currentAdminId) {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        localStorage.setItem("user", JSON.stringify({ ...stored, full_name: editForm.full_name }));
+        window.dispatchEvent(new Event("user-updated"));
+      }
+
+      showToast("User updated successfully");
+      closeEditModal();
+      fetchUsers();
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Failed to update", "error");
+    } finally {
+      setIsEditSubmitting(false);
+    }
   };
 
-  const handleSuspend = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    setConfirmModal({
-      title: "Suspend Account",
-      message: `Suspend ${user.name}? This will temporarily disable their account access.`,
-      confirmLabel: "Suspend",
-      confirmColor: "#ef4444",
-      onConfirm: () => {
-        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: "Suspended" } : u));
-        showToast(`${user.name}'s account suspended`, "error");
-      },
-    });
+  const handleAddUser = async () => {
+    if (!addForm.password) {
+      showToast("Password is required", "error");
+      return;
+    }
+    setIsAddSubmitting(true);
+    try {
+      await axios.post(`${API_BASE}/api/auth/register`, addForm);
+      showToast("User registered successfully");
+      closeAddModal();
+      fetchUsers();
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Failed to add user", "error");
+    } finally {
+      setIsAddSubmitting(false);
+    }
   };
 
-  const handleActivate = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    setConfirmModal({
-      title: "Activate Account",
-      message: `Activate ${user.name}? This will restore their full account access.`,
-      confirmLabel: "Activate",
-      confirmColor: "#10b981",
-      onConfirm: () => {
-        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: "Active" } : u));
-        showToast(`${user.name}'s account activated`);
-      },
-    });
+  const handleAdminResetPassword = async () => {
+    if (!newPassword) {
+      showToast("New password is required", "error");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+    setIsResetSubmitting(true);
+    try {
+      await axios.post(
+        `${API_BASE}/api/users/${getId(resetPwdTarget)}/reset-password`,
+        { new_password: newPassword },
+        getAuthHeader()
+      );
+      showToast("Password reset successfully");
+      closeResetPwdModal();
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Error resetting password", "error");
+    } finally {
+      setIsResetSubmitting(false);
+    }
   };
 
-  const handleResetPassword = (user) => setResetModal(user);
-
-  const confirmResetPassword = () => {
-    showToast(`Password reset link sent to ${resetModal.email}`);
-    setResetModal(null);
-  };
-
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setEditForm({ name: user.name, email: user.email, role: user.role, status: user.status });
-  };
-
-  const handleSaveEdit = () => {
-    setUsers((prev) => prev.map((u) => u.id === editingUser.id ? { ...u, ...editForm } : u));
-    showToast(`${editForm.name}'s profile updated`);
+  // ── Modal close helpers ────────────────────────────────────────────────────
+  const closeEditModal = () => {
     setEditingUser(null);
-    setEditForm({});
+    setEditForm({ full_name: "", role: "", isSelf: false });
   };
 
-  const validateAddForm = () => {
-    const errors = {};
-    if (!addForm.name.trim()) errors.name = "Name is required";
-    if (!addForm.email.trim()) errors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(addForm.email)) errors.email = "Invalid email address";
-    else if (users.some((u) => u.email.toLowerCase() === addForm.email.toLowerCase()))
-      errors.email = "Email already exists";
-    return errors;
-  };
-
-  const handleAddUser = () => {
-    const errors = validateAddForm();
-    if (Object.keys(errors).length > 0) { setAddErrors(errors); return; }
-    const newUser = {
-      id: Date.now(),
-      name: addForm.name.trim(),
-      email: addForm.email.trim(),
-      role: addForm.role,
-      status: addForm.status,
-      lastLogin: "-",
-    };
-    setUsers((prev) => [...prev, newUser]);
-    showToast(`Account created for ${newUser.name}`);
+  const closeAddModal = () => {
     setShowAddModal(false);
-    setAddForm({ name: "", email: "", role: "Analyst", status: "Active" });
-    setAddErrors({});
+    setAddForm({ full_name: "", email: "", role: "Security Analyst", password: "" });
   };
 
-  const handleCloseAddModal = () => {
-    setShowAddModal(false);
-    setAddForm({ name: "", email: "", role: "Analyst", status: "Active" });
-    setAddErrors({});
+  const closeResetPwdModal = () => {
+    setResetPwdTarget(null);
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
-  // ── Render ────────────────────────────────────────────────
+  const openConfirm = (message, onConfirm) => setConfirmModal({ message, onConfirm });
+
+  // ── Style helpers ──────────────────────────────────────────────────────────
+  const tabStyle = (id) => ({
+    padding: "10px 20px", cursor: "pointer",
+    color: activeTab === id ? "#3b82f6" : "#94a3b8",
+    borderBottom: activeTab === id ? "2px solid #3b82f6" : "2px solid transparent",
+    fontWeight: activeTab === id ? "600" : "400",
+    transition: "all 0.2s ease",
+  });
+
+  const submittingStyle = { opacity: 0.6, cursor: "not-allowed" };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
       {toast && (
         <div style={styles.toast(toast.type)}>
-          <span>{toast.type === "success" ? "✓" : "✕"}</span>
-          {toast.message}
+          <span>{toast.type === "success" ? "✓" : "✕"}</span> {toast.message}
         </div>
       )}
 
       <div style={styles.content}>
         <div style={styles.header}>
           <h1 style={styles.pageTitle}>User Management</h1>
-          <p style={styles.subtitle}>Approve, manage, and assign roles to registered users</p>
+          <p style={styles.subtitle}>System Access Control Panel</p>
         </div>
 
-        {/* ── Search + Add ── */}
+        {/* Tab Switcher */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px", borderBottom: "1px solid #1e293b" }}>
+          <div style={tabStyle("analysts")} onClick={() => setActiveTab("analysts")}>Analysts</div>
+          <div style={tabStyle("admins")}   onClick={() => setActiveTab("admins")}>Administrators</div>
+          <div style={tabStyle("pending")}  onClick={() => setActiveTab("pending")}>
+            Pending Requests{" "}
+            {pendingCount > 0 && (
+              <span style={{ background: "#ef4444", color: "white", borderRadius: "10px", padding: "1px 6px", fontSize: "0.7rem", marginLeft: "5px" }}>
+                {pendingCount}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Controls */}
         <div style={styles.controls}>
-          <input
-            type="text"
-            placeholder="Search users by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-          />
+          <div style={{ position: "relative", flex: 1 }}>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ ...styles.searchInput, width: "100%" }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "1.2rem" }}
+              >
+                ×
+              </button>
+            )}
+          </div>
           <button style={styles.addUserBtn} onClick={() => setShowAddModal(true)}>
             + Add User
           </button>
         </div>
 
-        {/* ── Filter + Sort bar ── */}
-        <div style={styles.filterBar}>
-          <div style={styles.filterGroup}>
-            <span style={styles.filterLabel}>Filter by</span>
-            <SelectDropdown
-              value={filterStatus}
-              onChange={setFilterStatus}
-              placeholder="Status"
-              options={[
-                { value: "Active", label: "Active" },
-                { value: "Pending", label: "Pending" },
-                { value: "Suspended", label: "Suspended" },
-                { value: "Rejected", label: "Rejected" },
-              ]}
-            />
-            <SelectDropdown
-              value={filterRole}
-              onChange={setFilterRole}
-              placeholder="Role"
-              options={[
-                { value: "Admin", label: "Admin" },
-                { value: "Analyst", label: "Analyst" },
-              ]}
-            />
-            <SelectDropdown
-              value={filterLogin}
-              onChange={setFilterLogin}
-              placeholder="Last Login"
-              options={[
-                { value: "today", label: "Today" },
-                { value: "week", label: "Past 7 days" },
-                { value: "never", label: "Never logged in" },
-              ]}
-            />
-          </div>
-
-          <div style={styles.filterGroup}>
-            <span style={styles.filterLabel}>Sort by</span>
-            <SelectDropdown
-              value={sortBy}
-              onChange={setSortBy}
-              placeholder="Sort by"
-              options={[
-                { value: "name_asc", label: "Name (A → Z)" },
-                { value: "name_desc", label: "Name (Z → A)" },
-                { value: "login_newest", label: "Last Login (Newest)" },
-                { value: "login_oldest", label: "Last Login (Oldest)" },
-                { value: "role", label: "Role" },
-                { value: "status", label: "Status" },
-              ]}
-            />
-          </div>
-
-          {/* Clear filters button — only shown when something is active */}
-          {activeFiltersCount > 0 && (
-            <button style={styles.clearBtn} onClick={clearFilters}>
-              ✕ Clear ({activeFiltersCount})
-            </button>
-          )}
-        </div>
-
         {/* Results count */}
-        <p style={styles.resultsCount}>
-          Showing {processedUsers.length} of {users.length} users
-        </p>
-
-        <div style={styles.tableSection}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Email</th>
-                <th style={styles.th}>Role</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Last Login</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {processedUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  style={hoveredRow === user.id ? styles.trHover : styles.tr}
-                  onMouseEnter={() => setHoveredRow(user.id)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                >
-                  <td style={styles.td}>
-                    <div style={styles.userInfo}>
-                      <div style={styles.avatar(user.id)}>
-                        {user.name.split(" ").map((n) => n[0]).join("")}
-                      </div>
-                      <span>{user.name}</span>
-                    </div>
-                  </td>
-                  <td style={styles.td}>{user.email}</td>
-                  <td style={styles.td}>
-                    <span style={styles.roleBadge(user.role)}>{user.role}</span>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={styles.statusBadge(user.status)}>{user.status}</span>
-                  </td>
-                  <td style={styles.td}>{user.lastLogin}</td>
-                  <td style={styles.td}>
-                    <ActionMenu
-                      user={user}
-                      onApprove={() => handleApprove(user.id)}
-                      onReject={() => handleReject(user.id)}
-                      onSuspend={() => handleSuspend(user.id)}
-                      onActivate={() => handleActivate(user.id)}
-                      onEdit={() => handleEdit(user)}
-                      onResetPassword={() => handleResetPassword(user)}
-                    />
-                  </td>
-                </tr>
-              ))}
-              {processedUsers.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={styles.emptyTd}>
-                    No users match your search or filters
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: "10px", fontSize: "0.85rem", color: "#64748b" }}>
+          Showing {processedUsers.length} {processedUsers.length === 1 ? "user" : "users"}
         </div>
+
+        {loading ? (
+          <div style={{ color: "white", textAlign: "center", padding: "50px" }}>Loading...</div>
+        ) : (
+          <div style={styles.tableSection}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>Email</th>
+                  <th style={styles.th}>Role</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ ...styles.td, textAlign: "center", color: "#64748b", padding: "40px" }}>
+                      No results found matching your criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  processedUsers.map((user) => (
+                    <tr
+                      key={getId(user)}
+                      style={hoveredRow === getId(user) ? styles.trHover : styles.tr}
+                      onMouseEnter={() => setHoveredRow(getId(user))}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <td style={styles.td}>{user.full_name}</td>
+                      <td style={styles.td}>{user.email}</td>
+                      <td style={styles.td}><span style={styles.roleBadge(user.role)}>{user.role}</span></td>
+                      <td style={styles.td}><span style={styles.statusBadge(user.status)}>{user.status}</span></td>
+                      <td style={styles.td}>
+                        <ActionMenu
+                          user={user}
+                          isSelf={getId(user) === currentAdminId}
+                          onApprove={() => openConfirm(`Approve ${user.full_name}?`, () => handleUpdateStatus(getId(user), "active"))}
+                          onReject={() => openConfirm(`Reject ${user.full_name}?`, () => handleUpdateStatus(getId(user), "rejected"))}
+                          onSuspend={() => openConfirm(`Suspend ${user.full_name}?`, () => handleUpdateStatus(getId(user), "suspended"))}
+                          onActivate={() => openConfirm(`Reactivate ${user.full_name}?`, () => handleUpdateStatus(getId(user), "active"))}
+                          onEdit={() => {
+                            setEditingUser(user);
+                            setEditForm({ full_name: user.full_name, role: user.role, isSelf: getId(user) === currentAdminId });
+                          }}
+                          onResetPassword={() => setResetPwdTarget(user)}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Confirm Modal */}
-      {confirmModal && (
-        <div style={styles.modalOverlay} onClick={() => setConfirmModal(null)}>
+      {/* ── Edit User Modal ─────────────────────────────────────────────────── */}
+      {editingUser && (
+        <div style={styles.modalOverlay}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>{confirmModal.title}</h2>
-              <button style={styles.closeBtn} onClick={() => setConfirmModal(null)}>×</button>
+            <div style={{ ...styles.modalHeader, display: "flex", alignItems: "center" }}>
+              <h2 style={styles.modalTitle}>Edit User</h2>
+              <button style={closeBtnStyle} onClick={closeEditModal} disabled={isEditSubmitting}>✕</button>
             </div>
             <div style={styles.modalBody}>
-              <p style={{ color: "#94a3b8", margin: 0, lineHeight: 1.6 }}>{confirmModal.message}</p>
+              <label style={styles.fieldLabel}>Full Name</label>
+              <input
+                style={styles.inputField}
+                type="text"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+              />
+              <label style={styles.fieldLabel}>Role</label>
+              <select
+                style={{ ...styles.inputField, ...(editForm.isSelf ? { opacity: 0.5, cursor: "not-allowed" } : {}) }}
+                value={editForm.role}
+                disabled={editForm.isSelf}
+                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+              >
+                <option value="Administrator">Administrator</option>
+                <option value="Security Analyst">Security Analyst</option>
+              </select>
+              {editForm.isSelf && (
+                <p style={{ color: "#64748b", fontSize: "0.78rem", marginTop: "4px" }}>
+                  You cannot change your own role.
+                </p>
+              )}
             </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={closeEditModal} disabled={isEditSubmitting}>Cancel</button>
+              <button
+                style={{ ...styles.saveBtn, ...(isEditSubmitting ? submittingStyle : {}) }}
+                onClick={handleEditSave}
+                disabled={isEditSubmitting}
+              >
+                {isEditSubmitting ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add User Modal ──────────────────────────────────────────────────── */}
+      {showAddModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={{ ...styles.modalHeader, display: "flex", alignItems: "center" }}>
+              <h2 style={styles.modalTitle}>Add User</h2>
+              <button style={closeBtnStyle} onClick={closeAddModal} disabled={isAddSubmitting}>✕</button>
+            </div>
+            <div style={styles.modalBody}>
+              <label style={styles.fieldLabel}>Full Name</label>
+              <input
+                style={styles.inputField}
+                type="text"
+                value={addForm.full_name}
+                onChange={(e) => setAddForm({ ...addForm, full_name: e.target.value })}
+              />
+              <label style={styles.fieldLabel}>Email</label>
+              <input
+                style={styles.inputField}
+                type="email"
+                value={addForm.email}
+                onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+              />
+              <label style={styles.fieldLabel}>Role</label>
+              <select
+                style={styles.inputField}
+                value={addForm.role}
+                onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
+              >
+                <option value="Administrator">Administrator</option>
+                <option value="Security Analyst">Security Analyst</option>
+              </select>
+              <label style={styles.fieldLabel}>Password</label>
+              <input
+                style={styles.inputField}
+                type="password"
+                placeholder="Enter a password"
+                value={addForm.password}
+                onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+              />
+              <PasswordStrength password={addForm.password} />
+            </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={closeAddModal} disabled={isAddSubmitting}>Cancel</button>
+              <button
+                style={{ ...styles.saveBtn, ...(isAddSubmitting ? submittingStyle : {}) }}
+                onClick={handleAddUser}
+                disabled={isAddSubmitting}
+              >
+                {isAddSubmitting ? "Registering…" : "Register"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Admin Reset Password Modal ──────────────────────────────────────── */}
+      {resetPwdTarget && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={{ ...styles.modalHeader, display: "flex", alignItems: "center" }}>
+              <h2 style={styles.modalTitle}>Reset Password</h2>
+              <button style={closeBtnStyle} onClick={closeResetPwdModal} disabled={isResetSubmitting}>✕</button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "12px" }}>
+                Resetting password for:{" "}
+                <strong style={{ color: "#e2e8f0" }}>{resetPwdTarget.full_name}</strong>
+              </p>
+              <label style={styles.fieldLabel}>New Password</label>
+              <input
+                style={styles.inputField}
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <PasswordStrength password={newPassword} />
+              <label style={styles.fieldLabel}>Confirm New Password</label>
+              <input
+                style={styles.inputField}
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={closeResetPwdModal} disabled={isResetSubmitting}>Cancel</button>
+              <button
+                style={{ ...styles.saveBtn, ...(isResetSubmitting ? submittingStyle : {}) }}
+                onClick={handleAdminResetPassword}
+                disabled={isResetSubmitting}
+              >
+                {isResetSubmitting ? "Updating…" : "Update"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Modal ───────────────────────────────────────────────────── */}
+      {confirmModal && (
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modal, maxWidth: "360px" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ ...styles.modalHeader, display: "flex", alignItems: "center" }}>
+              <h2 style={styles.modalTitle}>Confirm</h2>
+              <button style={closeBtnStyle} onClick={() => setConfirmModal(null)}>✕</button>
+            </div>
+            <div style={{ padding: "20px", color: "#94a3b8" }}>{confirmModal.message}</div>
             <div style={styles.modalFooter}>
               <button style={styles.cancelBtn} onClick={() => setConfirmModal(null)}>Cancel</button>
               <button
-                style={{ ...styles.saveBtn, backgroundColor: confirmModal.confirmColor }}
+                style={styles.saveBtn}
                 onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
               >
-                {confirmModal.confirmLabel}
+                Confirm
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Password Modal */}
-      {resetModal && (
-        <div style={styles.modalOverlay} onClick={() => setResetModal(null)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Reset Password</h2>
-              <button style={styles.closeBtn} onClick={() => setResetModal(null)}>×</button>
-            </div>
-            <div style={styles.modalBody}>
-              <p style={{ color: "#94a3b8", margin: "0 0 1rem 0", lineHeight: 1.6 }}>
-                A one-time password reset link will be sent to:
-              </p>
-              <div style={styles.resetEmailBox}>
-                <span>📧</span>
-                <strong style={{ color: "#60a5fa" }}>{resetModal.email}</strong>
-              </div>
-              <p style={{ color: "#64748b", fontSize: "0.85rem", margin: "1rem 0 0 0" }}>
-                The user will be forced to log out and must set a new password using the link.
-              </p>
-            </div>
-            <div style={styles.modalFooter}>
-              <button style={styles.cancelBtn} onClick={() => setResetModal(null)}>Cancel</button>
-              <button style={{ ...styles.saveBtn, backgroundColor: "#f59e0b" }} onClick={confirmResetPassword}>
-                Send Reset Link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div style={styles.modalOverlay} onClick={() => { setEditingUser(null); setEditForm({}); }}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Edit User</h2>
-              <button style={styles.closeBtn} onClick={() => { setEditingUser(null); setEditForm({}); }}>×</button>
-            </div>
-            <div style={styles.modalBody}>
-              {[
-                { label: "Full Name", key: "name", type: "text" },
-                { label: "Email", key: "email", type: "email" },
-              ].map(({ label, key, type }) => (
-                <div key={key} style={styles.formGroup}>
-                  <label style={styles.fieldLabel}>{label}</label>
-                  <input
-                    type={type}
-                    value={editForm[key] || ""}
-                    onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
-                    style={styles.input}
-                  />
-                </div>
-              ))}
-              <div style={styles.formGroup}>
-                <label style={styles.fieldLabel}>Role</label>
-                <select value={editForm.role || ""} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} style={styles.input}>
-                  <option value="Admin">Admin</option>
-                  <option value="Analyst">Analyst</option>
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.fieldLabel}>Status</label>
-                <select value={editForm.status || ""} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} style={styles.input}>
-                  <option value="Active">Active</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Suspended">Suspended</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
-            </div>
-            <div style={styles.modalFooter}>
-              <button style={styles.cancelBtn} onClick={() => { setEditingUser(null); setEditForm({}); }}>Cancel</button>
-              <button style={styles.saveBtn} onClick={handleSaveEdit}>Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div style={styles.modalOverlay} onClick={handleCloseAddModal}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Create New User</h2>
-              <button style={styles.closeBtn} onClick={handleCloseAddModal}>×</button>
-            </div>
-            <div style={styles.modalBody}>
-              {[
-                { label: "Full Name", key: "name", type: "text", placeholder: "e.g. John Smith" },
-                { label: "Email Address", key: "email", type: "email", placeholder: "e.g. john@company.com" },
-              ].map(({ label, key, type, placeholder }) => (
-                <div key={key} style={styles.formGroup}>
-                  <label style={styles.fieldLabel}>{label}</label>
-                  <input
-                    type={type}
-                    placeholder={placeholder}
-                    value={addForm[key] || ""}
-                    onChange={(e) => {
-                      setAddForm({ ...addForm, [key]: e.target.value });
-                      if (addErrors[key]) setAddErrors({ ...addErrors, [key]: null });
-                    }}
-                    style={{ ...styles.input, border: addErrors[key] ? "1px solid #ef4444" : "1px solid #334155" }}
-                  />
-                  {addErrors[key] && <span style={styles.errorText}>{addErrors[key]}</span>}
-                </div>
-              ))}
-              <div style={styles.formGroup}>
-                <label style={styles.fieldLabel}>Role</label>
-                <select value={addForm.role} onChange={(e) => setAddForm({ ...addForm, role: e.target.value })} style={styles.input}>
-                  <option value="Analyst">Analyst</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.fieldLabel}>Initial Status</label>
-                <select value={addForm.status} onChange={(e) => setAddForm({ ...addForm, status: e.target.value })} style={styles.input}>
-                  <option value="Active">Active</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-              <div style={styles.infoBox}>
-                🔑 A temporary password will be auto-generated and the user will be required to change it on first login.
-              </div>
-            </div>
-            <div style={styles.modalFooter}>
-              <button style={styles.cancelBtn} onClick={handleCloseAddModal}>Cancel</button>
-              <button style={styles.saveBtn} onClick={handleAddUser}>Create Account</button>
             </div>
           </div>
         </div>

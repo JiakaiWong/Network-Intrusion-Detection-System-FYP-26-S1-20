@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from routes import auth
 from routes import alerts
+from routes import logs  
 
 app = FastAPI(title="IDS Backend API")
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(alerts.router)
+app.include_router(logs.router)  # ← add this
 
 def custom_openapi():
     if app.openapi_schema:
@@ -27,6 +29,9 @@ def custom_openapi():
         description="Network Intrusion Detection System API",
         routes=app.routes,
     )
+
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
 
     openapi_schema["components"]["securitySchemes"] = {
         "HTTPBearer": {

@@ -1,9 +1,11 @@
-
 export const styles = {
   content: {
     flex: 1,
     padding: "2rem",
     overflowY: "auto",
+    overflowX: "hidden",
+    height: "100vh",        
+    boxSizing: "border-box",
     backgroundColor: "#0f172a",
     color: "#f1f5f9",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -92,6 +94,7 @@ export const styles = {
     backgroundColor: "#1e293b",
     padding: "1.5rem",
     borderRadius: "12px",
+    marginBottom: "2rem", 
   },
   tableHeaderSection: {
     display: "flex",
@@ -174,17 +177,17 @@ export const styles = {
     fontSize: "0.8rem",
     fontWeight: 600,
     backgroundColor:
-      status === "low" ? "rgba(16,185,129,0.15)" :
-      status === "medium" ? "rgba(245,158,11,0.15)" :
-      "rgba(239,68,68,0.15)",
+      status === "low"    ? "rgba(59,130,246,0.15)"  :
+      status === "medium" ? "rgba(245,158,11,0.15)"  :
+                            "rgba(239,68,68,0.15)",
     color:
-      status === "low" ? "#10b981" :
+      status === "low"    ? "#3b82f6" :
       status === "medium" ? "#f59e0b" :
-      "#ef4444",
+                            "#ef4444",
     border: `1px solid ${
-      status === "low" ? "rgba(16,185,129,0.3)" :
-      status === "medium" ? "rgba(245,158,11,0.3)" :
-      "rgba(239,68,68,0.3)"
+      status === "low"    ? "rgba(59,130,246,0.3)"  :
+      status === "medium" ? "rgba(245,158,11,0.3)"  :
+                            "rgba(239,68,68,0.3)"
     }`,
   }),
 };

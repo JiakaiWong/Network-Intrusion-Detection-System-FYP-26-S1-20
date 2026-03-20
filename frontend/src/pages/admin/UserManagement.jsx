@@ -260,7 +260,7 @@ function UserManagement() {
     }
     setIsAddSubmitting(true);
     try {
-      await axios.post(`${API_BASE}/api/auth/register`, addForm);
+      await axios.post(`${API_BASE}/api/users/admin-create`, addForm, getAuthHeader());
       showToast("User registered successfully");
       closeAddModal();
       fetchUsers();

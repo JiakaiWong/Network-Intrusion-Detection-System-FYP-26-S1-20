@@ -13,6 +13,7 @@ import Register from "./pages/shared/Register";
 import Visitor from "./pages/shared/Visitor";
 import ForgetPassword from "./pages/shared/ForgotPassword";
 import Logout from "./pages/shared/Logout";
+import ForcePasswordChange from "./pages/shared/ForcePasswordChange";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -45,6 +46,7 @@ function App() {
         <Route path="/demo"            element={<Demo />} />
         <Route path="/forgotpassword"  element={<ForgetPassword />} />
         <Route path="/logout"          element={<Logout />} />
+        <Route path="/force-password-change" element={<ForcePasswordChange />} />
 
         {/* --- PROTECTED ZONE --- */}
         {/* Everything inside this Route element requires a token to be seen */}

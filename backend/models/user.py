@@ -56,6 +56,7 @@ class LoginIn(BaseModel):
 class LoginOut(BaseModel):
     token: str
     user: UserOut
+    force_password_change: bool = False 
 
 class UserListOut(BaseModel):
     id: str

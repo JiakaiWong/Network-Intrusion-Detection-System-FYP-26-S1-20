@@ -4,52 +4,61 @@ import { loginUser } from "../../services/api";
 import { styles } from "./Login.styles";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("Security Analyst");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [role, setRole]             = useState("Security Analyst");
+  const [error, setError]           = useState("");
+  const [loading, setLoading]       = useState(false);
   const navigate = useNavigate();
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    const data = await loginUser(email, password);
-    
-    if (data.user?.status === "suspended") {
-      throw new Error("Your account has been suspended. Please contact an administrator.");
-    }
-    if (data.user?.status === "pending") {
-      throw new Error("Your account is awaiting approval.");
-    }
-    if (data.user?.status === "rejected") {
-      throw new Error("Your account registration was rejected. Please contact an administrator.");
-    }
+    try {
+      // Normalise email to lowercase so "User@Example.com" and
+      // "user@example.com" are always treated as the same account
+      const normalisedEmail = email.trim().toLowerCase();
 
-    const serverRole = data.user?.role?.toLowerCase() || "";
-    const isServerAdmin = serverRole.includes("admin");
-    const selectedAdmin = role === "Administrator";
+      const data = await loginUser(normalisedEmail, password);
 
-    if (isServerAdmin !== selectedAdmin) {
-      throw new Error("Role mismatch. Please select the correct role for your account.");
-    }
+      if (data.user?.status === "suspended") {
+        throw new Error("Your account has been suspended. Please contact an administrator.");
+      }
+      if (data.user?.status === "pending") {
+        throw new Error("Your account is awaiting approval.");
+      }
+      if (data.user?.status === "rejected") {
+        throw new Error("Your account registration was rejected. Please contact an administrator.");
+      }
 
-    localStorage.setItem("token", data.access_token || data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+      const serverRole    = data.user?.role?.toLowerCase() || "";
+      const isServerAdmin = serverRole.includes("admin");
+      const selectedAdmin = role === "Administrator";
 
-    if (isServerAdmin) {
-      navigate("/admin");
-    } else {
-      navigate("/dashboard");
-    }
-  } catch (err) {
+      if (isServerAdmin !== selectedAdmin) {
+        throw new Error("Role mismatch. Please select the correct role for your account.");
+      }
+
+      localStorage.setItem("token", data.access_token || data.token);
+      localStorage.setItem("user", JSON.stringify({
+        ...data.user,
+        force_password_change: data.force_password_change ?? false,
+      }));
+
+      // If admin set this password, force the user to change it before proceeding
+      if (data.force_password_change) {
+        navigate("/force-password-change");
+      } else if (isServerAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
       console.error("Login failed:", err.message);
-      const friendlyError = err.response?.data?.detail || err.message || "Login failed.";
-      setError(friendlyError);
+      setError(err.response?.data?.detail || err.message || "Login failed.");
     } finally {
       setLoading(false);
     }
@@ -71,14 +80,10 @@ const handleLogin = async (e) => {
   return (
     <div style={styles.page}>
       <nav style={styles.navbar}>
-        <h2 style={styles.logo} onClick={() => navigate("/")}>
-          Intrusion Detection
-        </h2>
-      <div style={styles.navLinks}>
+        <h2 style={styles.logo} onClick={() => navigate("/")}>Intrusion Detection</h2>
+        <div style={styles.navLinks}>
           <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
           <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>
-          <span style={styles.navLink} onClick={() => navigate("/features")}>Features</span>
-          <span style={styles.navLink} onClick={() => navigate("/demo")}>Demo</span>
           <span style={styles.navActive}>Login</span>
         </div>
       </nav>
@@ -151,11 +156,10 @@ const handleLogin = async (e) => {
           </p>
         </div>
       </div>
+
       <footer style={styles.footer}>© 2026 Intrusion Detection Dashboard</footer>
     </div>
   );
 }
-
-
 
 export default Login;

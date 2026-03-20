@@ -27,11 +27,32 @@ from database import db  # adjust this import to match your actual db import
 router = APIRouter()
 security = HTTPBearer()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    # Check if the user's sessions have been invalidated (e.g. after password reset)
+    # JWT iat (issued at) must be after token_invalidated_at on the user document
+    user_id = payload.get("user_id")
+    if user_id:
+        try:
+            from bson import ObjectId
+            from datetime import datetime
+            user = await db["users"].find_one({"_id": ObjectId(user_id)}, {"token_invalidated_at": 1})
+            if user and user.get("token_invalidated_at"):
+                invalidated_at = datetime.fromisoformat(user["token_invalidated_at"])
+                token_issued_at = payload.get("iat")
+                if token_issued_at:
+                    issued_dt = datetime.utcfromtimestamp(token_issued_at)
+                    if issued_dt < invalidated_at:
+                        raise HTTPException(status_code=401, detail="Session invalidated. Please log in again.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # If check fails, allow through — don't break auth for non-reset users
+
     return payload
 
 @router.post("/api/auth/register", response_model=UserOut, status_code=201)
@@ -65,8 +86,12 @@ async def login(login_data: LoginIn):
         role=user["role"],
         status=user.get("status", "pending")
     )
-    
-    return LoginOut(token=token, user=user_out)
+
+    return LoginOut(
+        token=token,
+        user=user_out,
+        force_password_change=bool(user.get("force_password_change", False))
+    )
 
 @router.get("/api/users", response_model=list[UserListOut])
 async def get_users(current_user: dict = Security(get_current_user)):
@@ -129,6 +154,60 @@ async def change_user_password(password_data: ChangePasswordIn, current_user: di
         return {"ok": True, "message": "Password changed successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Logout — invalidates the current session server-side ─────────────────────
+@router.post("/api/auth/logout")
+async def logout(current_user: dict = Security(get_current_user)):
+    from datetime import datetime
+    user_id = current_user.get("user_id")
+    if user_id:
+        try:
+            await db["users"].update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"token_invalidated_at": datetime.utcnow().isoformat()}}
+            )
+        except Exception:
+            pass  # Don't block logout if DB update fails
+    return {"ok": True, "message": "Logged out successfully"}
+
+
+# ── Force password change (no current password needed, only when flag is set) ──
+class ForceChangePasswordIn(BaseModel):
+    new_password: str
+
+@router.post("/api/users/force-change-password")
+async def force_change_password(
+    data: ForceChangePasswordIn,
+    current_user: dict = Security(get_current_user)
+):
+    from core.security import hash_password
+    from datetime import datetime
+
+    user_id = current_user.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.get("force_password_change"):
+        raise HTTPException(status_code=403, detail="Password change not required")
+
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {
+            "hashed_password":       hash_password(data.new_password),
+            "force_password_change": False,
+            "token_invalidated_at":  None,
+        }}
+    )
+
+    return {"ok": True, "message": "Password updated successfully"}
 
 
 # ── NEW: Update user status (Approve / Reject / Suspend / Activate) ──────────
@@ -203,3 +282,79 @@ async def update_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"ok": True, "message": "User updated successfully"}
+
+
+# ── Admin: Create user (force password change on first login) ─────────────────
+class AdminCreateUser(BaseModel):
+    full_name: str
+    email: str
+    role: str
+    password: str
+
+@router.post("/api/users/admin-create", status_code=201)
+async def admin_create_user(
+    body: AdminCreateUser,
+    current_user: dict = Security(get_current_user)
+):
+    if current_user.get("role") != "Administrator":
+        raise HTTPException(status_code=403, detail="Only administrators can create users")
+
+    from core.security import hash_password
+    from datetime import datetime
+
+    existing = await db["users"].find_one({"email": body.email.strip().lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="A user with this email already exists")
+
+    new_user = {
+        "email":                 body.email.strip().lower(),
+        "full_name":             body.full_name,
+        "role":                  body.role,
+        "hashed_password":       hash_password(body.password),
+        "status":                "active",
+        "force_password_change": True,   # ← admin-set password must be changed on first login
+        "created_at":            datetime.utcnow().isoformat(),
+    }
+
+    result = await db["users"].insert_one(new_user)
+    new_user["id"] = str(result.inserted_id)
+
+    return {"ok": True, "id": new_user["id"], "message": "User created. They must change their password on first login."}
+
+
+# ── Admin: Reset a user's password (force password change + invalidate session) 
+class AdminResetPassword(BaseModel):
+    new_password: str
+
+@router.post("/api/users/{user_id}/reset-password")
+async def admin_reset_password(
+    user_id: str,
+    body: AdminResetPassword,
+    current_user: dict = Security(get_current_user)
+):
+    if current_user.get("role") != "Administrator":
+        raise HTTPException(status_code=403, detail="Only administrators can reset passwords")
+
+    from core.security import hash_password
+    from datetime import datetime
+
+    try:
+        object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+    now = datetime.utcnow().isoformat()
+
+    result = await db["users"].update_one(
+        {"_id": object_id},
+        {"$set": {
+            "hashed_password":       hash_password(body.new_password),
+            "force_password_change": True,    # ← must change on next login
+            "token_invalidated_at":  now,     # ← forces logout of existing session
+        }}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"ok": True, "message": "Password reset. User must change their password on next login."}

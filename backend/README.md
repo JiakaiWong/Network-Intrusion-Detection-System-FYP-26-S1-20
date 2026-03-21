@@ -4,10 +4,13 @@ This directory contains the Python/FastAPI server that powers the IDS
 dashboard.  It exposes a small JSON REST API that the frontend can talk
 to when running locally (or once deployed).
 
-At the moment the only public endpoint is **user registration** – the
-frontend team can use it to submit new accounts while the administrator
-workflow is still being built.  All of the code is covered by the
-existing test suite.
+# Features
+- User authentication
+- IDS alert ingestion (Suricata EVE JSON)
+- Alert validation and processing
+- MongoDB storage
+- Alert filtering
+- Integration with frontend dashboard
 
 ---
 
@@ -41,12 +44,13 @@ The default connection string is mongodb://localhost:27017. To
 override, create a .env file with:
 ```bash
 MONGODB_URL=mongodb://<your‑host>:<port>
+DATABASE_NAME=seimless_db
 ```
 
 3. **Run the API**
 
 ```bash
-uvicorn app:app --reload
+uvicorn main:app --reload
 ```
 
 The server will listen on http://127.0.0.1:8000 by default.
@@ -60,6 +64,15 @@ frontend server on the same host/port.
 
 Registration payload: the JSON keys are: 
 email, password, full_name and role. 
+Registration payload:
+```json
+{
+  "email": "user@example.com",
+  "password": "String123!",
+  "full_name": "User Name",
+  "role": "Security Analyst"
+}
+```
 
 Only "Security Analyst" and "Administrator"
 are currently accepted; the UI may hard‑code "Security Analyst" for
@@ -88,13 +101,16 @@ The frontend will run on : http://localhost:5173
 5.**IDS Alerts testing**
 
 Simulating Suricata alerts locally,
-Run ingestion script :
 ```bash
 cd backend
-python eve_ingestor.py
-#if there's error "no module named 'requests', run this script : 'pip3 install requests'
+python3 eve_ingestor.py
 ```
-This script will reads IDS events from eve.json and sends them to the backend API.
+
+If error:
+```bash
+pip3 install requests
+```
+This script will reads IDS events from 'eve.json' and sends them to the backend API.
 
 6. **IDS Alert Pipeline**
 Current pipeline works like this :
@@ -116,10 +132,12 @@ backend/
 ├── routes/               # FastAPI routers
 │   └── auth.py           # `/api/auth` endpoints
 ├── services/             # Business logic / helpers
+│   └── alert_service.py  # Alert processing, validation, filtering
 │   └── user_service.py   # validation & create_user()
 ├── tests/                # pytest async tests
 │   ├── conftest.py       # fixtures (mongodb_client, etc.)
 │   └── test_auth.py      # registration/password/full‑name tests
+├── eve_ingestor.py       # reaeds Suricata eve.json, extract alerts
 ├── main.py               # FastAPI app instance
 ├── pytest.ini            # test configuration
 ├── .env                  # local environment override (ignored by git)
@@ -138,3 +156,13 @@ cd backend
 docker-compose -f docker-compose.test.yml up -d  
 pytest    
 ```
+
+#Important note
+
+Running the ingestion script multiple times:
+
+```bash
+python3 eve_ingestor.py
+```
+
+will insert duplicate alerts into the database.

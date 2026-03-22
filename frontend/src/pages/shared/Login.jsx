@@ -47,6 +47,7 @@ function Login() {
         ...data.user,
         force_password_change: data.force_password_change ?? false,
       }));
+      localStorage.setItem("userId", data.user.id);
 
       // If admin set this password, force the user to change it before proceeding
       if (data.force_password_change) {

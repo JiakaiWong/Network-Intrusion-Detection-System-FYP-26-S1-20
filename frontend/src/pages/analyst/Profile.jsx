@@ -30,7 +30,7 @@ function Profile() {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId"); // or store user ID on login
 
-      const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
+      const res = await fetch(`http://localhost:8000/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -38,15 +38,19 @@ function Profile() {
         },
         body: JSON.stringify({
           full_name: fullName,
-          phone: phone,
           telegram_id: telegramId
         })
       });
 
-      if (!res.ok) throw new Error("Failed to update profile");
-
       const data = await res.json();
-      console.log("Updated profile:", data);
+
+      if (!res.ok) {
+        console.error("Backend error:", data);
+        throw new Error(data.message || "Failed to update profile");
+      }
+      console.log("Sending telegram_id:", telegramId);
+      console.log(JSON.stringify(data, null, 2));
+    console.log("Updated profile:", data);
       alert("Profile saved successfully!");
     } catch (err) {
       console.error(err);
@@ -66,7 +70,7 @@ function Profile() {
 
         setFullName(data.full_name);
         setPhone(data.phone || "");
-        setTelegramId(data.telegram_id || "");  // <-- set Telegram ID
+        setTelegramId(data.telegram_id || ""); 
       } catch (err) {
         console.error(err);
       }

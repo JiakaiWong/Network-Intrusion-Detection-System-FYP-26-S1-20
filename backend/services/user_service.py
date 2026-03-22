@@ -94,19 +94,36 @@ async def get_all_users():
         })
     return users
 
-async def update_user_profile(user_id: str, full_name: str):
+async def update_user_profile(user_id: str, full_name: str, telegram_id: str):
     from bson import ObjectId
     try:
-        validate_full_name(full_name)
-        full_name = full_name.strip()
-        
+        update_fields = {}
+
+        # Validate & update full name
+        if full_name is not None:
+            validate_full_name(full_name)
+            update_fields["full_name"] = full_name.strip()
+
+        # Update telegram_id
+        if telegram_id is not None:
+            telegram_id = telegram_id.strip()
+            update_fields["telegram_id"] = telegram_id
+
+        # If nothing to update, return current user
+        if not update_fields:
+            return await db.users.find_one({"_id": ObjectId(user_id)})
+
+        # Update in DB
         result = await db.users.find_one_and_update(
             {"_id": ObjectId(user_id)},
-            {"$set": {"full_name": full_name}},
+            {"$set": update_fields},
             return_document=True
         )
+
         return result
-    except:
+
+    except Exception as e:
+        print("Update error:", e)
         return None
 
 async def change_password(user_id: str, old_password: str, new_password: str):

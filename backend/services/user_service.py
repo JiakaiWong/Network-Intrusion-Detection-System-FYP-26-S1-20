@@ -94,6 +94,17 @@ async def get_all_users():
         })
     return users
 
+async def get_users_with_telegram_id():
+    users = []
+    async for user in db.users.find({"telegram_id": {"$exists": True, "$ne": None, "$ne": ""}}):
+        users.append({
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "telegram_id": user["telegram_id"]
+        })
+    return users
+
 async def update_user_profile(user_id: str, full_name: str, telegram_id: str):
     from bson import ObjectId
     try:

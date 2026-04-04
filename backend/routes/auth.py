@@ -111,6 +111,7 @@ async def get_profile(current_user: dict = Security(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    
     return UserOut(
         id=str(user["_id"]),
         email=user["email"],

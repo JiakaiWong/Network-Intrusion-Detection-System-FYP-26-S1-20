@@ -19,7 +19,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(alerts.router)
-app.include_router(logs.router)  # ← add this
+app.include_router(logs.router)  
 
 def custom_openapi():
     if app.openapi_schema:

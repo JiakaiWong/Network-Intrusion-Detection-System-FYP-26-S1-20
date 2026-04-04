@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+import os
 
 from fastapi import APIRouter, HTTPException, Security
 import httpx  # async HTTP client
@@ -8,10 +9,21 @@ from core.security import get_current_user
 from pydantic import BaseModel
 
 from services.alert_service import get_collection, SEVERITY_LABELS, ALLOWED_STATUS
+from services.user_service import get_users_with_telegram_id
 
 router = APIRouter(tags=["Alerts"])
 
-BOT_TOKEN = "8500029016:AAG13AhvWboYuAQSG4CmTh8RppPgu8G2aKI"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+async def send_telegram_message(chat_id: str, text: str):
+    if not BOT_TOKEN or not chat_id or not text:
+        return None
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    async with httpx.AsyncClient() as client:
+        res = await client.post(url, json={"chat_id": chat_id, "text": text})
+    return res
+
+SEVERITY_THRESHOLD = 2
 
 class AlertIn(BaseModel):
     timestamp: str
@@ -46,7 +58,7 @@ def health():
 
 
 @router.post("/ingest/alerts", status_code=201)
-def ingest_alert(alert: AlertIn):
+async def ingest_alert(alert: AlertIn):
     collection = get_collection()
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
@@ -61,6 +73,13 @@ def ingest_alert(alert: AlertIn):
     alert_id = str(result.inserted_id)
     collection.update_one({"_id": result.inserted_id}, {"$set": {"id": alert_id}})
 
+    # Automatic Telegram notification for high/medium severity alerts
+    if doc["severity"] <= SEVERITY_THRESHOLD:
+        text = f"🚨 Alert: {doc['signature']} from {doc['src_ip']} to {doc['dest_ip']}, severity {doc['severity_label']}"
+        users = await get_users_with_telegram_id()
+        for user in users:
+            await send_telegram_message(user["telegram_id"], text)
+    
     return {"ok": True, "id": alert_id}
 
 
@@ -185,9 +204,9 @@ async def send_telegram(alert: dict, current_user: dict = Security(get_current_u
     if not chat_id or not text:
         raise HTTPException(status_code=400, detail="chat_id and text required")
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    async with httpx.AsyncClient() as client:
-        res = await client.post(url, json={"chat_id": chat_id, "text": text})
+    res = await send_telegram_message(chat_id, text)
+    if res is None:
+        raise HTTPException(status_code=500, detail="Telegram bot not configured")
     
     if res.status_code != 200:
         raise HTTPException(status_code=res.status_code, detail=res.text)

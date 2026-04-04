@@ -1,26 +1,42 @@
+/* RESET */
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+:root {
+  --bg-primary:   #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card:      #1e293b;
+  --bg-sidebar:   #1e293b;
+  --border:       #334155;
+  --text-primary: #f1f5f9;
+  --text-muted:   #94a3b8;
+  --accent:       #38bdf8;
+  --accent-dim:   #0ea5e9;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
+
+/* LAYOUT */
 
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  background-color: #0f172a;
+  background-color: var(--bg-primary);
 }
 
 /* ── Sidebar ── */
 .sidebar {
   width: 200px;
-  background-color: #1e293b;
-  border-right: 1px solid #334155;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -35,8 +51,8 @@ body {
   padding: 0.85rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;
-  border-bottom: 1px solid #334155;
-  color: #38bdf8;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
   letter-spacing: 0.04em;
   flex-shrink: 0;
   white-space: nowrap;
@@ -60,14 +76,12 @@ body {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .sidebar-nav ul {
   list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 /* FIX: reduced padding so all 6 items fit without scrolling */
@@ -77,7 +91,7 @@ body {
   margin: 0.15rem 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-primary);
   border-radius: 6px;
   transition: background-color 0.15s;
   border-left: 3px solid transparent;
@@ -87,7 +101,7 @@ body {
   display: block;
   /* CHANGED: reduced vertical padding — was 0.65rem, now 0.55rem per item */
   padding: 0.7rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 0.9rem;
   border-radius: 8px;
@@ -99,27 +113,27 @@ body {
 .sidebar-nav li:hover,
 .sidebar-nav li:hover a {
   background-color: rgba(56, 189, 248, 0.08);
-  color: #38bdf8;
+  color: var(--accent);
 }
 
 .sidebar-nav li.active,
 .sidebar-nav li.active a {
   background-color: rgba(56, 189, 248, 0.12);
-  border-left-color: #38bdf8;
-  color: #38bdf8;
+  border-left-color: var(--accent);
+  color: var(--accent);
   font-weight: 600;
 }
 
 /* User section — fixed at bottom, never shrinks */
 .sidebar-user {
   padding: 0.75rem 0.85rem;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .divider {
   border: none;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border);
   margin: 0 0 0.45rem 0;
 }
 
@@ -132,14 +146,14 @@ body {
 
 .user-role {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .user-name {
   font-size: 0.8rem;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -150,9 +164,9 @@ body {
   width: 100%;
   padding: 0.4rem 0.75rem;
   background: transparent;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.78rem;
   cursor: pointer;
   text-align: left;
@@ -171,7 +185,7 @@ body {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  background-color: #0f172a;
+  background-color: var(--bg-primary);
   min-width: 0;
   
 }
@@ -186,8 +200,8 @@ body {
 
 .card {
   position: relative;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
 }
@@ -204,14 +218,14 @@ body {
   margin-bottom: 0.4rem;
 }
 
-.card-total .card-icon  { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+.card-total .card-icon  { background: rgba(56,189,248,0.15);  color: var(--accent); }
 .card-high .card-icon   { background: rgba(239,68,68,0.15);   color: #ef4444; }
 .card-medium .card-icon { background: rgba(245,158,11,0.15);  color: #f59e0b; }
 .card-low .card-icon    { background: rgba(34,197,94,0.15);   color: #22c55e; }
 
 .card-label {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.4rem;
@@ -219,7 +233,7 @@ body {
 
 .card hr {
   border: none;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border);
   margin: 0.5rem 0;
 }
 
@@ -228,7 +242,7 @@ body {
   font-weight: 800;
 }
 
-.card-total  .card-value { color: #38bdf8; }
+.card-total  .card-value { color: var(--accent); }
 .card-high   .card-value { color: #ef4444; }
 .card-medium .card-value { color: #f59e0b; }
 .card-low    .card-value { color: #22c55e; }
@@ -242,40 +256,41 @@ body {
 }
 
 .trends-card, .distribution-card {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
 }
 
-.trends-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.trends-header,
+.distribution-header {
+  font-weight: 600;
   margin-bottom: 1rem;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .time-filter {
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   padding: 0.3rem 0.6rem;
   font-size: 0.8rem;
   cursor: pointer;
 }
+
+/* CHART PLACEHOLDER */
 
 .chart-placeholder {
   height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.9rem;
-  border: 1px dashed #334155;
+  border: 1px dashed var(--border);
   border-radius: 8px;
 }
 
@@ -283,7 +298,7 @@ body {
   font-weight: 700;
   font-size: 0.95rem;
   margin-bottom: 1rem;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .pie-chart-container {
@@ -295,8 +310,8 @@ body {
 
 /* ── Alerts table ── */
 .recent-alerts-section {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -306,7 +321,7 @@ body {
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .alerts-table {
@@ -318,17 +333,17 @@ body {
 .alerts-table th {
   padding: 0.6rem 0.9rem;
   text-align: left;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .alerts-table td {
   padding: 0.75rem 0.9rem;
-  color: #cbd5e1;
+  color: var(--text-primary);
   border-bottom: 1px solid #253348;
   white-space: nowrap;
 }
@@ -360,7 +375,7 @@ body {
   font-weight: 600;
 }
 
-.progress-badge.new           { background: rgba(56,189,248,0.12);  color: #38bdf8; }
+.progress-badge.new           { background: rgba(56,189,248,0.12);  color: var(--accent); }
 .progress-badge.investigating  { background: rgba(245,158,11,0.12); color: #f59e0b; }
 .progress-badge.resolved      { background: rgba(34,197,94,0.12);   color: #22c55e; }
 
@@ -368,9 +383,9 @@ body {
 .view-btn, .telegram-btn {
   padding: 0.3rem 0.7rem;
   border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #94a3b8;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-muted);
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -378,7 +393,7 @@ body {
 
 .view-btn:hover {
   background: rgba(56,189,248,0.1);
-  color: #38bdf8;
+  color: var(--accent);
   border-color: rgba(56,189,248,0.3);
 }
 
@@ -416,15 +431,15 @@ body {
 .alerts-header h1 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .export-btn {
   padding: 0.55rem 1rem;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.875rem;
   cursor: pointer;
   display: flex;

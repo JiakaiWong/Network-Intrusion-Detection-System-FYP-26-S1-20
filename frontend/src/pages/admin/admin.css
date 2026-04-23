@@ -1,0 +1,722 @@
+/* ==========================================================================
+   Admin Panel — Full admin.css
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Box-sizing reset
+   -------------------------------------------------------------------------- */
+.admin-container *,
+.admin-container *::before,
+.admin-container *::after {
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   1. Theme Variables
+   -------------------------------------------------------------------------- */
+.admin-container {
+  --admin-bg: var(--bg-primary);
+  --admin-card: var(--bg-card);
+  --admin-input: var(--bg-input);
+  --admin-hover: var(--bg-hover);
+  --admin-text: var(--text-primary);
+  --admin-secondary: var(--text-secondary);
+  --admin-border: var(--border-primary);
+  --admin-radius: var(--radius-lg);
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: var(--transition);
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.light .admin-container {
+  --admin-bg: #f8fafc;
+  --admin-card: #ffffff;
+  --admin-input: #f8fafc;
+  --admin-hover: #e2e8f0;
+  --admin-text: #0f172a;
+  --admin-secondary: #64748b;
+  --admin-border: #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   2. Layout
+   -------------------------------------------------------------------------- */
+.admin-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: visible;
+  background-color: var(--admin-bg);
+  position: relative;
+}
+
+.admin-content {
+  min-height: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.admin-page {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  padding: 2rem;
+  flex: 1;
+  min-height: 100%;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   3. Sidebar
+   -------------------------------------------------------------------------- */
+.admin-sidebar {
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--admin-bg);
+  border-right: 1px solid var(--admin-border);
+  padding: 1.5rem 0;
+}
+
+.admin-logo {
+  padding: 0 1.5rem 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--admin-text);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.admin-nav-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.875rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--admin-secondary);
+  text-decoration: none;
+  text-align: left;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.admin-nav-item:hover {
+  background-color: var(--admin-hover);
+}
+
+.admin-nav-item.active {
+  background-color: var(--admin-hover);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.admin-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--admin-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background-color: var(--admin-card);
+}
+
+.admin-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.admin-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-user-email {
+  font-size: 0.72rem;
+  color: var(--admin-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: transparent;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.admin-logout-btn:hover {
+  background-color: var(--admin-hover);
+}
+
+/* --------------------------------------------------------------------------
+   4. Section Label
+   -------------------------------------------------------------------------- */
+.admin-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--admin-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   5. Cards
+   -------------------------------------------------------------------------- */
+.admin-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.admin-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-card p {
+  margin: 0;
+  color: var(--admin-secondary);
+  line-height: 1.6;
+}
+
+.admin-summary-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.admin-summary-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-summary-card__label {
+  font-size: 0.78rem;
+  color: var(--admin-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.admin-summary-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1;
+}
+
+.admin-summary-card__sub {
+  font-size: 0.75rem;
+  color: var(--admin-secondary);
+  margin-top: 6px;
+}
+
+.admin-resource-card {
+  background-color: var(--admin-card);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.admin-resource-label {
+  color: var(--admin-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-gauge-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--admin-text);
+  margin-bottom: 0.5rem;
+}
+
+.admin-gauge-bar {
+  height: 8px;
+  background-color: var(--admin-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.admin-gauge-bar__fill       { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.admin-gauge-bar__fill--low  { background-color: var(--success); }
+.admin-gauge-bar__fill--mid  { background-color: var(--warning); }
+.admin-gauge-bar__fill--high { background-color: var(--error);   }
+
+.admin-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.admin-status-card          { background-color: var(--admin-card); padding: 1.5rem; border-radius: 12px; transition: all 0.2s; }
+.admin-status-card--running { border: 1px solid var(--success-bg); }
+.admin-status-card--stopped { border: 1px solid var(--error-bg);   }
+
+.admin-status-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.admin-service-name  { font-size: 1.1rem; font-weight: 600; color: var(--admin-text); }
+
+.admin-status-dot          { width: 12px; height: 12px; border-radius: 50%; }
+.admin-status-dot--running { background-color: var(--success); box-shadow: 0 0 6px var(--success); }
+.admin-status-dot--stopped { background-color: var(--error);   box-shadow: 0 0 6px var(--error);   }
+
+.admin-status-text--running { font-size: 0.9rem; font-weight: 500; color: var(--success); }
+.admin-status-text--stopped { font-size: 0.9rem; font-weight: 500; color: var(--error);   }
+
+/* --------------------------------------------------------------------------
+   6. Table
+   -------------------------------------------------------------------------- */
+.admin-table-section {
+  background-color: var(--admin-card);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: visible;
+  position: relative;
+}
+
+.admin-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.admin-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-table-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--admin-text);
+}
+
+.admin-table { width: 100%; border-collapse: collapse; }
+
+.admin-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background-color: var(--admin-bg);
+  color: var(--admin-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--admin-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-tr { border-bottom: 1px solid var(--admin-border); }
+.admin-tr:hover { background: var(--admin-hover); }
+
+.admin-td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: var(--admin-text);
+}
+
+.admin-td--truncate {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   7. Badges
+   -------------------------------------------------------------------------- */
+.admin-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+.admin-badge--high   { background-color: var(--error-bg);   color: var(--error);   border: 1px solid var(--error-bg);   }
+.admin-badge--medium { background-color: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-bg); }
+.admin-badge--low    { background-color: var(--primary-bg); color: var(--primary); border: 1px solid var(--primary-bg); }
+.admin-severity-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+
+/* --------------------------------------------------------------------------
+   8. Severity Bar
+   -------------------------------------------------------------------------- */
+.admin-severity-bar           { margin-bottom: 14px; }
+.admin-severity-bar__header   { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.admin-severity-bar__label    { font-size: 0.82rem; color: var(--admin-secondary); }
+.admin-severity-bar__count    { font-size: 0.82rem; font-weight: 600; color: var(--admin-text); }
+.admin-severity-bar__track    { background: var(--admin-border); border-radius: 4px; height: 6px; }
+.admin-severity-bar__fill     { height: 6px; border-radius: 4px; transition: width 0.4s ease; }
+
+/* --------------------------------------------------------------------------
+   9. Log Source Summary Bar
+   -------------------------------------------------------------------------- */
+.admin-log-summary-bar     { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; padding: 0.75rem 1rem; background-color: var(--admin-bg); border-radius: 8px; border: 1px solid var(--admin-border); }
+.admin-log-summary-label   { font-size: 0.78rem; color: var(--admin-secondary); font-weight: 600; margin-right: 0.25rem; }
+.admin-log-chip            { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 500; }
+.admin-log-chip--active    { background-color: var(--success-bg); color: var(--success); border: 1px solid var(--success-bg); }
+.admin-log-chip--inactive  { background-color: var(--error-bg);   color: var(--error);   border: 1px solid var(--error-bg);   }
+.admin-log-dot             { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.admin-log-dot--active     { background-color: var(--success); }
+.admin-log-dot--inactive   { background-color: var(--error);   }
+.admin-no-logs-warning     { padding: 0.875rem 1rem; margin-bottom: 1.25rem; background-color: var(--warning-bg); border: 1px solid var(--warning); border-radius: 8px; font-size: 0.88rem; color: var(--warning); }
+
+/* --------------------------------------------------------------------------
+   10. Panels Row
+   -------------------------------------------------------------------------- */
+.admin-panels-row            { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.admin-panel                 { flex: 1; min-width: 250px; background: var(--admin-card); border: 1px solid var(--admin-border); border-radius: 10px; padding: 20px; }
+.admin-panel__service-row    { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--admin-bg); border-radius: 8px; margin-bottom: 8px; }
+.admin-panel__service-name   { color: var(--admin-text); font-size: 0.85rem; }
+.admin-panel__service-status--running { font-size: 0.75rem; color: var(--success); font-weight: bold; }
+.admin-panel__service-status--stopped { font-size: 0.75rem; color: var(--error);   font-weight: bold; }
+
+/* --------------------------------------------------------------------------
+   11. Pagination
+   -------------------------------------------------------------------------- */
+.admin-pagination                       { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px; }
+.admin-pagination__btn                  { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--admin-border); background: var(--admin-card); color: var(--admin-text); cursor: pointer; transition: var(--transition); }
+.admin-pagination__btn:disabled         { opacity: 0.4; cursor: default; }
+.admin-pagination__btn:not(:disabled):hover { background: var(--admin-hover); }
+.admin-pagination__info                 { line-height: 28px; color: var(--admin-secondary); font-size: 0.82rem; }
+
+/* --------------------------------------------------------------------------
+   12. Form Controls
+   -------------------------------------------------------------------------- */
+.admin-input             { width: 100%; padding: 0.875rem 1rem; background: var(--admin-input); border: 1px solid var(--admin-border); border-radius: var(--radius); color: var(--admin-text); font-size: 0.95rem; }
+.admin-input::placeholder { color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   13. Buttons
+   -------------------------------------------------------------------------- */
+.admin-btn             { padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 500; cursor: pointer; transition: var(--transition); font-size: 0.95rem; width: 100%; }
+.admin-btn--primary    { background: var(--primary); color: white; }
+.admin-btn--primary:hover { background: var(--primary-hover); }
+.admin-btn--secondary  { background: var(--admin-hover); color: var(--admin-text); border: 1px solid var(--admin-border); }
+
+/* --------------------------------------------------------------------------
+   14. Tabs
+   -------------------------------------------------------------------------- */
+.admin-tabs            { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 1px solid var(--admin-border); background: var(--admin-card); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.admin-tab-btn         { flex: 1; padding: 1rem 0; background: none; border: none; cursor: pointer; transition: var(--transition); font-size: 0.95rem; font-weight: 400; border-bottom: 3px solid transparent; color: var(--admin-secondary); }
+.admin-tab-btn.active  { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+
+/* --------------------------------------------------------------------------
+   15. Theme Buttons — Settings page
+   -------------------------------------------------------------------------- */
+.admin-theme-section { display: flex; flex-direction: column; gap: 1.5rem; max-width: 500px; }
+.admin-theme-preview { padding: 1rem; background: var(--admin-card); border-radius: var(--radius); border: 1px solid var(--admin-border); }
+
+.theme-options { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+
+.theme-btn {
+  padding: 10px 18px;
+  min-width: 110px;
+  border-radius: 10px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+  background: var(--admin-hover);
+}
+
+.theme-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   16. Error / Loading Banners
+   -------------------------------------------------------------------------- */
+.admin-error-banner            { background: var(--error-bg); border: 1px solid var(--error); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+.admin-error-banner__message   { color: var(--error); font-weight: 600; }
+.admin-error-banner__retry     { margin-left: auto; padding: 5px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--error); color: var(--error); background: transparent; }
+.admin-loading                 { color: var(--admin-secondary); padding: 16px 0; display: flex; align-items: center; gap: 10px; }
+.admin-empty-state             { padding: 40px; text-align: center; color: var(--admin-secondary); }
+
+/* --------------------------------------------------------------------------
+   17. Resources Grid
+   -------------------------------------------------------------------------- */
+.admin-resources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+
+/* --------------------------------------------------------------------------
+   18. Page Header 
+   -------------------------------------------------------------------------- */
+.admin-page-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.admin-page-header p {
+  margin: 0;
+  color: var(--admin-secondary);
+  font-size: 0.95rem;
+}
+
+/* --------------------------------------------------------------------------
+   19. Settings Page Table
+   -------------------------------------------------------------------------- */
+.admin-settings-table-section {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+}
+
+.admin-settings-search-input { width: 100%; padding: 0.875rem 1rem; background: var(--admin-input); border: 1px solid var(--admin-border); border-radius: var(--radius); color: var(--admin-text); font-size: 0.95rem; margin-bottom: 1rem; box-sizing: border-box; }
+.admin-settings-logs-table   { width: 100%; border-collapse: collapse; background: var(--admin-card); }
+
+.admin-settings-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background-color: var(--admin-bg);
+  color: var(--admin-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--admin-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-settings-tr           { border-bottom: 1px solid var(--admin-border); transition: var(--transition); }
+.admin-settings-tr:hover      { background: var(--admin-hover); }
+.admin-settings-td            { padding: 1rem; font-size: 0.9rem; color: var(--admin-text); }
+
+.admin-settings-action-btn   { background: transparent; border: 1px solid var(--admin-border); color: var(--admin-secondary); border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.8rem; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.admin-settings-form-section { background: var(--admin-card); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 1.5rem; }
+.admin-settings-form-title   { color: var(--admin-text); font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+.admin-settings-input        { width: 100%; padding: 0.875rem 1rem; background: var(--admin-input); border: 1px solid var(--admin-border); border-radius: var(--radius); color: var(--admin-text); font-size: 0.95rem; box-sizing: border-box; }
+.admin-settings-submit-btn   { padding: 0.875rem 1.5rem; background: var(--primary); color: white; border: none; border-radius: var(--radius); font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: var(--transition); }
+.admin-settings-submit-btn:hover    { background: var(--primary-hover); }
+.admin-settings-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* --------------------------------------------------------------------------
+   20. Portal Action Menu — UserManagement
+   -------------------------------------------------------------------------- */
+.admin-action-menu-overlay {
+  position: absolute;
+  min-width: 180px;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  z-index: 99999;
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.admin-action-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--admin-text);
+  font-size: 0.88rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.admin-action-menu-item:hover          { background: var(--admin-hover); }
+.admin-action-menu-item--approve       { color: var(--success); }
+.admin-action-menu-item--approve:hover { background: var(--success-bg); }
+.admin-action-menu-item--danger        { color: var(--error); }
+.admin-action-menu-item--danger:hover  { background: var(--error-bg); }
+
+/* --------------------------------------------------------------------------
+   21. Scroll lock — active when action menu is open
+   -------------------------------------------------------------------------- */
+body.action-menu-open {
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   22. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .admin-layout   { flex-direction: column; }
+  .admin-sidebar  { width: 100%; min-width: 100%; max-width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--admin-border); }
+  .admin-nav      { flex-direction: row; flex-wrap: wrap; }
+  .admin-nav-item { width: auto; }
+  .admin-main     { min-height: 0; }
+}
+
+/* --------------------------------------------------------------------------
+23. Dashboard-specific classes 
+----------------------------------------------------------------------------- */
+.dashboard-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dashboard-heading {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.dashboard-status-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-text        { font-size: 0.8rem; }
+.status-online      { color: #22c55e; }
+.status-offline     { color: #f59e0b; }
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-muted);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.15s ease;
+}
+.refresh-btn:hover { background-color: var(--bg-hover); }
+
+.card-divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  opacity: 0.2;
+  margin: 0.5rem 0;
+}
+
+.pie-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+
+.table-scroll  { overflow-x: auto; }
+
+.src-ip        { color: #38bdf8; font-family: monospace; }
+
+/* In light mode, src-ip uses the accent colour instead of sky blue */
+[data-theme="light"] .src-ip { color: var(--accent-primary); }
+
+.text-sm       { font-size: 0.8rem; }
+
+.view-all-link { margin-top: 1rem; }
+.view-all-link a {
+  color: #38bdf8;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+[data-theme="light"] .view-all-link a { color: var(--accent-primary); }

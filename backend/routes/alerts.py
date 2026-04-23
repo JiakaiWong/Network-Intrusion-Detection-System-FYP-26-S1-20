@@ -3,17 +3,18 @@ from typing import Optional
 import os
 
 from fastapi import APIRouter, HTTPException, Security
-import httpx  # async HTTP client
-from core.security import get_current_user 
+import httpx
+from core.security import get_current_user
 
 from pydantic import BaseModel
 
 from services.alert_service import get_collection, SEVERITY_LABELS, ALLOWED_STATUS
-from services.user_service import get_users_with_telegram_id
+from services.user_service import get_users_with_telegram_id, get_user_by_email
 
-router = APIRouter(tags=["Alerts"])
+router = APIRouter(prefix="/api", tags=["Alerts"])
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
 
 async def send_telegram_message(chat_id: str, text: str):
     if not BOT_TOKEN or not chat_id or not text:
@@ -23,7 +24,9 @@ async def send_telegram_message(chat_id: str, text: str):
         res = await client.post(url, json={"chat_id": chat_id, "text": text})
     return res
 
+
 SEVERITY_THRESHOLD = 2
+
 
 class AlertIn(BaseModel):
     timestamp: str
@@ -73,13 +76,12 @@ async def ingest_alert(alert: AlertIn):
     alert_id = str(result.inserted_id)
     collection.update_one({"_id": result.inserted_id}, {"$set": {"id": alert_id}})
 
-    # Automatic Telegram notification for high/medium severity alerts
     if doc["severity"] <= SEVERITY_THRESHOLD:
         text = f"🚨 Alert: {doc['signature']} from {doc['src_ip']} to {doc['dest_ip']}, severity {doc['severity_label']}"
         users = await get_users_with_telegram_id()
         for user in users:
             await send_telegram_message(user["telegram_id"], text)
-    
+
     return {"ok": True, "id": alert_id}
 
 
@@ -89,14 +91,13 @@ def get_alerts(
     src_ip: Optional[str] = None,
     dest_ip: Optional[str] = None,
     proto: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
 ):
     collection = get_collection()
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
 
     query = {}
-
     if severity is not None:
         query["severity"] = severity
     if src_ip:
@@ -135,7 +136,7 @@ def update_status(alert_id: str, body: StatusUpdate):
     if new_status not in ALLOWED_STATUS:
         raise HTTPException(
             status_code=400,
-            detail="Status must be new, investigating, or resolved"
+            detail="Status must be new, investigating, or resolved",
         )
 
     result = collection.update_one({"id": alert_id}, {"$set": {"status": new_status}})
@@ -147,13 +148,19 @@ def update_status(alert_id: str, body: StatusUpdate):
 
 
 @router.post("/alerts/{alert_id}/notes")
-def add_note(alert_id: str, body: NoteIn):
+async def add_note(alert_id: str, body: NoteIn, current_user: dict = Security(get_current_user)):
     collection = get_collection()
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
 
+    # Fetch full user data from database
+    user_email = current_user.get("sub")
+    user_data = await get_user_by_email(user_email)
+    
     note = {
         "text": body.text,
+        "author": user_data.get("full_name", "Analyst") if user_data else "Analyst",
+        "role": current_user.get("role", "Analyst"),
         "time": datetime.utcnow().isoformat()
     }
 
@@ -174,10 +181,33 @@ def get_notes(alert_id: str):
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    return {"ok": True, "items": alert.get("notes", [])}
+    # Normalize notes: handle both string notes (legacy) and object notes (new)
+    raw_notes = alert.get("notes", [])
+    normalized_notes = []
+    for idx, note in enumerate(raw_notes):
+        if isinstance(note, str):
+            # Legacy: plain string note
+            normalized_notes.append({
+                "id": idx,
+                "text": note,
+                "author": "System",
+                "role": "System",
+                "time": "—"
+            })
+        elif isinstance(note, dict):
+            # New: object note with text and time
+            normalized_notes.append({
+                "id": idx,
+                "text": note.get("text", ""),
+                "author": note.get("author", "System"),
+                "role": note.get("role", "Analyst"),
+                "time": note.get("time", "—")
+            })
+    
+    return {"ok": True, "items": normalized_notes}
 
 
-@router.get("/dashboard/summary")
+@router.get("/alerts/dashboard/summary")
 def summary():
     collection = get_collection()
     if collection is None:
@@ -191,13 +221,10 @@ def summary():
         if label in result:
             result[label] += 1
 
-    return {
-        "ok": True,
-        "total": len(alerts),
-        "severity_summary": result
-    }
+    return {"ok": True, "total": len(alerts), "severity_summary": result}
 
-@router.post("/api/alerts/send-telegram")
+
+@router.post("/alerts/send-telegram")
 async def send_telegram(alert: dict, current_user: dict = Security(get_current_user)):
     chat_id = alert.get("chat_id")
     text = alert.get("text")
@@ -207,8 +234,8 @@ async def send_telegram(alert: dict, current_user: dict = Security(get_current_u
     res = await send_telegram_message(chat_id, text)
     if res is None:
         raise HTTPException(status_code=500, detail="Telegram bot not configured")
-    
+
     if res.status_code != 200:
         raise HTTPException(status_code=res.status_code, detail=res.text)
-    
+
     return {"ok": True, "telegram_response": res.json()}

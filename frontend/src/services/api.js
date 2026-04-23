@@ -6,7 +6,7 @@
 
 // Define the two different base URLs
 const AUTH_BASE = import.meta.env.VITE_AUTH_URL || "http://127.0.0.1:8000";
-const ALERTS_BASE = import.meta.env.VITE_ALERTS_URL || "http://127.0.0.1:8001";
+const ALERTS_BASE = import.meta.env.VITE_ALERTS_URL || "http://127.0.0.1:8000";
 
 /**
  * Core request helper
@@ -54,7 +54,7 @@ export async function healthCheck() {
 // --- ALERTS & DASHBOARD SERVICES (Port 8001) ---
 
 export async function getDashboardSummary() {
-  return request(ALERTS_BASE, "/dashboard/summary");
+  return request(ALERTS_BASE, "/api/dashboard/summary");
 }
 
 export async function getAlerts(params = {}) {
@@ -66,26 +66,26 @@ export async function getAlerts(params = {}) {
   if (params.status)   qs.append("status",   params.status);
   
   const q = qs.toString();
-  return request(ALERTS_BASE, `/alerts${q ? `?${q}` : ""}`);
+  return request(ALERTS_BASE, `/api/alerts${q ? `?${q}` : ""}`);
 }
 
 export async function getAlertById(id) {
-  return request(ALERTS_BASE, `/alerts/${id}`);
+  return request(ALERTS_BASE, `/api/alerts/${id}`);
 }
 
 export async function updateAlertStatus(id, status) {
-  return request(ALERTS_BASE, `/alerts/${id}/status`, {
+  return request(ALERTS_BASE, `/api/alerts/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
 }
 
 export async function getNotes(alertId) {
-  return request(ALERTS_BASE, `/alerts/${alertId}/notes`);
+  return request(ALERTS_BASE, `/api/alerts/${alertId}/notes`);
 }
 
 export async function addNote(alertId, text) {
-  return request(ALERTS_BASE, `/alerts/${alertId}/notes`, {
+  return request(ALERTS_BASE, `/api/alerts/${alertId}/notes`, {
     method: "POST",
     body: JSON.stringify({ text }),
   });

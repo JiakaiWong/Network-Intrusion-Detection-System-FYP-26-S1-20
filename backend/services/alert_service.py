@@ -19,3 +19,4 @@ def get_collection():
     if _client is None:
         return None
     return _client[DB_NAME][COLLECTION_NAME]
+

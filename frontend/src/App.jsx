@@ -18,10 +18,11 @@ import ForcePasswordChange from "./pages/shared/ForcePasswordChange";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProfile from "./pages/admin/Profile";
-import Settings from "./pages/admin/Settings";
 import Usermanagement from "./pages/admin/UserManagement";
+import Profile from "./pages/admin/Profile";
 import AdminSidebar from "./pages/admin/AdminSidebar";
+import LogManagement from "./pages/admin/LogManagement";
+import AdminSettings from "./pages/admin/Settings";
 import DatabaseMaintenance from "./pages/admin/DatabaseMaintenance";
 
 // Analyst Pages
@@ -32,6 +33,8 @@ import AnalystProfile from "./pages/analyst/Profile";
 import AlertDetails from "./pages/analyst/AlertDetails";
 import NetworkTraffic from "./pages/analyst/NetworkTraffic";
 import Notifications from "./pages/analyst/Notifications";
+import AnalystSettings from "./pages/analyst/Settings";
+import AnalystSidebar from "./pages/analyst/AnalystSidebar";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
@@ -42,10 +45,10 @@ const getAuthHeader = () => ({
 function App() {
   const [logs, setLogs] = useState([]);
 
-  // ── Fetch logs at the App level so all child routes share the same data ──
   const fetchLogs = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token) return; // not logged in yet, skip
+    if (!token) return;
+
     try {
       const res = await axios.get(`${API_BASE}/api/logs`, getAuthHeader());
       setLogs(res.data.items ?? res.data ?? []);
@@ -54,62 +57,66 @@ function App() {
     }
   }, []);
 
-  // Run once on mount (covers the case where the user is already logged in
-  // e.g. refreshing the page while a session is active)
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   return (
     <BrowserRouter>
       <Routes>
         {/* --- PUBLIC ROUTES --- */}
-        <Route path="/"                element={<Visitor />} />
-        <Route path="/login"           element={<Login />} />
-        <Route path="/register"        element={<Register />} />
-        <Route path="/about"           element={<About />} />
-        <Route path="/features"        element={<Features />} />
-        <Route path="/demo"            element={<Demo />} />
-        <Route path="/forgotpassword"  element={<ForgetPassword />} />
-        <Route path="/logout"          element={<Logout />} />
-        <Route path="/force-password-change" element={<ForcePasswordChange />} />
+        <Route path="/" element={<Visitor />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/demo" element={<Demo />} />
+        <Route path="/forgotpassword" element={<ForgetPassword />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route
+          path="/force-password-change"
+          element={<ForcePasswordChange />}
+        />
 
         {/* --- PROTECTED ZONE --- */}
         <Route element={<ProtectedRoute />}>
+          {/* Analyst Layout + Routes */}
+          <Route element={<AnalystSidebar />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/alert/:id" element={<AlertDetails />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/network-traffic" element={<NetworkTraffic />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<AnalystSettings />} />
+            <Route path="/analyst/profile" element={<AnalystProfile />} />
+            <Route path="/profile" element={<AnalystProfile />} />
+          </Route>
 
-          {/* Analyst Routes */}
-          <Route path="/dashboard"       element={<Dashboard />} />
-          <Route path="/alerts"          element={<Alerts />} />
-          <Route path="/alert/:id"       element={<AlertDetails />} />
-          <Route path="/reports"         element={<Reports />} />
-          <Route path="/network-traffic" element={<NetworkTraffic />} />
-          <Route path="/notifications"   element={<Notifications />} />
-          <Route path="/analyst/profile" element={<AnalystProfile />} />
-          <Route path="/profile"         element={<AnalystProfile />} />
-
-          {/* Admin Routes */}
+          {/* Admin Layout + Routes */}
           <Route path="/admin" element={<AdminSidebar />}>
             <Route
               index
               element={
-                // Pass onRefreshLogs so the Dashboard can also trigger a
-                // re-fetch (e.g. after the user adds a new log source in
-                // Settings and immediately navigates back to the dashboard)
                 <AdminDashboard logs={logs} onRefreshLogs={fetchLogs} />
               }
             />
-            <Route path="users"       element={<Usermanagement />} />
+            <Route path="users" element={<Usermanagement />} />
             <Route
-              path="settings"
+              path="log-management"
               element={
-                // Settings still receives setLogs so it can update the
-                // shared state when the user adds / removes a log source
-                <Settings logs={logs} setLogs={setLogs} onRefreshLogs={fetchLogs} />
+                <LogManagement
+                  logs={logs}
+                  setLogs={setLogs}
+                  onRefreshLogs={fetchLogs}
+                />
               }
             />
-            <Route path="profile"     element={<AdminProfile />} />
+            <Route path="settings" element={<AdminSettings />} />
             <Route path="maintenance" element={<DatabaseMaintenance />} />
-            <Route path="logout"      element={<Logout />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="logout" element={<Logout />} />
           </Route>
-
         </Route>
       </Routes>
     </BrowserRouter>

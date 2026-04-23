@@ -4,7 +4,111 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+/* Theme CSS Variables */
+:root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --bg-input: #1e293b;
+  --bg-hover: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-primary: #334155;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-bg: rgba(59, 130, 246, 0.1);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --transition: all 0.2s ease;
+}
+
+[data-theme="light"],
+body.light {
+  --bg-primary: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #f8fafc;
+  --bg-hover: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-primary: #e2e8f0;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-bg: rgba(37, 99, 235, 0.1);
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.1);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --error: #dc2626;
+  --error-bg: rgba(220, 38, 38, 0.1);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html {
+  transition: var(--transition);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: var(--transition);
+}
+
+#root {
   height: 100%;
   width: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: var(--transition);
 }
+
+/* Base element styles */
+*, *::before, *::after {
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+input, select, textarea, button {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius);
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--bg-hover);
+}
+
+.card, [class*='card'] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  transition: var(--transition);
+}
+
+.status-active {
+  background: var(--success-bg) !important;
+  color: var(--success) !important;
+  border-color: rgba(16,185,129,0.3) !important;
+}
+

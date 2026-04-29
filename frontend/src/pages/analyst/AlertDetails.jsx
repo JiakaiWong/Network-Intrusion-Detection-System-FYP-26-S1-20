@@ -11,7 +11,8 @@ import {
   getAlertById, 
   getNotes, 
   addNote, 
-  updateAlertStatus 
+  updateAlertStatus,
+  refreshAlertLocation 
 } from "../../services/api";
 
 const AlertDetails = () => {
@@ -26,6 +27,7 @@ const AlertDetails = () => {
   const [status, setStatus] = useState(location.state?.alert?.status || "new");
   const [saving, setSaving] = useState(false);
   const [notePosting, setNotePosting] = useState(false);
+  const [refreshingLocation, setRefreshingLocation] = useState(false);
 
   // Helper function to format ISO timestamp
   const formatTime = (isoString) => {
@@ -50,21 +52,31 @@ const AlertDetails = () => {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [selectedProgress, setSelectedProgress] = useState("new");
 
-  // 1. Effect to fetch Alert Metadata
+  // 1. Effect to fetch Alert Metadata and refresh location on every load
   useEffect(() => {
-    if (!alert && id) {
-      getAlertById(id)
-        .then((data) => {
-          setAlert(data.item);
-          setStatus(data.item?.status || "new");
-          setSelectedProgress(data.item?.status || "new");
-        })
-        .catch(console.error);
-    } else if (alert) {
-      setStatus(alert.status || "new");
-      setSelectedProgress(alert.status || "new");
-    }
-  }, [id, alert]);
+    if (!id) return;
+
+    const loadAlert = async () => {
+      try {
+        const data = await getAlertById(id);
+        const alertItem = data.item;
+        setAlert(alertItem);
+        setStatus(alertItem?.status || "new");
+        setSelectedProgress(alertItem?.status || "new");
+
+        if (alertItem?.id) {
+          const refreshData = await refreshAlertLocation(alertItem.id);
+          setAlert(refreshData.item);
+          setStatus(refreshData.item?.status || "new");
+          setSelectedProgress(refreshData.item?.status || "new");
+        }
+      } catch (error) {
+        console.error("Failed to load alert or refresh location:", error);
+      }
+    };
+
+    loadAlert();
+  }, [id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +137,21 @@ const AlertDetails = () => {
   const handleUpdateStatus = () => handleStatusChange(selectedProgress);
   const handleBack = () => navigate(-1);
 
+  const handleRefreshLocation = async () => {
+    if (!alert?.id) return;
+    setRefreshingLocation(true);
+    try {
+      const response = await refreshAlertLocation(alert.id);
+      setAlert(response.item);
+      setStatus(response.item?.status || "new");
+      setSelectedProgress(response.item?.status || "new");
+    } catch (error) {
+      console.error("Failed to refresh location:", error);
+    } finally {
+      setRefreshingLocation(false);
+    }
+  };
+
   if (!alert) {
     return (
       <div className="alert-page no-alert" style={{ color: 'var(--text-main)', padding: '2rem' }}>
@@ -140,6 +167,7 @@ const AlertDetails = () => {
   const alertType = alert.signature || alert.type || "Unknown";
   const idsSource = alert.proto || alert.ids || "—";
   const time = formatTime(alert.timestamp) || (alert.time || "—");
+  const destLocation = alert.dest_location || null;
 
   return (
     <div className="alert-details-container" style={{ padding: '2rem' }}>
@@ -155,7 +183,25 @@ const AlertDetails = () => {
           <div className="alert-overview-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem' }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <h2 className="section-title" style={{ margin: 0, color: 'var(--text-main)' }}>Alert Overview</h2>
-              <div style={{ display: "flex", gap: "0.4rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <button
+                  onClick={handleRefreshLocation}
+                  disabled={refreshingLocation}
+                  style={{
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: 6,
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-card)",
+                    color: "var(--text-main)",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}
+                >
+                  {refreshingLocation ? "⟳" : "🗺️"} {refreshingLocation ? "Refreshing..." : "Refresh Location"}
+                </button>
                 {["new", "investigating", "resolved"].map((s) => (
                   <button
                     key={s}
@@ -188,6 +234,20 @@ const AlertDetails = () => {
               <div className="value" style={{ color: 'var(--accent-main)', fontFamily: 'monospace' }}>{srcIp}</div>
               <div className="label" style={{ color: 'var(--text-muted)' }}>Destination IP</div>
               <div className="value" style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{dstIp}</div>
+              {destLocation && (
+                <>
+                  <div className="label" style={{ color: 'var(--text-muted)' }}>Dest. Location</div>
+                  <div className="value" style={{ color: 'var(--text-main)' }}>
+                    {destLocation.city ? `${destLocation.city}, ${destLocation.country_name || destLocation.country}` : destLocation.country_name || destLocation.country || "Unknown"}
+                  </div>
+                  <div className="label" style={{ color: 'var(--text-muted)' }}>Coordinates</div>
+                  <div className="value" style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                    {destLocation.latitude?.toFixed(4) || "—"}, {destLocation.longitude?.toFixed(4) || "—"}
+                  </div>
+                  <div className="label" style={{ color: 'var(--text-muted)' }}>Timezone</div>
+                  <div className="value" style={{ color: 'var(--text-main)' }}>{destLocation.timezone || "—"}</div>
+                </>
+              )}
             </div>
 
             <div className="description-box" style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-sidebar)', borderRadius: '8px' }}>

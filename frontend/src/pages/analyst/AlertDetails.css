@@ -885,6 +885,50 @@ button {
   z-index: 1000;
 }
 
+/* ── Geolocation Display ───────────────────────────────────── */
+.location-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background-color: var(--accent-dim);
+  border: 1px solid var(--accent-main);
+  border-radius: 6px;
+  color: var(--accent-main);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.location-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--bg-sidebar);
+  border-left: 3px solid var(--accent-main);
+  border-radius: 6px;
+}
+
+.location-info h4 {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.location-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.location-detail-item {
+  color: var(--text-muted);
+}
+
+.location-detail-item strong {
+  color: var(--text-main);
+  display: block;
+}
+
 .modal-box {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);

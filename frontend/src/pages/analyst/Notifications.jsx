@@ -50,7 +50,7 @@ function Notifications() {
     <main className="dashboard-main" style={{...s.main, backgroundColor: colors.bg, color: colors.text}}>
       <div style={s.headerRow}>
         <div>
-          <h1 style={s.heading}>Notifications</h1>
+          <h1 className="page-title">Notifications</h1>
           <div style={{...s.subheading, color: colors.subtext}}>Unread: {unreadCount}</div>
         </div>
         <button

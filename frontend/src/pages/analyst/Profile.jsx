@@ -127,7 +127,7 @@ function Profile() {
       <div style={s.page}>
         {toast && <div style={s.toast(toast.type)}>{toast.message}</div>}
 
-        <h1 style={s.headerTitle}>Profile</h1>
+        <h1 className="page-title">Profile</h1>
         <p style={s.headerSub}>Manage your account settings</p>
 
         {/* Hero */}

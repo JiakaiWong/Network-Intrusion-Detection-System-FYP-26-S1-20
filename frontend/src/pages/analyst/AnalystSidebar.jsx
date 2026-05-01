@@ -60,11 +60,14 @@ const handleLogout = () => {
               <li className={isActive("/reports", { prefix: true }) ? "active" : ""}>
                 <Link to="/reports">Reports</Link>
               </li>
+              <li className={isActive("/threat-map") ? "active" : ""}>
+                <Link to="/threat-map">Threat Map</Link>
+              </li>
               <li className={isActive("/notifications") ? "active" : ""}>
                 <Link to="/notifications">Notifications</Link>
               </li>
               <li className={isActive("/settings", { prefix: true }) ? "active" : ""}>
-                <Link to="/settings">Settings</Link>
+                <Link to="/settings">Themes</Link>
               </li>
               <li className={isActive("/analyst/profile") ? "active" : ""}>
                 <Link to="/analyst/profile">Profile</Link>

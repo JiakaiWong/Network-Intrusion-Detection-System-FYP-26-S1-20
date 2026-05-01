@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./AlertDetails.css";
-import { 
-  FaArrowLeft, 
-  FaExclamationCircle, 
-  FaLink, 
-  FaCloudDownloadAlt 
+import {
+  FaArrowLeft,
+  FaExclamationCircle,
+  FaLink,
+  FaCloudDownloadAlt,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import { 
   getAlertById, 
@@ -174,7 +175,7 @@ const AlertDetails = () => {
       {/* Header */}
       <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <FaArrowLeft className="back-icon" onClick={handleBack} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} />
-        <h1 style={{ color: 'var(--text-main)', fontSize: '1.5rem', margin: 0 }}>Alert Details</h1>
+        <h1 className="page-title">Alert Details</h1>
       </div>
 
       <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
@@ -223,7 +224,7 @@ const AlertDetails = () => {
 
             <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px' }}>
               <div className="label" style={{ color: 'var(--text-muted)' }}>Alert Type</div>
-              <div className="value" style={{ color: 'var(--text-main)' }}>{alertType}</div>
+              <div className="value" style={{ color: 'var(--text-main)', textTransform: 'capitalize' }}>{alertType}</div>
               <div className="label" style={{ color: 'var(--text-muted)' }}>Status</div>
               <div className="value" style={{ textTransform: "capitalize", color: 'var(--text-main)' }}>{status}</div>
               <div className="label" style={{ color: 'var(--text-muted)' }}>IDS Source</div>
@@ -271,6 +272,18 @@ const AlertDetails = () => {
               <FaLink style={{ color: 'var(--accent-main)' }} />
               <span>Link Alerts</span>
             </div>
+            {destLocation?.latitude && destLocation?.longitude && (
+              <div
+                className="action-item"
+                onClick={() => navigate(`/threat-map?alertId=${alert?.id}`)}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', color: 'var(--accent-main)', cursor: 'pointer', borderRadius: 6, transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <FaMapMarkerAlt style={{ color: 'var(--accent-main)' }} />
+                <span style={{ fontWeight: 500 }}>View on Threat Map</span>
+              </div>
+            )}
           </div>
 
           <div className="card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '12px' }}>

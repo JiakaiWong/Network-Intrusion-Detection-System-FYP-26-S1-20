@@ -81,7 +81,7 @@ function Reports() {
   return (
     <main className="dashboard-main" style={{ ...s.main, backgroundColor: colors.bg }}>
       <div style={s.headerRow}>
-        <h1 style={{ ...s.heading, color: colors.text }}>Reports</h1>
+        <h1 className="page-title">Reports</h1>
         <button style={s.primaryBtn} onClick={generate}>Generate New Report</button>
       </div>
 
@@ -106,7 +106,7 @@ function Reports() {
               {["HIGH_ONLY", "HIGH_MED", "ALL"].map((val) => (
                 <label key={val} style={{ ...s.radioItem, color: colors.text }}>
                   <input type="radio" name="sev" checked={severity === val} onChange={() => setSeverity(val)} />
-                  <span>{val.replace("_", " ").toLowerCase()}</span>
+                  <span>{val.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}</span>
                 </label>
               ))}
             </div>
@@ -221,9 +221,9 @@ const getDynamicStyles = (colors) => ({
   input: { border: "1px solid", borderRadius: "10px", padding: "0.75rem", outline: "none" },
   select: { border: "1px solid", borderRadius: "10px", padding: "0.75rem", outline: "none" },
   radioRow: { display: "flex", gap: "1rem", padding: "0.75rem", border: "1px solid", borderRadius: "12px" },
-  radioItem: { display: "flex", gap: "0.5rem", alignItems: "center", fontWeight: 700 },
+  radioItem: { display: "flex", gap: "0.5rem", alignItems: "center", fontWeight: 400 },
   checkRow: { display: "flex", gap: "0.8rem", flexWrap: "wrap" },
-  checkItem: { display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.65rem 0.85rem", border: "1px solid", borderRadius: "12px", fontWeight: 800 },
+  checkItem: { display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.65rem 0.85rem", border: "1px solid", borderRadius: "12px", fontWeight: 400 },
   actions: { display: "flex", gap: "0.6rem", justifyContent: "flex-end" },
   primaryBtn: { backgroundColor: "#16a34a", border: "none", color: "#fff", padding: "0.75rem 1rem", borderRadius: "10px", cursor: "pointer", fontWeight: 800 },
   secondaryBtn: { border: "1px solid", padding: "0.75rem 1rem", borderRadius: "10px", cursor: "pointer", fontWeight: 800 },

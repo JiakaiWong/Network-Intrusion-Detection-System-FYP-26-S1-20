@@ -1,45 +1,180 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiEye, FiRefreshCw } from 'react-icons/fi';
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  LineChart, Line,
+  ScatterChart, Scatter, ZAxis,
+} from 'recharts';
 import './analyst.css';
 import AnalystSidebar from './AnalystSidebar';
 
-// ── PieChart ─────────────────────────────────────────────────────────────────
-const PieChart = ({ high = 0, medium = 0, low = 0 }) => {
-  const data = [
-    { value: low, color: '#22c55e' },
-    { value: medium, color: '#f59e0b' },
-    { value: high, color: '#ef4444' },
+const SEV_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
+
+// ── Distribution Chart (switchable) ──────────────────────────────────────────
+const DistributionChart = ({ high = 0, medium = 0, low = 0, chartType = 'donut' }) => {
+  const pieData = [
+    { name: 'High', value: high, color: SEV_COLORS.high },
+    { name: 'Medium', value: medium, color: SEV_COLORS.medium },
+    { name: 'Low', value: low, color: SEV_COLORS.low },
+  ].filter(d => d.value > 0);
+
+  const barData = [
+    { name: 'High', count: high, fill: SEV_COLORS.high },
+    { name: 'Medium', count: medium, fill: SEV_COLORS.medium },
+    { name: 'Low', count: low, fill: SEV_COLORS.low },
   ];
-  const total = data.reduce((s, d) => s + d.value, 0) || 1;
-  let cum = 0;
-  const seg = (value, start) => {
-    const angle = (value / total) * 2 * Math.PI;
-    const end = start + angle;
-    const x1 = 50 + 40 * Math.sin(start);
-    const y1 = 50 - 40 * Math.cos(start);
-    const x2 = 50 + 40 * Math.sin(end);
-    const y2 = 50 - 40 * Math.cos(end);
-    return `M 50,50 L ${x1},${y1} A 40,40 0 ${angle > Math.PI ? 1 : 0} 1 ${x2},${y2} Z`;
-  };
+
+  if (chartType === 'bar') {
+    return (
+      <ResponsiveContainer width="100%" height={160}>
+        <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 4, left: -20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+          <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+          <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-main)' }} />
+          {barData.map(d => (
+            <Bar key={d.name} dataKey="count" data={[d]} fill={d.fill} radius={[4, 4, 0, 0]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  const total = high + medium + low || 1;
   return (
-    <div className="pie-chart-container">
-      <svg viewBox="0 0 100 100" width="100%" height="120">
-        {data.map((d, i) => {
-          const path = seg(d.value, cum);
-          cum += (d.value / total) * 2 * Math.PI;
-          return <path key={i} d={path} fill={d.color} stroke="var(--bg-card)" strokeWidth="0.5" />;
-        })}
-        <circle cx="50" cy="50" r="20" fill="var(--bg-card)" stroke="var(--bg-card)" strokeWidth="1" />
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.78rem' }}>
-        {[['High', '#ef4444', high], ['Medium', '#f59e0b', medium], ['Low', '#22c55e', low]].map(([l, c, v]) => (
-          <span key={l} style={{ color: c }}>● {l} ({v})</span>
-        ))}
-      </div>
-    </div>
+    <ResponsiveContainer width="100%" height={160}>
+      <PieChart>
+        <Pie
+          data={pieData.length ? pieData : [{ name: 'None', value: 1, color: 'var(--border-color)' }]}
+          cx="50%" cy="50%"
+          innerRadius={chartType === 'donut' ? 35 : 0}
+          outerRadius={60}
+          dataKey="value"
+          strokeWidth={0}
+        >
+          {(pieData.length ? pieData : [{ color: 'var(--border-color)' }]).map((entry, i) => (
+            <Cell key={i} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-main)' }} />
+        <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{v}</span>} />
+      </PieChart>
+    </ResponsiveContainer>
   );
 };
+
+// ── Trends Chart (switchable) ─────────────────────────────────────────────────
+const TrendsChart = ({ alerts = [], chartType = 'bar' }) => {
+  // Group alerts by hour
+  const hourMap = {};
+  alerts.forEach(a => {
+    if (!a.timestamp) return;
+    const d = new Date(a.timestamp);
+    const key = `${d.getHours().toString().padStart(2, '0')}:00`;
+    if (!hourMap[key]) hourMap[key] = { time: key, high: 0, medium: 0, low: 0 };
+    hourMap[key][a.severity_label] = (hourMap[key][a.severity_label] || 0) + 1;
+  });
+  const data = Object.values(hourMap).sort((a, b) => a.time.localeCompare(b.time));
+
+  if (!data.length) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 160, color: 'var(--text-muted)', fontSize: '0.85rem' }}>No trend data available</div>;
+  }
+
+  const commonProps = {
+    data,
+    margin: { top: 4, right: 8, bottom: 4, left: -20 },
+  };
+  const axisProps = { tick: { fill: 'var(--text-muted)', fontSize: 11 } };
+  const tooltipStyle = { contentStyle: { background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-main)' } };
+  const gridProps = { strokeDasharray: "3 3", stroke: "var(--border-color)" };
+
+  if (chartType === 'radar') {
+    // Line chart — smooth curves with visible dots per data point
+    return (
+      <ResponsiveContainer width="100%" height={160}>
+        <LineChart {...commonProps}>
+          <CartesianGrid {...gridProps} />
+          <XAxis dataKey="time" {...axisProps} />
+          <YAxis {...axisProps} />
+          <Tooltip {...tooltipStyle} />
+          <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{v}</span>} />
+          <Line type="monotone" dataKey="high" stroke={SEV_COLORS.high} strokeWidth={2} dot={{ r: 3, fill: SEV_COLORS.high }} activeDot={{ r: 5 }} />
+          <Line type="monotone" dataKey="medium" stroke={SEV_COLORS.medium} strokeWidth={2} dot={{ r: 3, fill: SEV_COLORS.medium }} activeDot={{ r: 5 }} />
+          <Line type="monotone" dataKey="low" stroke={SEV_COLORS.low} strokeWidth={2} dot={{ r: 3, fill: SEV_COLORS.low }} activeDot={{ r: 5 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (chartType === 'scatter') {
+    // Scatter plot — each severity as a dot cloud by hour
+    const toScatter = (sev) =>
+      alerts
+        .filter(a => a.severity_label === sev && a.timestamp)
+        .map(a => {
+          const d = new Date(a.timestamp);
+          return { x: d.getHours() + d.getMinutes() / 60, y: 1, z: 1 };
+        });
+
+    return (
+      <ResponsiveContainer width="100%" height={160}>
+        <ScatterChart margin={{ top: 4, right: 8, bottom: 4, left: -20 }}>
+          <CartesianGrid {...gridProps} />
+          <XAxis type="number" dataKey="x" name="Hour" domain={[0, 23]} tickCount={8}
+            tickFormatter={v => `${Math.floor(v)}:00`} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+          <YAxis type="number" dataKey="y" hide />
+          <ZAxis type="number" dataKey="z" range={[20, 20]} />
+          <Tooltip
+            cursor={{ strokeDasharray: '3 3' }}
+            content={({ payload }) => {
+              if (!payload?.length) return null;
+              const h = Math.floor(payload[0]?.value);
+              return (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 6, padding: '6px 10px', fontSize: 11, color: 'var(--text-main)' }}>
+                  {`${h}:00 – ${h + 1}:00`}
+                </div>
+              );
+            }}
+          />
+          <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{v}</span>} />
+          <Scatter name="high" data={toScatter('high')} fill={SEV_COLORS.high} fillOpacity={0.8} />
+          <Scatter name="medium" data={toScatter('medium')} fill={SEV_COLORS.medium} fillOpacity={0.8} />
+          <Scatter name="low" data={toScatter('low')} fill={SEV_COLORS.low} fillOpacity={0.8} />
+        </ScatterChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  // default: bar
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart {...commonProps}>
+        <CartesianGrid {...gridProps} />
+        <XAxis dataKey="time" {...axisProps} />
+        <YAxis {...axisProps} />
+        <Tooltip {...tooltipStyle} />
+        <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{v}</span>} />
+        <Bar dataKey="high" fill={SEV_COLORS.high} radius={[3, 3, 0, 0]} />
+        <Bar dataKey="medium" fill={SEV_COLORS.medium} radius={[3, 3, 0, 0]} />
+        <Bar dataKey="low" fill={SEV_COLORS.low} radius={[3, 3, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
+const ChartTypeBtn = ({ active, onClick, label }) => (
+  <button onClick={onClick} style={{
+    background: active ? 'var(--accent-main)' : 'transparent',
+    border: '1px solid var(--border-color)',
+    borderRadius: 4,
+    color: active ? '#fff' : 'var(--text-muted)',
+    padding: '2px 8px',
+    cursor: 'pointer',
+    fontSize: '0.72rem',
+  }}>{label}</button>
+);
 
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -50,6 +185,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [backendStatus, setBackendStatus] = useState("Connecting…");
   const [telegramId, setTelegramId] = useState("");
+  const [trendsChartType, setTrendsChartType] = useState('bar'); // 'bar' | 'radar' | 'scatter'
+  const [distChartType, setDistChartType] = useState('donut');
 
   // Summary counts derived from live data
   const high = alerts.filter(a => a.severity_label === "high").length;
@@ -128,7 +265,7 @@ const Dashboard = () => {
     <>
       {/* Status bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>Dashboard Overview</h1>
+        <h1 className="page-title">Dashboard Overview</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '0.8rem', color: backendStatus.startsWith('✅') ? '#22c55e' : '#f59e0b' }}>
             {backendStatus}
@@ -168,22 +305,29 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Trends + Pie */}
+      {/* Trends + Distribution */}
       <div className="trends-distribution-row">
         <div className="trends-card" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="trends-header">
             <span style={{ color: 'var(--text-main)' }}>Threat Trends</span>
-            <select className="time-filter" style={{ backgroundColor: 'var(--bg-sidebar)', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
-              <option>24 hours</option>
-              <option>7 days</option>
-              <option>30 days</option>
-            </select>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[['bar','Bar'],['radar','Line'],['scatter','Scatter']].map(([v,l]) => (
+                <ChartTypeBtn key={v} active={trendsChartType === v} onClick={() => setTrendsChartType(v)} label={l} />
+              ))}
+            </div>
           </div>
-          <div className="chart-placeholder" style={{ color: 'var(--text-muted)' }}>📈 Live chart coming soon</div>
+          <TrendsChart alerts={alerts} chartType={trendsChartType} />
         </div>
         <div className="distribution-card" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-          <div className="distribution-header" style={{ color: 'var(--text-main)' }}>Alerts Distribution</div>
-          <PieChart high={high} medium={medium} low={low} />
+          <div className="distribution-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
+            <span>Alerts Distribution</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[['donut','Donut'],['pie','Pie'],['bar','Bar']].map(([v,l]) => (
+                <ChartTypeBtn key={v} active={distChartType === v} onClick={() => setDistChartType(v)} label={l} />
+              ))}
+            </div>
+          </div>
+          <DistributionChart high={high} medium={medium} low={low} chartType={distChartType} />
         </div>
       </div>
 
@@ -216,7 +360,7 @@ const Dashboard = () => {
                 {alerts.map((alert) => (
                   <tr key={alert.id}>
                     <td><span className={`severity-badge ${alert.severity_label}`}>{alert.severity_label}</span></td>
-                    <td style={{ color: 'var(--text-main)' }}>{alert.signature}</td>
+                    <td style={{ color: 'var(--text-main)', textTransform: 'capitalize' }}>{alert.signature}</td>
                     <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{alert.src_ip}</td>
                     <td style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{alert.dest_ip}</td>
                     <td style={{ color: 'var(--text-main)' }}>{alert.proto}</td>

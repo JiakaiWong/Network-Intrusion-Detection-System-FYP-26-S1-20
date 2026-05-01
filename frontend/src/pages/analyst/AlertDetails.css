@@ -522,7 +522,7 @@ button {
 
 .alerts-header h1 {
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-main);
 }
 
@@ -587,13 +587,18 @@ button {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  overflow-x: auto;
+  overflow: hidden;
   margin-bottom: 1rem;
+}
+
+.table-container .table-scroll {
+  overflow-x: auto;
 }
 
 .table-container table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   min-width: 800px;
 }
 
@@ -609,12 +614,23 @@ button {
   border-bottom: 1px solid var(--border-color);
 }
 
+.table-container tbody tr {
+  height: 56px;
+}
+
 .table-container tbody td {
-  padding: 0.75rem 1rem;
+  padding: 0 1rem;
+  height: 56px;
   border-bottom: 1px solid var(--border-light);
   color: var(--text-main);
   font-size: 0.85rem;
   vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
 }
 
 .table-container tbody tr:last-child td { border-bottom: none; }
@@ -844,9 +860,14 @@ button {
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+  background-color: var(--bg-card);
   color: var(--text-muted);
   font-size: 0.82rem;
   text-align: center;
+}
+
+.footer * {
+  color: var(--text-muted);
 }
 
 /* ── Theme Toggle Button (Settings page) ────────────────────── */

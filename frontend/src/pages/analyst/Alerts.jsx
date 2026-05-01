@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FiEye, FiDownload, FiSearch } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { FiEye, FiDownload, FiSearch, FiMap } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
 import { refreshAllLocations } from "../../services/api";
 
@@ -9,6 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 const Alerts = () => {
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
+  const navigate = useNavigate();
 
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -285,7 +286,7 @@ const Alerts = () => {
           ) : currentAlerts.length === 0 ? (
             <p className="empty-text">No alerts found.</p>
           ) : (
-            <table>
+            <div className="table-scroll"><table>
               <thead>
                 <tr>
                   <th>Severity</th>
@@ -297,11 +298,14 @@ const Alerts = () => {
                   <th>IDS Source</th>
                   <th>Time</th>
                   <th>Status</th>
-                  <th></th>
+                  <th>View</th>
+                  <th>Map</th>
                 </tr>
               </thead>
               <tbody>
-                {currentAlerts.map((alert) => (
+                {currentAlerts.map((alert) => {
+                  const hasgeo = alert.dest_location?.latitude && alert.dest_location?.longitude;
+                  return (
                   <tr key={alert.id}>
                     <td>
                       <span
@@ -310,7 +314,7 @@ const Alerts = () => {
                         {alert.severity_label || "-"}
                       </span>
                     </td>
-                    <td>{alert.signature || "-"}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{alert.signature || "-"}</td>
                     <td>{alert.src_ip || "-"}</td>
                     <td>{alert.dest_ip || "-"}</td>
                     <td>
@@ -324,7 +328,7 @@ const Alerts = () => {
                     </td>
                     <td>{alert.dest_port || "-"}</td>
                     <td>{alert.proto || "-"}</td>
-                    <td>{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([], 
+                    <td>{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([],
                       { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}</td>
                     <td>{alert.status || "new"}</td>
                     <td>
@@ -332,10 +336,23 @@ const Alerts = () => {
                         <FiEye className="view-icon" />
                       </Link>
                     </td>
+                    <td>
+                      {hasgeo ? (
+                        <FiMap
+                          className="view-icon"
+                          title="View on Threat Map"
+                          style={{ cursor: 'pointer', color: 'var(--accent-main)' }}
+                          onClick={() => navigate(`/threat-map?alertId=${alert.id}`)}
+                        />
+                      ) : (
+                        <span style={{ color: 'var(--text-dim)' }}>—</span>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 

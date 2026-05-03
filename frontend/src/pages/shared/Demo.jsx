@@ -1,38 +1,96 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import PublicNavbar from "../../components/PublicNavbar";
+
+const ALL_ALERTS = [
+  { id: "AL-1001", sev: "HIGH", type: "SQL Injection",   src: "192.168.1.12", dst: "10.0.0.45",  when: "3 mins ago",  ids: "Suricata" },
+  { id: "AL-1002", sev: "MED",  type: "Suspicious DNS",  src: "192.168.1.52", dst: "8.8.8.8",    when: "12 mins ago", ids: "Zeek" },
+  { id: "AL-1003", sev: "LOW",  type: "Port Scan",       src: "172.16.8.12",  dst: "10.0.0.12",  when: "30 mins ago", ids: "Snort" },
+  { id: "AL-1004", sev: "HIGH", type: "Brute Force",     src: "10.0.0.45",    dst: "10.0.0.12",  when: "1 hr ago",    ids: "Suricata" },
+  { id: "AL-1005", sev: "MED",  type: "Beacon Activity", src: "10.0.0.77",    dst: "45.33.12.88",when: "2 hrs ago",   ids: "Zeek" },
+  { id: "AL-1006", sev: "LOW",  type: "ICMP Flood",      src: "192.168.5.3",  dst: "10.0.0.1",   when: "3 hrs ago",   ids: "Snort" },
+];
+
+const STAT_TARGETS = [
+  { label: "Total Alerts", target: 1245, tone: null },
+  { label: "High",         target: 12,   tone: "HIGH" },
+  { label: "Medium",       target: 58,   tone: "MED" },
+  { label: "Low",          target: 175,  tone: "LOW" },
+];
+
+function useCountUp(target, duration = 1200) {
+  const [value, setValue] = useState(0);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    let start = null;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      setValue(Math.floor(progress * target));
+      if (progress < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, duration]);
+
+  return value;
+}
+
+function StatCard({ label, target, tone }) {
+  const value = useCountUp(target);
+  const toneStyle = tone ? statTone(tone) : {};
+  return (
+    <div style={{ ...styles.stat, ...toneStyle }}>
+      <div style={styles.statLabel}>{label}</div>
+      <div style={styles.statValue}>{value.toLocaleString()}</div>
+    </div>
+  );
+}
+
+function statTone(t) {
+  if (t === "HIGH") return { borderColor: "#ef4444" };
+  if (t === "MED")  return { borderColor: "#f59e0b" };
+  if (t === "LOW")  return { borderColor: "#10b981" };
+  return {};
+}
+
+function sevStyle(sev) {
+  if (sev === "HIGH") return { backgroundColor: "#7f1d1d", borderColor: "#ef4444" };
+  if (sev === "MED")  return { backgroundColor: "#78350f", borderColor: "#f59e0b" };
+  return { backgroundColor: "#064e3b", borderColor: "#10b981" };
+}
+
+function Kv({ k, v, mono }) {
+  return (
+    <div style={styles.kv}>
+      <div style={styles.kvKey}>{k}</div>
+      <div style={{ ...styles.kvVal, ...(mono ? styles.mono : {}) }}>{v}</div>
+    </div>
+  );
+}
+
+const SEV_FILTERS = ["ALL", "HIGH", "MED", "LOW"];
 
 function Demo() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(null);
+  const [open, setOpen]         = useState(false);
+  const [active, setActive]     = useState(null);
+  const [sevFilter, setSevFilter] = useState("ALL");
 
-  const alerts = [
-    { id: "AL-1001", sev: "HIGH", type: "SQL Injection", src: "192.168.1.12", dst: "10.0.0.45", when: "3 mins ago", ids: "Suricata" },
-    { id: "AL-1002", sev: "MED", type: "Suspicious DNS", src: "192.168.1.52", dst: "8.8.8.8", when: "12 mins ago", ids: "Zeek" },
-    { id: "AL-1003", sev: "LOW", type: "Port Scan", src: "172.16.8.12", dst: "10.0.0.12", when: "30 mins ago", ids: "Snort" },
-    { id: "AL-1004", sev: "HIGH", type: "Brute Force", src: "10.0.0.45", dst: "10.0.0.12", when: "1 hr ago", ids: "Suricata" },
-  ];
+  const filtered = sevFilter === "ALL"
+    ? ALL_ALERTS
+    : ALL_ALERTS.filter((a) => a.sev === sevFilter);
 
-  const openAlert = (a) => {
-    setActive(a);
-    setOpen(true);
-  };
+  const openAlert = (a) => { setActive(a); setOpen(true); };
 
   return (
     <div style={styles.page}>
-      <nav style={styles.navbar}>
-        <h2 style={styles.logo}>Intrusion Detection</h2>
-        <div style={styles.navLinks}>
-          <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
-          <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>
-          <span style={styles.navLink} onClick={() => navigate("/features")}>Features</span>
-          <span style={styles.navActive} onClick={() => navigate("/demo")}>Demo</span>
-          <span style={styles.navLink} onClick={() => navigate("/login")}>Login</span>
-        </div>
-      </nav>
+      <PublicNavbar active="Demo" />
 
       <section style={styles.hero}>
         <div style={styles.heroLeft}>
+          <div style={styles.heroBadge}>Interactive Preview</div>
           <h1 style={styles.heroTitle}>Interactive Demo</h1>
           <p style={styles.heroSubtitle}>
             Explore a sample analyst dashboard with demo data. Some actions are disabled until you log in.
@@ -63,11 +121,11 @@ function Demo() {
           </aside>
 
           <main style={styles.main}>
+            {/* Animated stat cards */}
             <div style={styles.cards}>
-              <StatCard label="Total Alerts" value="1,245" />
-              <StatCard label="High" value="12" tone="HIGH" />
-              <StatCard label="Medium" value="58" tone="MED" />
-              <StatCard label="Low" value="175" tone="LOW" />
+              {STAT_TARGETS.map((s) => (
+                <StatCard key={s.label} label={s.label} target={s.target} tone={s.tone} />
+              ))}
             </div>
 
             <div style={styles.row}>
@@ -89,6 +147,19 @@ function Demo() {
                 <button style={styles.ghostBtn} onClick={() => navigate("/login")}>Open Analyst View →</button>
               </div>
 
+              {/* Severity filter tabs */}
+              <div style={styles.filterRow}>
+                {SEV_FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    style={sevFilter === f ? styles.filterTabActive : styles.filterTab}
+                    onClick={() => setSevFilter(f)}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
               <div style={styles.tableWrap}>
                 <table style={styles.table}>
                   <thead>
@@ -103,21 +174,29 @@ function Demo() {
                     </tr>
                   </thead>
                   <tbody>
-                    {alerts.map((a) => (
-                      <tr key={a.id} style={styles.tr}>
-                        <td style={styles.td}>
-                          <span style={{ ...styles.badge, ...sevStyle(a.sev) }}>{a.sev}</span>
-                        </td>
-                        <td style={styles.td}>{a.type}</td>
-                        <td style={styles.tdMono}>{a.src}</td>
-                        <td style={styles.tdMono}>{a.dst}</td>
-                        <td style={styles.td}><span style={styles.tag}>{a.ids}</span></td>
-                        <td style={styles.td}>{a.when}</td>
-                        <td style={styles.td}>
-                          <button style={styles.smallBtn} onClick={() => openAlert(a)}>View</button>
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ ...styles.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>
+                          No alerts for this filter.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filtered.map((a) => (
+                        <tr key={a.id} style={styles.tr}>
+                          <td style={styles.td}>
+                            <span style={{ ...styles.badge, ...sevStyle(a.sev) }}>{a.sev}</span>
+                          </td>
+                          <td style={styles.td}>{a.type}</td>
+                          <td style={styles.tdMono}>{a.src}</td>
+                          <td style={styles.tdMono}>{a.dst}</td>
+                          <td style={styles.td}><span style={styles.tag}>{a.ids}</span></td>
+                          <td style={styles.td}>{a.when}</td>
+                          <td style={styles.td}>
+                            <button style={styles.smallBtn} onClick={() => openAlert(a)}>View</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -140,11 +219,11 @@ function Demo() {
             </div>
             <div style={styles.modalBody}>
               <div style={styles.kvGrid}>
-                <Kv k="Severity" v={active.sev} />
-                <Kv k="IDS Source" v={active.ids} />
-                <Kv k="Source IP" v={active.src} mono />
+                <Kv k="Severity"       v={active.sev} />
+                <Kv k="IDS Source"     v={active.ids} />
+                <Kv k="Source IP"      v={active.src} mono />
                 <Kv k="Destination IP" v={active.dst} mono />
-                <Kv k="Time" v={active.when} />
+                <Kv k="Time"           v={active.when} />
               </div>
               <div style={styles.divider} />
               <div style={styles.noteTitle}>Investigation Notes (demo)</div>
@@ -166,38 +245,6 @@ function Demo() {
   );
 }
 
-function StatCard({ label, value, tone }) {
-  const toneStyle = tone ? statTone(tone) : {};
-  return (
-    <div style={{ ...styles.stat, ...toneStyle }}>
-      <div style={styles.statLabel}>{label}</div>
-      <div style={styles.statValue}>{value}</div>
-    </div>
-  );
-}
-
-function statTone(t) {
-  if (t === "HIGH") return { borderColor: "#ef4444" };
-  if (t === "MED") return { borderColor: "#f59e0b" };
-  if (t === "LOW") return { borderColor: "#10b981" };
-  return {};
-}
-
-function sevStyle(sev) {
-  if (sev === "HIGH") return { backgroundColor: "#7f1d1d", borderColor: "#ef4444" };
-  if (sev === "MED") return { backgroundColor: "#78350f", borderColor: "#f59e0b" };
-  return { backgroundColor: "#064e3b", borderColor: "#10b981" };
-}
-
-function Kv({ k, v, mono }) {
-  return (
-    <div style={styles.kv}>
-      <div style={styles.kvKey}>{k}</div>
-      <div style={{ ...styles.kvVal, ...(mono ? styles.mono : {}) }}>{v}</div>
-    </div>
-  );
-}
-
 const styles = {
   page: {
     backgroundColor: "#0f172a",
@@ -207,33 +254,6 @@ const styles = {
     flexDirection: "column",
     fontFamily: "sans-serif",
   },
-  navbar: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1e293b",
-    padding: "1rem 2rem",
-  },
-  logo: { color: "#38bdf8", fontSize: "1.2rem", margin: 0 },
-  navLinks: { display: "flex", flexDirection: "row", gap: "0.5rem", flexWrap: "wrap" },
-  navLink: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#94a3b8",
-    fontSize: "0.95rem",
-  },
-  navActive: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#f1f5f9",
-    fontWeight: "bold",
-    fontSize: "0.95rem",
-    borderBottom: "2px solid #3b82f6",
-    paddingBottom: "2px",
-  },
   hero: {
     display: "flex",
     justifyContent: "space-between",
@@ -242,6 +262,18 @@ const styles = {
     padding: "3rem 2rem",
   },
   heroLeft: { maxWidth: "720px" },
+  heroBadge: {
+    display: "inline-block",
+    backgroundColor: "rgba(59,130,246,0.12)",
+    border: "1px solid rgba(59,130,246,0.3)",
+    color: "#60a5fa",
+    borderRadius: "999px",
+    padding: "0.3rem 0.9rem",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    marginBottom: "0.75rem",
+    letterSpacing: "0.03em",
+  },
   heroTitle: { fontSize: "2.4rem", fontWeight: 900, marginBottom: "0.8rem" },
   heroSubtitle: { color: "#94a3b8", fontSize: "1.05rem", margin: 0, lineHeight: 1.6 },
   heroCtas: { display: "flex", gap: "0.75rem", marginTop: "1.3rem", flexWrap: "wrap" },
@@ -323,6 +355,37 @@ const styles = {
     padding: "1.2rem",
     color: "#94a3b8",
   },
+
+  // Severity filter tabs
+  filterRow: {
+    display: "flex",
+    gap: "0.4rem",
+    marginTop: "0.9rem",
+    flexWrap: "wrap",
+  },
+  filterTab: {
+    padding: "0.3rem 0.9rem",
+    borderRadius: "999px",
+    border: "1px solid #334155",
+    backgroundColor: "transparent",
+    color: "#94a3b8",
+    fontSize: "0.8rem",
+    fontWeight: 700,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
+  },
+  filterTabActive: {
+    padding: "0.3rem 0.9rem",
+    borderRadius: "999px",
+    border: "1px solid #3b82f6",
+    backgroundColor: "rgba(59,130,246,0.15)",
+    color: "#60a5fa",
+    fontSize: "0.8rem",
+    fontWeight: 700,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
+  },
+
   tableWrap: { overflowX: "auto", borderRadius: "12px", border: "1px solid #24324f", marginTop: "0.8rem" },
   table: { width: "100%", borderCollapse: "collapse", minWidth: "860px", backgroundColor: "#0b1224" },
   th: {
@@ -401,8 +464,6 @@ const styles = {
     fontSize: "0.8rem",
     borderTop: "1px solid #1e293b",
   },
-
-  // Modal
   modalOverlay: {
     position: "fixed",
     inset: 0,
@@ -449,6 +510,7 @@ const styles = {
     color: "#94a3b8",
     outline: "none",
     resize: "vertical",
+    boxSizing: "border-box",
   },
   modalFooter: { display: "flex", justifyContent: "flex-end", gap: "0.6rem", padding: "1rem", borderTop: "1px solid #24324f", flexWrap: "wrap" },
 };

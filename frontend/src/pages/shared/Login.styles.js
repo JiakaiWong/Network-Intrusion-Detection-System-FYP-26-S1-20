@@ -9,44 +9,6 @@ export const styles = {
     color: "#f1f5f9" 
   },
 
-  // --- Navigation Bar ---
-  navbar: { 
-    display: "flex", 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between", 
-    backgroundColor: "#1e293b", 
-    padding: "1rem 2rem",
-    boxSizing: "border-box"
-  },
-  logo: { 
-    color: "#38bdf8", 
-    fontSize: "1.2rem", 
-    margin: 0, 
-    cursor: "pointer",
-    fontWeight: "bold"
-  },
-  navLinks: { 
-    display: "flex", 
-    flexDirection: "row", 
-    gap: "1.5rem" // Increased gap for better readability
-  },
-  navLink: { 
-    padding: "0.5rem 0.2rem", 
-    cursor: "pointer", 
-    color: "#94a3b8", 
-    fontSize: "0.95rem",
-    transition: "color 0.2s"
-  },
-  navActive: { 
-    padding: "0.5rem 0.2rem", 
-    cursor: "pointer", 
-    color: "#f1f5f9", 
-    fontWeight: "bold", 
-    fontSize: "0.95rem", 
-    borderBottom: "2px solid #3b82f6" 
-  },
-
   // --- Main Container & Card ---
   container: { 
     flex: 1, 

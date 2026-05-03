@@ -1,25 +1,62 @@
 import { useNavigate } from "react-router-dom";
+import PublicNavbar from "../../components/PublicNavbar";
+
+const features = [
+  {
+    icon: "🚨",
+    title: "Real-time Alerts",
+    text: "Monitor threats from Snort, Suricata, Zeek, and Kismet the moment they occur.",
+    tags: ["Real-time", "Multi-IDS"],
+    accent: "#ef4444",
+  },
+  {
+    icon: "🔍",
+    title: "Advanced Analytics",
+    text: "Visualize attack patterns and threat intelligence with interactive charts and filters.",
+    tags: ["Charts", "Filtering"],
+    accent: "#3b82f6",
+  },
+  {
+    icon: "⚙️",
+    title: "Multi-IDS Support",
+    text: "A unified interface for all your intrusion detection systems — no more switching tools.",
+    tags: ["Snort", "Suricata", "Zeek", "Kismet"],
+    accent: "#8b5cf6",
+  },
+  {
+    icon: "📄",
+    title: "Evidence Reports",
+    text: "Export incidents and alert data as PDF or CSV for audit trails and compliance.",
+    tags: ["PDF", "CSV"],
+    accent: "#10b981",
+  },
+  {
+    icon: "🔔",
+    title: "Instant Notifications",
+    text: "High-severity alerts push directly to your Telegram — stay informed away from the desk.",
+    tags: ["Telegram", "High-severity"],
+    accent: "#f59e0b",
+  },
+  {
+    icon: "📝",
+    title: "Incident Management",
+    text: "Group related alerts, attach investigation notes, and track triage progress over time.",
+    tags: ["Notes", "Triage"],
+    accent: "#06b6d4",
+  },
+];
 
 function Features() {
   const navigate = useNavigate();
 
   return (
     <div style={styles.page}>
-      {/* Navbar - EXACT Visitor.jsx style */}
-      <nav style={styles.navbar}>
-        <h2 style={styles.logo}>Intrusion Detection</h2>  
-        <div style={styles.navLinks}>
-          <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
-          <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>
-          <span style={styles.navActive} onClick={() => navigate("/features")}>Features</span>
-          <span style={styles.navLink} onClick={() => navigate("/demo")}>Demo</span>
-          <span style={styles.navLink} onClick={() => navigate("/login")}>Login</span>
-        </div>
-      </nav>
+      <PublicNavbar active="Features" />
 
-      {/* Hero Section - Visitor style */}
+      {/* Hero Section */}
       <div style={styles.hero}>
         <div style={styles.heroLeft}>
+          <div style={styles.heroBadge}>What's inside</div>
           <h1 style={styles.heroTitle}>Powerful Features for Network Security</h1>
           <p style={styles.heroSubtitle}>Everything you need to detect, analyse, and respond to threats</p>
           <div style={styles.heroButtons}>
@@ -35,29 +72,30 @@ function Features() {
           <img
             src="/DashboardDemo.png"
             alt="IDS Dashboard Preview"
-            style={styles.heroImage}  
+            style={styles.heroImage}
           />
         </div>
       </div>
+
       <hr style={styles.divider} />
 
       {/* Features Grid */}
       <div style={styles.featuresGrid}>
-        <div style={styles.featureCard}>
-          <div style={styles.featureIcon}>🚨</div>
-          <h3 style={styles.featureTitle}>Real-time Alerts</h3>
-          <p style={styles.featureText}>Monitor threats from Snort, Suricata, Zeek, and Kismet in real-time</p>
-        </div>
-        <div style={styles.featureCard}>
-          <div style={styles.featureIcon}>🔍</div>
-          <h3 style={styles.featureTitle}>Advanced Analytics</h3>
-          <p style={styles.featureText}>Visualize attack patterns and threat intelligence with interactive charts</p>
-        </div>
-        <div style={styles.featureCard}>
-          <div style={styles.featureIcon}>⚙️</div>
-          <h3 style={styles.featureTitle}>Multi-IDS Support</h3>
-          <p style={styles.featureText}>Unified interface for all your intrusion detection systems</p>
-        </div>
+        {features.map((f) => (
+          <div key={f.title} style={styles.featureCard}>
+            <div style={{ ...styles.featureAccentBar, backgroundColor: f.accent }} />
+            <div style={styles.featureIcon}>{f.icon}</div>
+            <h3 style={styles.featureTitle}>{f.title}</h3>
+            <p style={styles.featureText}>{f.text}</p>
+            <div style={styles.tagRow}>
+              {f.tags.map((tag) => (
+                <span key={tag} style={{ ...styles.tag, borderColor: f.accent, color: f.accent }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Footer */}
@@ -68,7 +106,6 @@ function Features() {
   );
 }
 
-// ✅ Complete Visitor.jsx styles
 const styles = {
   page: {
     backgroundColor: "#0f172a",
@@ -78,65 +115,33 @@ const styles = {
     flexDirection: "column",
     fontFamily: "sans-serif",
   },
-  navbar: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1e293b",
-    padding: "1rem 2rem",
-  },
-  logo: {
-    color: "#38bdf8",
-    fontSize: "1.2rem",
-    margin: 0,
-  },
-  navLinks: {
-    display: "flex",
-    flexDirection: "row",
-    gap: "0.5rem",
-    margin: 0,
-  },
-  navLink: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#94a3b8",
-    fontSize: "0.95rem",
-  },
-  navActive: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#f1f5f9",
-    fontWeight: "bold",
-    fontSize: "0.95rem",
-    borderBottom: "2px solid #3b82f6",
-    paddingBottom: "2px",
-  },
   hero: {
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
     padding: "4rem 2rem",
-    flex: 1,
     gap: "4rem",
     maxWidth: "1200px",
     margin: "0 auto",
+    width: "100%",
+    boxSizing: "border-box",
   },
- // Just change the heroImage style:
-heroImage: {
-  width: "100%",
-  maxWidth: "550px",  
-  height: "auto", 
-  borderRadius: "20px",
-  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
-},
-
   heroLeft: {
     flex: 1,
     minWidth: "300px",
+  },
+  heroBadge: {
+    display: "inline-block",
+    backgroundColor: "rgba(59,130,246,0.12)",
+    border: "1px solid rgba(59,130,246,0.3)",
+    color: "#60a5fa",
+    borderRadius: "999px",
+    padding: "0.3rem 0.9rem",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    marginBottom: "1rem",
+    letterSpacing: "0.03em",
   },
   heroTitle: {
     fontSize: "2.5rem",
@@ -147,7 +152,7 @@ heroImage: {
   },
   heroSubtitle: {
     color: "#94a3b8",
-    fontSize: "1.2rem",
+    fontSize: "1.1rem",
     marginBottom: "2rem",
     lineHeight: "1.6",
   },
@@ -157,7 +162,7 @@ heroImage: {
     flexWrap: "wrap",
   },
   primaryButton: {
-    padding: "1rem 2rem",
+    padding: "0.75rem 1.75rem",
     backgroundColor: "#3b82f6",
     color: "#fff",
     border: "none",
@@ -165,10 +170,9 @@ heroImage: {
     fontSize: "1rem",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.2s",
   },
   secondaryButton: {
-    padding: "1rem 2rem",
+    padding: "0.75rem 1.75rem",
     backgroundColor: "transparent",
     color: "#60a5fa",
     border: "2px solid #60a5fa",
@@ -176,7 +180,6 @@ heroImage: {
     fontSize: "1rem",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.2s",
   },
   heroRight: {
     flex: 1,
@@ -185,16 +188,12 @@ heroImage: {
     alignItems: "center",
     minWidth: "300px",
   },
-  featurePreview: {
-    width: "400px",
-    height: "300px",
-    background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+  heroImage: {
+    width: "100%",
+    maxWidth: "550px",
+    height: "auto",
     borderRadius: "20px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "1.5rem",
-    border: "2px dashed #60a5fa",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
   },
   divider: {
     borderColor: "#334155",
@@ -203,32 +202,56 @@ heroImage: {
   featuresGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "2rem",
-    padding: "4rem 2rem",
+    gap: "1.5rem",
+    padding: "3rem 2rem",
     maxWidth: "1200px",
     margin: "0 auto",
+    width: "100%",
+    boxSizing: "border-box",
   },
   featureCard: {
-    backgroundColor: "#1e293b",
-    padding: "2rem",
+    backgroundColor: "#111c33",
+    padding: "1.75rem",
+    paddingTop: "0",
     borderRadius: "16px",
-    border: "1px solid #334155",
-    textAlign: "center",
-    transition: "all 0.3s",
+    border: "1px solid #1e3a5f",
+    overflow: "hidden",
+    position: "relative",
+  },
+  featureAccentBar: {
+    height: "3px",
+    margin: "0 -1.75rem 1.5rem",
+    borderRadius: "0",
   },
   featureIcon: {
-    fontSize: "3rem",
-    marginBottom: "1rem",
+    fontSize: "2rem",
+    marginBottom: "0.75rem",
   },
   featureTitle: {
-    fontSize: "1.25rem",
+    fontSize: "1.1rem",
     fontWeight: "700",
     color: "#f1f5f9",
-    marginBottom: "1rem",
+    marginBottom: "0.6rem",
   },
   featureText: {
     color: "#94a3b8",
     lineHeight: "1.6",
+    fontSize: "0.9rem",
+    marginBottom: "1rem",
+  },
+  tagRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.4rem",
+  },
+  tag: {
+    fontSize: "0.72rem",
+    fontWeight: 600,
+    padding: "0.2rem 0.55rem",
+    borderRadius: "999px",
+    border: "1px solid",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    letterSpacing: "0.03em",
   },
   footer: {
     marginTop: "auto",

@@ -12,6 +12,24 @@ to when running locally (or once deployed).
 - Alert filtering
 - Integration with frontend dashboard
 
+# Setup
+1. **Install Suricata**
+    ```bash
+    sudo apt update
+    sudo apt install suricata
+    ```
+
+2. **Configure the paths**
+    ```bash
+    /etc/suricata/suricata.yaml
+    /var/lib/suricata/rules/local.rules
+    ```
+
+3. **Run Suricata**
+    ```bash
+    sudo suricata -i eth0 -c /etc/suricata/suricata.yaml
+    ```
+
 ---
 
 ## Quick start
@@ -85,8 +103,6 @@ frontend should surface this to the user.
 Approval workflow: every new account is created with approved = False. The UI should inform users that an administrator must approve their account; the backend does not yet provide an approval endpoint.
 
 
-
-
 4. **Run the Frontend**
    
 In new terminal :
@@ -98,7 +114,7 @@ npm run dev
 
 The frontend will run on : http://localhost:5173
 
-5.**IDS Alerts testing**
+5.**IDS Alerts Ingestion**
 
 Simulating Suricata alerts locally,
 ```bash
@@ -106,11 +122,16 @@ cd backend
 python3 eve_ingestor.py
 ```
 
-If error:
+Viewing alerts
 ```bash
-pip3 install requests
+curl http://127.0.0.1:8000/alerts
 ```
-This script will reads IDS events from 'eve.json' and sends them to the backend API.
+
+Live Monitoring
+```bash
+tail -f /var/log/suricata/eve.json | grep '"event_type":"alert"'
+```
+
 
 6. **IDS Alert Pipeline**
 Current pipeline works like this :

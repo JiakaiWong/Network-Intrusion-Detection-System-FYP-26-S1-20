@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../services/api";
 import { styles } from "./Login.styles";
+import PublicNavbar from "../../components/PublicNavbar";
 
 function Login() {
   const [email, setEmail]           = useState("");
@@ -80,14 +81,7 @@ function Login() {
 
   return (
     <div style={styles.page}>
-      <nav style={styles.navbar}>
-        <h2 style={styles.logo} onClick={() => navigate("/")}>Intrusion Detection</h2>
-        <div style={styles.navLinks}>
-          <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
-          <span style={styles.navLink} onClick={() => navigate("/about")}>About</span>
-          <span style={styles.navActive}>Login</span>
-        </div>
-      </nav>
+      <PublicNavbar active="Login" />
 
       <div style={styles.container}>
         <div style={styles.card}>

@@ -65,7 +65,7 @@ function NetworkTraffic() {
   return (
     <>
       <div style={styles.main}>
-        <h1 style={styles.heading}>Network Traffic Logs</h1>
+        <h1 className="page-title">Network Traffic Logs</h1>
 
         {/* Filters Card */}
         <div style={styles.card}>

@@ -35,6 +35,7 @@ import NetworkTraffic from "./pages/analyst/NetworkTraffic";
 import Notifications from "./pages/analyst/Notifications";
 import AnalystSettings from "./pages/analyst/Settings";
 import AnalystSidebar from "./pages/analyst/AnalystSidebar";
+import ThreatMap from "./pages/analyst/ThreatMap";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
@@ -87,6 +88,7 @@ function App() {
             <Route path="/alert/:id" element={<AlertDetails />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/network-traffic" element={<NetworkTraffic />} />
+            <Route path="/threat-map" element={<ThreatMap />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<AnalystSettings />} />
             <Route path="/analyst/profile" element={<AnalystProfile />} />

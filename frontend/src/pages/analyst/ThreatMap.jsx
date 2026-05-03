@@ -1,0 +1,314 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import './analyst.css';
+import L from 'leaflet';
+
+// Fix Leaflet default icon paths with Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const SEV_COLOR = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
+const SEV_RADIUS = { high: 10, medium: 7, low: 5 };
+
+// ── Inner component: handles map fly-to when a focus alert is set ─────────────
+const MapFocuser = ({ focusAlert, markerRefs }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!focusAlert?.dest_location?.latitude) return;
+    const { latitude, longitude } = focusAlert.dest_location;
+    map.flyTo([latitude, longitude], 8, { duration: 1.2 });
+
+    // Open the popup after flying
+    const timer = setTimeout(() => {
+      const ref = markerRefs.current[focusAlert.id];
+      if (ref) ref.openPopup();
+    }, 1400);
+
+    return () => clearTimeout(timer);
+  }, [focusAlert]);
+
+  return null;
+};
+
+// ── Main ThreatMap component ──────────────────────────────────────────────────
+const ThreatMap = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const highlightId = searchParams.get('alertId');
+
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [focusAlert, setFocusAlert] = useState(null);
+  const [stats, setStats] = useState({ total: 0, mapped: 0, high: 0, medium: 0, low: 0 });
+
+  // Holds refs to each CircleMarker by alert id
+  const markerRefs = useRef({});
+
+  const fetchAlerts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/alerts?limit=500');
+      const data = await res.json();
+      const items = data.items || [];
+
+      setStats({
+        total: items.length,
+        mapped: items.filter(a => a.dest_location?.latitude && a.dest_location?.longitude).length,
+        high: items.filter(a => a.severity_label === 'high').length,
+        medium: items.filter(a => a.severity_label === 'medium').length,
+        low: items.filter(a => a.severity_label === 'low').length,
+      });
+      setAlerts(items);
+
+      // If navigated with an alertId, find and focus it
+      if (highlightId) {
+        const target = items.find(a => a.id === highlightId);
+        if (target?.dest_location?.latitude) {
+          setFocusAlert(target);
+        }
+      }
+    } catch {
+      setAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [highlightId]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  const mappableAlerts = alerts.filter(a => {
+    if (!a.dest_location?.latitude || !a.dest_location?.longitude) return false;
+    if (filter !== 'all' && a.severity_label !== filter) return false;
+    return true;
+  });
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div>
+          <h1 className="page-title">Threat Map</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>
+            Geographic distribution of detected attack destinations
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {focusAlert && (
+            <button
+              onClick={() => {
+                setFocusAlert(null);
+                navigate('/threat-map');
+              }}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--accent-main)',
+                borderRadius: 6,
+                color: 'var(--accent-main)',
+                padding: '4px 12px',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+              }}
+            >
+              ✕ Clear focus
+            </button>
+          )}
+          {['all', 'high', 'medium', 'low'].map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              style={{
+                background: filter === s ? (s === 'all' ? 'var(--accent-main)' : SEV_COLOR[s]) : 'transparent',
+                border: `1px solid ${s === 'all' ? 'var(--accent-main)' : SEV_COLOR[s]}`,
+                borderRadius: 6,
+                color: filter === s ? '#fff' : 'var(--text-muted)',
+                padding: '4px 12px',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                textTransform: 'capitalize',
+              }}
+            >
+              {s === 'all' ? 'All' : s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Focused alert banner */}
+      {focusAlert && (
+        <div style={{
+          background: 'var(--bg-card)',
+          border: `1px solid ${SEV_COLOR[focusAlert.severity_label] || 'var(--border-color)'}`,
+          borderRadius: 8,
+          padding: '10px 16px',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ color: SEV_COLOR[focusAlert.severity_label], fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase' }}>
+            {focusAlert.severity_label}
+          </span>
+          <span style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>{focusAlert.signature}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+            {focusAlert.src_ip} → {focusAlert.dest_ip}
+          </span>
+          {focusAlert.dest_location?.city && (
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              📍 {focusAlert.dest_location.city}, {focusAlert.dest_location.country_name || focusAlert.dest_location.country}
+            </span>
+          )}
+          <button
+            onClick={() => navigate(`/alert/${focusAlert.id}`)}
+            style={{
+              marginLeft: 'auto',
+              background: 'var(--accent-main)',
+              border: 'none',
+              borderRadius: 6,
+              color: '#fff',
+              padding: '4px 14px',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+            }}
+          >
+            View Alert Details →
+          </button>
+        </div>
+      )}
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {[
+          { label: 'Total Alerts', value: stats.total, color: 'var(--text-main)' },
+          { label: 'Geo-mapped', value: stats.mapped, color: 'var(--accent-main)' },
+          { label: 'High', value: stats.high, color: SEV_COLOR.high },
+          { label: 'Medium', value: stats.medium, color: SEV_COLOR.medium },
+          { label: 'Low', value: stats.low, color: SEV_COLOR.low },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 8,
+            padding: '10px 18px',
+            minWidth: 90,
+          }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{label}</div>
+            <div style={{ color, fontSize: '1.3rem', fontWeight: 700 }}>{loading ? '…' : value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Map */}
+      <div style={{
+        borderRadius: 10,
+        overflow: 'hidden',
+        border: '1px solid var(--border-color)',
+        height: 'calc(100vh - 340px)',
+        minHeight: 360,
+      }}>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-card)', color: 'var(--text-muted)' }}>
+            Loading alerts…
+          </div>
+        ) : (
+          <MapContainer
+            center={[20, 0]}
+            zoom={2}
+            style={{ width: '100%', height: '100%' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            <MapFocuser focusAlert={focusAlert} markerRefs={markerRefs} />
+
+            {mappableAlerts.map((alert) => {
+              const isFocused = focusAlert?.id === alert.id;
+              return (
+                <CircleMarker
+                  key={alert.id}
+                  ref={(el) => { if (el) markerRefs.current[alert.id] = el; }}
+                  center={[alert.dest_location.latitude, alert.dest_location.longitude]}
+                  radius={isFocused ? (SEV_RADIUS[alert.severity_label] || 6) + 4 : (SEV_RADIUS[alert.severity_label] || 6)}
+                  pathOptions={{
+                    color: isFocused ? '#fff' : SEV_COLOR[alert.severity_label] || '#94a3b8',
+                    fillColor: SEV_COLOR[alert.severity_label] || '#94a3b8',
+                    fillOpacity: isFocused ? 1 : 0.7,
+                    weight: isFocused ? 2.5 : 1,
+                  }}
+                >
+                  <Popup>
+                    <div style={{ minWidth: 190, fontFamily: 'inherit' }}>
+                      <div className="popup-sev-title" style={{ fontWeight: 700, marginBottom: 6, color: SEV_COLOR[alert.severity_label] }}>
+                        {alert.severity_label?.toUpperCase()} — {alert.signature}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', lineHeight: 1.7 }}>
+                        <div><b>Src:</b> {alert.src_ip}</div>
+                        <div><b>Dest:</b> {alert.dest_ip}</div>
+                        {alert.dest_location?.city && <div><b>City:</b> {alert.dest_location.city}</div>}
+                        {alert.dest_location?.country_name && <div><b>Country:</b> {alert.dest_location.country_name}</div>}
+                        <div><b>Protocol:</b> {alert.proto}</div>
+                        <div><b>Status:</b> {alert.status}</div>
+                        {alert.timestamp && <div><b>Time:</b> {new Date(alert.timestamp).toLocaleString()}</div>}
+                      </div>
+                      <button
+                        onClick={() => navigate(`/alert/${alert.id}`)}
+                        style={{
+                          marginTop: 8,
+                          width: '100%',
+                          background: SEV_COLOR[alert.severity_label] || '#3b82f6',
+                          border: 'none',
+                          borderRadius: 5,
+                          color: '#fff',
+                          padding: '5px 0',
+                          cursor: 'pointer',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        View Alert Details →
+                      </button>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
+          </MapContainer>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '16px', marginTop: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Severity:</span>
+        {Object.entries(SEV_COLOR).map(([sev, color]) => (
+          <span key={sev} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <svg width="12" height="12"><circle cx="6" cy="6" r="5" fill={color} fillOpacity={0.8} /></svg>
+            {sev.charAt(0).toUpperCase() + sev.slice(1)}
+          </span>
+        ))}
+        {stats.mapped === 0 && !loading && (
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginLeft: 'auto' }}>
+            No geo-mapped alerts yet — install the GeoLite2 database to see locations.
+          </span>
+        )}
+      </div>
+
+      <footer className="footer" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', marginTop: '1rem' }}>
+        <p>© 2026 Intrusion Detection Dashboard</p>
+      </footer>
+    </>
+  );
+};
+
+export default ThreatMap;

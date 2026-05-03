@@ -91,7 +91,24 @@ export async function addNote(alertId, text) {
   });
 }
 
-// --- STUBS ---
+export async function updateAlert(alertId, updates) {
+  return request(ALERTS_BASE, `/api/alerts/${alertId}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function refreshAlertLocation(alertId) {
+  return request(ALERTS_BASE, `/api/alerts/${alertId}/refresh-location`, {
+    method: "POST",
+  });
+}
+
+export async function refreshAllLocations() {
+  return request(ALERTS_BASE, "/api/alerts/refresh-all-locations", {
+    method: "POST",
+  });
+}
 
 export async function getTrafficLogs(params = {}) {
   console.warn("[api] GET /traffic not yet on backend – using mock data.");

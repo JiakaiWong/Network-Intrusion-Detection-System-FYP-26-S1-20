@@ -413,6 +413,7 @@ button {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  padding-left: 0.5rem;
 }
 
 .card-value {
@@ -530,7 +531,8 @@ button {
 
 .alerts-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
 }
 
@@ -546,12 +548,22 @@ button {
   background-color: var(--bg-card);
 }
 
+.alerts-table tbody tr {
+  height: 56px;
+}
+
 .alerts-table td {
-  padding: 0.75rem 0.9rem;
+  padding: 0 0.9rem;
+  height: 56px;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-light);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
   vertical-align: middle;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
 }
 
 .alerts-table tr:last-child td { border-bottom: none; }
@@ -895,9 +907,14 @@ button {
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+  background-color: var(--bg-card);
   color: var(--text-muted);
   font-size: 0.82rem;
   text-align: center;
+}
+
+.footer * {
+  color: var(--text-muted);
 }
 
 /* ── Theme Toggle Button (Settings page) ────────────────────── */
@@ -1065,4 +1082,46 @@ button {
 
 @media (max-width: 480px) {
   .summary-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Uniform Page Title ─────────────────────────────────────── */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.25rem 0;
+}
+
+/* ── Leaflet Popup Theme Overrides ──────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --popup-bg:     #1e293b;
+  --popup-text:   #e2e8f0;
+  --popup-border: #334155;
+}
+
+[data-theme="light"] {
+  --popup-bg:     #ffffff;
+  --popup-text:   #1e293b;
+  --popup-border: #e2e8f0;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--popup-bg) !important;
+  color: var(--popup-text) !important;
+  border: 1px solid var(--popup-border) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+  border-radius: 10px !important;
+}
+
+.leaflet-popup-content-wrapper *:not(.popup-sev-title) {
+  color: var(--popup-text) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--popup-bg) !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--popup-text) !important;
 }

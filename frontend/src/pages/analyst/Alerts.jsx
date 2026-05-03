@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FiEye, FiDownload, FiSearch } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { FiEye, FiDownload, FiSearch, FiMap } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
+import { refreshAllLocations } from "../../services/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
 const Alerts = () => {
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
+  const navigate = useNavigate();
 
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,48 +18,49 @@ const Alerts = () => {
   const [severityFilter, setSeverityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshingLocations, setRefreshingLocations] = useState(false);
 
   const alertsPerPage = 5;
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const fetchAlerts = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        let url = `${API_BASE}/api/alerts`;
-        const params = new URLSearchParams();
+      let url = `${API_BASE}/api/alerts`;
+      const params = new URLSearchParams();
 
-        if (severityFilter) {
-          if (severityFilter === "High") params.append("severity", "1");
-          if (severityFilter === "Medium") params.append("severity", "2");
-          if (severityFilter === "Low") params.append("severity", "3");
-        }
-
-        if (statusFilter) {
-          params.append("status", statusFilter.toLowerCase());
-        }
-
-        if (params.toString()) {
-          url += `?${params.toString()}`;
-        }
-
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch alerts");
-        }
-
-        const data = await response.json();
-        setAlerts(data.items || []);
-      } catch (err) {
-        setError("Could not reach backend — showing no live data.");
-        setAlerts([]);
-      } finally {
-        setLoading(false);
+      if (severityFilter) {
+        if (severityFilter === "High") params.append("severity", "1");
+        if (severityFilter === "Medium") params.append("severity", "2");
+        if (severityFilter === "Low") params.append("severity", "3");
       }
-    };
 
+      if (statusFilter) {
+        params.append("status", statusFilter.toLowerCase());
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch alerts");
+      }
+
+      const data = await response.json();
+      setAlerts(data.items || []);
+    } catch (err) {
+      setError("Could not reach backend — showing no live data.");
+      setAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAlerts();
   }, [severityFilter, statusFilter]);
 
@@ -129,6 +132,7 @@ const Alerts = () => {
       "Alert Type",
       "Source IP",
       "Destination IP",
+      "Location",
       "Port",
       "IDS Source",
       "Time",
@@ -140,6 +144,9 @@ const Alerts = () => {
       alert.signature || "",
       alert.src_ip || "",
       alert.dest_ip || "",
+      alert.dest_location 
+        ? (alert.dest_location.city ? `${alert.dest_location.city}, ${alert.dest_location.country}` : alert.dest_location.country || "")
+        : "",
       alert.dest_port || "",
       alert.proto || "",
       alert.timestamp || "",
@@ -165,6 +172,20 @@ const Alerts = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleRefreshAllLocations = async () => {
+    setRefreshingLocations(true);
+    try {
+      await refreshAllLocations();
+      // Refresh the alerts list
+      await fetchAlerts();
+    } catch (error) {
+      console.error("Failed to refresh locations:", error);
+      setError("Failed to refresh locations");
+    } finally {
+      setRefreshingLocations(false);
+    }
+  };
+
   const showingFrom = totalAlerts === 0 ? 0 : indexOfFirstAlert + 1;
   const showingTo = Math.min(indexOfLastAlert, totalAlerts);
 
@@ -173,9 +194,18 @@ const Alerts = () => {
       <div className={`alerts-wrapper ${isDarkMode ? "dark" : "light"}`}>
         <div className="alerts-header">
           <h1>Intrusion Detection Alerts</h1>
-          <button className="export-btn" onClick={exportToCSV}>
-            <FiDownload /> Export
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              className="refresh-btn" 
+              onClick={handleRefreshAllLocations}
+              disabled={refreshingLocations}
+            >
+              {refreshingLocations ? "⟳ Refreshing..." : "🗺️ Refresh Locations"}
+            </button>
+            <button className="export-btn" onClick={exportToCSV}>
+              <FiDownload /> Export
+            </button>
+          </div>
         </div>
 
         <div className="summary-cards">
@@ -256,22 +286,26 @@ const Alerts = () => {
           ) : currentAlerts.length === 0 ? (
             <p className="empty-text">No alerts found.</p>
           ) : (
-            <table>
+            <div className="table-scroll"><table>
               <thead>
                 <tr>
                   <th>Severity</th>
                   <th>Alert Type</th>
                   <th>Source IP</th>
                   <th>Destination IP</th>
+                  <th>Location</th>
                   <th>Port</th>
                   <th>IDS Source</th>
                   <th>Time</th>
                   <th>Status</th>
-                  <th></th>
+                  <th>View</th>
+                  <th>Map</th>
                 </tr>
               </thead>
               <tbody>
-                {currentAlerts.map((alert) => (
+                {currentAlerts.map((alert) => {
+                  const hasgeo = alert.dest_location?.latitude && alert.dest_location?.longitude;
+                  return (
                   <tr key={alert.id}>
                     <td>
                       <span
@@ -280,12 +314,21 @@ const Alerts = () => {
                         {alert.severity_label || "-"}
                       </span>
                     </td>
-                    <td>{alert.signature || "-"}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{alert.signature || "-"}</td>
                     <td>{alert.src_ip || "-"}</td>
                     <td>{alert.dest_ip || "-"}</td>
+                    <td>
+                      {alert.dest_location ? (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          {alert.dest_location.city ? `${alert.dest_location.city}, ${alert.dest_location.country}` : alert.dest_location.country || "-"}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>-</span>
+                      )}
+                    </td>
                     <td>{alert.dest_port || "-"}</td>
                     <td>{alert.proto || "-"}</td>
-                    <td>{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([], 
+                    <td>{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([],
                       { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}</td>
                     <td>{alert.status || "new"}</td>
                     <td>
@@ -293,10 +336,23 @@ const Alerts = () => {
                         <FiEye className="view-icon" />
                       </Link>
                     </td>
+                    <td>
+                      {hasgeo ? (
+                        <FiMap
+                          className="view-icon"
+                          title="View on Threat Map"
+                          style={{ cursor: 'pointer', color: 'var(--accent-main)' }}
+                          onClick={() => navigate(`/threat-map?alertId=${alert.id}`)}
+                        />
+                      ) : (
+                        <span style={{ color: 'var(--text-dim)' }}>—</span>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 

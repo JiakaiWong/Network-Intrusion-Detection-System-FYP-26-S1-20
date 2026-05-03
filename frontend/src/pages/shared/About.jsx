@@ -1,23 +1,27 @@
 import { useNavigate } from "react-router-dom";
+import PublicNavbar from "../../components/PublicNavbar";
+
+const TECH_STACK = [
+  { name: "React",     color: "#61dafb" },
+  { name: "FastAPI",   color: "#009688" },
+  { name: "MongoDB",   color: "#4db33d" },
+  { name: "Suricata",  color: "#f97316" },
+  { name: "Snort",     color: "#ef4444" },
+  { name: "Zeek",      color: "#8b5cf6" },
+  { name: "Kismet",    color: "#06b6d4" },
+  { name: "Telegram",  color: "#2ca5e0" },
+];
 
 function About() {
   const navigate = useNavigate();
 
   return (
     <div style={styles.page}>
-      <nav style={styles.navbar}>
-        <h2 style={styles.logo}>Intrusion Detection</h2>
-        <div style={styles.navLinks}>
-          <span style={styles.navLink} onClick={() => navigate("/")}>Home</span>
-          <span style={styles.navActive} onClick={() => navigate("/about")}>About</span>
-          <span style={styles.navLink} onClick={() => navigate("/features")}>Features</span>
-          <span style={styles.navLink} onClick={() => navigate("/demo")}>Demo</span>
-          <span style={styles.navLink} onClick={() => navigate("/login")}>Login</span>
-        </div>
-      </nav>
+      <PublicNavbar active="About" />
 
       <section style={styles.hero}>
         <div style={styles.heroLeft}>
+          <div style={styles.heroBadge}>Final Year Project</div>
           <h1 style={styles.heroTitle}>A lightweight IDS dashboard for fast, remote monitoring</h1>
           <p style={styles.heroSubtitle}>
             MyIDS centralizes alerts from Snort, Suricata, Zeek & Kismet into one modern interface —
@@ -44,11 +48,13 @@ function About() {
       </section>
 
       <div style={styles.sectionWrap}>
+
+        {/* Problem vs Solution */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Why this project exists</h2>
           <div style={styles.twoCol}>
-            <div style={styles.panel}>
-              <div style={styles.panelTitle}>Common problems with IDS dashboards</div>
+            <div style={{ ...styles.panel, borderColor: "#7f1d1d", borderLeftWidth: "3px" }}>
+              <div style={{ ...styles.panelTitle, color: "#f87171" }}>The Problem</div>
               <ul style={styles.list}>
                 <li>Hard to monitor multiple IDS tools in one place</li>
                 <li>Limited visibility when analysts are away from their workstation</li>
@@ -56,8 +62,8 @@ function About() {
                 <li>Manual reporting and inconsistent incident records</li>
               </ul>
             </div>
-            <div style={styles.panel}>
-              <div style={styles.panelTitle}>How MyIDS helps</div>
+            <div style={{ ...styles.panel, borderColor: "#14532d", borderLeftWidth: "3px" }}>
+              <div style={{ ...styles.panelTitle, color: "#4ade80" }}>Our Solution</div>
               <ul style={styles.list}>
                 <li>Single dashboard for Snort / Suricata / Zeek / Kismet</li>
                 <li>Notifications via cloud service (mobile / email / telegram)</li>
@@ -68,7 +74,7 @@ function About() {
           </div>
         </section>
 
-
+        {/* Architecture */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>High-level architecture</h2>
           <div style={styles.arch}>
@@ -97,27 +103,29 @@ function About() {
           </div>
         </section>
 
+        {/* Core capabilities */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Core capabilities</h2>
           <div style={styles.cards}>
-            <FeatureCard
-              title="Alert Visualization"
-              desc="Filter by severity, source, time, and investigate with detail views."
-            />
-            <FeatureCard
-              title="Traffic Log Search"
-              desc="Search and pivot network traffic by IP, port, protocol, and IDS source."
-            />
-            <FeatureCard
-              title="Incident Handling"
-              desc="Group related alerts, attach notes, and track progress over time."
-            />
-            <FeatureCard
-              title="Reporting"
-              desc="Generate PDF/CSV reports with notes to support evidence and audit."
-            />
+            <FeatureCard title="Alert Visualization" desc="Filter by severity, source, time, and investigate with detail views." />
+            <FeatureCard title="Traffic Log Search" desc="Search and pivot network traffic by IP, port, protocol, and IDS source." />
+            <FeatureCard title="Incident Handling" desc="Group related alerts, attach notes, and track progress over time." />
+            <FeatureCard title="Reporting" desc="Generate PDF/CSV reports with notes to support evidence and audit." />
           </div>
         </section>
+
+        {/* Tech stack */}
+        <section style={styles.section}>
+          <h2 style={styles.sectionTitle}>Tech stack</h2>
+          <div style={styles.techRow}>
+            {TECH_STACK.map((t) => (
+              <div key={t.name} style={{ ...styles.techBadge, borderColor: t.color, color: t.color }}>
+                {t.name}
+              </div>
+            ))}
+          </div>
+        </section>
+
       </div>
 
       <footer style={styles.footer}>© 2026 Intrusion Detection Dashboard</footer>
@@ -143,44 +151,6 @@ const styles = {
     flexDirection: "column",
     fontFamily: "sans-serif",
   },
-  navbar: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1e293b",
-    padding: "1rem 2rem",
-  },
-  navLinks: {
-    display: "flex",
-    flexDirection: "row",
-    gap: "0.5rem",
-    margin: 0,
-    flexWrap: "wrap",
-    justifyContent: "flex-end",
-  },
-  navLink: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#94a3b8",
-    fontSize: "0.95rem",
-  },
-  navActive: {
-    padding: "0.5rem 1rem",
-    borderRadius: "6px",
-    cursor: "pointer",
-    color: "#f1f5f9",
-    fontWeight: "bold",
-    fontSize: "0.95rem",
-    borderBottom: "2px solid #3b82f6",
-    paddingBottom: "2px",
-  },
-  logo: {
-    color: "#38bdf8",
-    fontSize: "1.2rem",
-    margin: 0,
-  },
   hero: {
     display: "grid",
     gridTemplateColumns: "1.4fr 1fr",
@@ -189,6 +159,18 @@ const styles = {
     padding: "3.5rem 2rem",
   },
   heroLeft: { maxWidth: "760px" },
+  heroBadge: {
+    display: "inline-block",
+    backgroundColor: "rgba(59,130,246,0.12)",
+    border: "1px solid rgba(59,130,246,0.3)",
+    color: "#60a5fa",
+    borderRadius: "999px",
+    padding: "0.3rem 0.9rem",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    marginBottom: "0.75rem",
+    letterSpacing: "0.03em",
+  },
   heroTitle: {
     fontSize: "2.4rem",
     fontWeight: 900,
@@ -278,6 +260,22 @@ const styles = {
   },
   featureTitle: { fontWeight: 900, marginBottom: "0.45rem" },
   featureDesc: { color: "#94a3b8", lineHeight: 1.7 },
+
+  // Tech stack badges
+  techRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.6rem",
+  },
+  techBadge: {
+    padding: "0.4rem 0.9rem",
+    borderRadius: "999px",
+    border: "1px solid",
+    fontSize: "0.85rem",
+    fontWeight: 700,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    letterSpacing: "0.02em",
+  },
 
   footer: {
     marginTop: "auto",

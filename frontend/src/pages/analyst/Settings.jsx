@@ -7,7 +7,7 @@ function Settings() {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1>Settings</h1>
+        <h1 className="page-title">Themes</h1>
         <p>Manage application preferences.</p>
       </div>
 

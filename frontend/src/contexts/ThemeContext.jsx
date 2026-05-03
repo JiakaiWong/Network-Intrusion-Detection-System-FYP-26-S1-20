@@ -8,6 +8,17 @@ import React, {
 
 const ThemeContext = createContext(null);
 
+export const VALID_THEMES = [
+  "dark",
+  "light",
+  "white-yellow",
+  "blue-white",
+  "orange-black",
+  "purple-dark",
+  "green-dark",
+  "midnight-red",
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const getSystemTheme = () =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -15,7 +26,7 @@ const getSystemTheme = () =>
 const getInitialTheme = () => {
   try {
     const saved = localStorage.getItem("theme");
-    if (saved === "dark" || saved === "light") return saved;
+    if (saved && VALID_THEMES.includes(saved)) return saved;
   } catch {
     // localStorage blocked (e.g. sandboxed iframe)
   }
@@ -29,17 +40,11 @@ export function ThemeProvider({ children }) {
   // Apply theme to <html> and save to localStorage whenever it changes
   useEffect(() => {
     const root = document.documentElement;
-
     root.setAttribute("data-theme", theme);
 
-    // Also set a class on <body> for admin.css (.light selector)
-    if (theme === "light") {
-      document.body.classList.add("light");
-      document.body.classList.remove("dark");
-    } else {
-      document.body.classList.add("dark");
-      document.body.classList.remove("light");
-    }
+    // Remove all old theme classes from body, then add current
+    VALID_THEMES.forEach((t) => document.body.classList.remove(t));
+    document.body.classList.add(theme);
 
     try {
       localStorage.setItem("theme", theme);
@@ -48,7 +53,7 @@ export function ThemeProvider({ children }) {
     }
   }, [theme]);
 
-  // Listen for OS-level theme changes — only applies if user has not manually set a theme
+  // Listen for OS-level theme changes — only if user has not manually set a theme
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -68,7 +73,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const setTheme = (newTheme) => {
-    if (newTheme === "dark" || newTheme === "light") {
+    if (VALID_THEMES.includes(newTheme)) {
       setThemeState(newTheme);
     }
   };

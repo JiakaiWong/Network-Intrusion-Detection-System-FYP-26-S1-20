@@ -1,9 +1,7 @@
 import React from "react";
-import { useTheme } from "../../contexts/ThemeContext";
+import ThemePicker from "../../components/ThemePicker";
 
 function Settings() {
-  const { theme, setTheme } = useTheme();
-
   return (
     <div className="admin-page">
       <div className="admin-page-header">
@@ -11,27 +9,12 @@ function Settings() {
         <p>Manage application preferences.</p>
       </div>
 
-      <div className="admin-card">
-        <h3>Appearance</h3>
-        <p>Choose your preferred dashboard theme.</p>
-
-        <div style={{ marginTop: "16px" }}>
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            className="theme-dropdown"
-            style={{
-              padding: "8px 12px",
-              borderRadius: "2px",
-              border: "1px solid #ccc",
-              fontSize: "14px",
-              width: "200px"
-            }}
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
+      <div className="admin-card" style={{ maxWidth: "520px" }}>
+        <h3 style={{ marginBottom: "0.3rem" }}>Appearance</h3>
+        <p style={{ color: "var(--admin-secondary, #64748b)", fontSize: "0.85rem" }}>
+          Choose your preferred dashboard theme. Changes apply instantly.
+        </p>
+        <ThemePicker />
       </div>
     </div>
   );

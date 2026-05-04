@@ -5,22 +5,8 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 function Notifications() {
   const navigate = useNavigate();
-  const { theme } = useTheme(); // "light" or "dark"
   
-  // 1. Create a dynamic theme object based on the current mode
-  const isDark = theme === "dark";
-  const colors = {
-    bg: isDark ? "#0b1224" : "#f8fafc",
-    cardBg: isDark ? "#111c33" : "#ffffff",
-    border: isDark ? "#24324f" : "#e2e8f0",
-    text: isDark ? "#e2e8f0" : "#1e293b",
-    subtext: isDark ? "#94a3b8" : "#64748b",
-    inputBg: isDark ? "#0b1224" : "#f1f5f9",
-    btnSecondary: isDark ? "#1e293b" : "#e2e8f0",
-    btnSecondaryText: isDark ? "#e2e8f0" : "#1e293b",
-  };
-
-  // State and Logic (remains the same)
+  // State and Logic
   const [severity, setSeverity] = useState("ALL");
   const [status, setStatus] = useState("UNREAD");
   const [channel, setChannel] = useState("ALL");
@@ -44,62 +30,38 @@ function Notifications() {
   const unreadCount = items.filter((n) => !n.read).length;
 
   // 2. Generate styles dynamically
-  const s = getDynamicStyles(colors);
-
   return (
-    <main className="dashboard-main" style={{...s.main, backgroundColor: colors.bg, color: colors.text}}>
-      <div style={s.headerRow}>
+    <main className="dashboard-main">
+      <div className="dashboard-status-bar">
         <div>
           <h1 className="page-title">Notifications</h1>
-          <div style={{...s.subheading, color: colors.subtext}}>Unread: {unreadCount}</div>
+          <div className="text-sm text-muted">Unread: {unreadCount}</div>
         </div>
         <button
-          style={{...s.secondaryBtn, backgroundColor: colors.btnSecondary, color: colors.btnSecondaryText}}
+          className="refresh-btn"
           onClick={() => setItems(prev => prev.map(n => ({ ...n, read: true })))}
         >
           Mark all as read
         </button>
       </div>
 
-      <div style={{...s.card, backgroundColor: colors.cardBg, borderColor: colors.border}}>
-        <div style={s.filtersRow}>
+      <div className="card">
+        <div className="trends-header">
+          <div className="nav-section-title">Filters</div>
           {/* Severity Select */}
-          <div style={s.field}>
-            <label style={{...s.label, color: colors.subtext}}>Severity</label>
-            <select
-              style={{...s.select, backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border}}
-              value={severity}
-              onChange={(e) => setSeverity(e.target.value)}
-            >
+          <div style={{display: 'flex', gap: '1rem'}}>
+            <select className="time-filter" value={severity} onChange={(e) => setSeverity(e.target.value)}>
               <option value="ALL">All</option>
               <option value="HIGH">High</option>
               <option value="MED">Medium</option>
               <option value="LOW">Low</option>
             </select>
-          </div>
-
-          {/* Status Select */}
-          <div style={s.field}>
-            <label style={{...s.label, color: colors.subtext}}>Status</label>
-            <select
-              style={{...s.select, backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border}}
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
+            <select className="time-filter" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="UNREAD">Unread</option>
               <option value="READ">Read</option>
               <option value="ALL">All</option>
             </select>
-          </div>
-
-          {/* Channel Select */}
-          <div style={s.field}>
-            <label style={{...s.label, color: colors.subtext}}>Channel</label>
-            <select
-              style={{...s.select, backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border}}
-              value={channel}
-              onChange={(e) => setChannel(e.target.value)}
-            >
+            <select className="time-filter" value={channel} onChange={(e) => setChannel(e.target.value)}>
               <option value="ALL">All</option>
               <option value="MOBILE">Mobile</option>
               <option value="EMAIL">Email</option>
@@ -109,36 +71,26 @@ function Notifications() {
         </div>
       </div>
 
-      <div style={s.grid}>
+      <div className="summary-cards">
         {filtered.map((n) => (
           <div
             key={n.id}
-            style={{ 
-              ...s.notice, 
-              backgroundColor: colors.cardBg, 
-              borderColor: colors.border,
-              ...(n.read ? { opacity: 0.6, backgroundColor: colors.bg } : {}) 
-            }}
+            className={`card ${n.read ? 'text-muted' : ''}`}
           >
-            <div style={s.noticeTop}>
-              <span style={{ ...s.sevBadge, ...sevStyle(n.sev) }}>{n.sev}</span>
-              {n.failed && <span style={s.failed}>Delivery failed</span>}
-              <span style={{...s.noticeWhen, color: colors.subtext}}>{n.when}</span>
+            <div className="card-icon severity-badge severity-badge-high">{n.sev}</div>
+            {n.failed && <div className="text-yellow">Delivery failed</div>}
+            <div className="card-label">{n.when}</div>
+            <div className="card-value">{n.title}</div>
+            <div className="text-sm">
+              IP: <span className="src-ip mono">{n.ip}</span> • {n.channel}
             </div>
-
-            <div style={{...s.noticeTitle, color: colors.text}}>{n.title}</div>
-
-            <div style={{...s.noticeMeta, color: colors.subtext}}>
-              IP: <span style={{...s.mono, color: colors.text}}>{n.ip}</span> • Channel: {n.channel}
-            </div>
-
-            <div style={s.noticeActions}>
+            <div className="card-actions">
               {!n.read ? (
-                <button style={s.primaryBtn} onClick={() => acknowledge(n.id)}>Acknowledge</button>
+                <button className="view-btn">Acknowledge</button>
               ) : (
-                <button style={{...s.secondaryBtn, backgroundColor: colors.btnSecondary, color: colors.btnSecondaryText}} onClick={() => alert("Mock modal")}>View</button>
+                <button className="telegram-btn">View</button>
               )}
-              <button style={{...s.ghostBtn, color: colors.subtext}} onClick={() => navigate("/alerts")}>View Alert</button>
+              <button className="view-btn">View Alert</button>
             </div>
           </div>
         ))}

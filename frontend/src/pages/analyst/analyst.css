@@ -137,7 +137,7 @@
 }
 
 /* ── White & Yellow ─────────────────────────────────────────── */
-[data-theme="white-yellow"] {
+:root[data-theme="white-yellow"], [data-theme="white-yellow"] {
   --bg-main:            #fffbeb;
   --bg-sidebar:         #fef3c7;
   --bg-card:            #ffffff;
@@ -184,7 +184,7 @@
 }
 
 /* ── Blue & White ────────────────────────────────────────────── */
-[data-theme="blue-white"] {
+:root[data-theme="blue-white"], [data-theme="blue-white"] {
   --bg-main:            #1e3a5f;
   --bg-sidebar:         #162d4a;
   --bg-card:            #234876;
@@ -231,7 +231,7 @@
 }
 
 /* ── Orange & Black ──────────────────────────────────────────── */
-[data-theme="orange-black"] {
+:root[data-theme="orange-black"], [data-theme="orange-black"] {
   --bg-main:            #0a0a0a;
   --bg-sidebar:         #0f0f0f;
   --bg-card:            #1a1a1a;
@@ -278,7 +278,7 @@
 }
 
 /* ── Purple Dark ─────────────────────────────────────────────── */
-[data-theme="purple-dark"] {
+:root[data-theme="purple-dark"], [data-theme="purple-dark"] {
   --bg-main:            #1a0a2e;
   --bg-sidebar:         #120621;
   --bg-card:            #231040;
@@ -325,7 +325,7 @@
 }
 
 /* ── Matrix Green ────────────────────────────────────────────── */
-[data-theme="green-dark"] {
+:root[data-theme="green-dark"], [data-theme="green-dark"] {
   --bg-main:            #011c08;
   --bg-sidebar:         #001505;
   --bg-card:            #012d0d;
@@ -372,7 +372,7 @@
 }
 
 /* ── Midnight Red ────────────────────────────────────────────── */
-[data-theme="midnight-red"] {
+:root[data-theme="midnight-red"], [data-theme="midnight-red"] {
   --bg-main:            #1a0000;
   --bg-sidebar:         #110000;
   --bg-card:            #280000;

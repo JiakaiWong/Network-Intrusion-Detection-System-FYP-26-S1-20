@@ -7,12 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Correct API endpoint (IMPORTANT FIX)
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/api/ingest/alerts")
 
-EVE_PATH = os.getenv("EVE_PATH", "./eve.json")
+EVE_PATH = "/opt/homebrew/var/log/suricata/eve.json"
 SEVERITY_THRESHOLD = int(os.getenv("SEVERITY_THRESHOLD", "2"))
-
 SEVERITY_LABELS = {
     1: "high",
     2: "medium",

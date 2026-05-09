@@ -1112,7 +1112,6 @@ body.action-menu-open {
   align-items: center;
   justify-content: center;
   z-index: 9998;
-  backdrop-filter: blur(2px);
 }
 
 .maint-modal {

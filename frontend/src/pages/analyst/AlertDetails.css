@@ -355,6 +355,7 @@ button {
 }
 
 /* ── Alerts Table ───────────────────────────────────────────── */
+/* .alerts-table styles are defined in analyst.css — do not redefine here */
 .recent-alerts-section {
   margin-bottom: 1.5rem;
 }
@@ -364,40 +365,6 @@ button {
   font-weight: 700;
   margin-bottom: 0.75rem;
   color: var(--text-main);
-}
-
-.alerts-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-  background-color: var(--bg-card);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.alerts-table th {
-  text-align: left;
-  padding: 0.7rem 0.9rem;
-  background-color: var(--accent-dim);
-  color: var(--accent-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.alerts-table td {
-  padding: 0.75rem 0.9rem;
-  border-bottom: 1px solid var(--border-light);
-  color: var(--text-main);
-  vertical-align: middle;
-}
-
-.alerts-table tr:last-child td { border-bottom: none; }
-
-.alerts-table tr:hover td {
-  background-color: var(--bg-hover);
 }
 
 /* ── Severity & Status Badges ───────────────────────────────── */
@@ -596,46 +563,7 @@ button {
   overflow-x: auto;
 }
 
-.table-container table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 800px;
-}
-
-.table-container thead th {
-  text-align: left;
-  padding: 0.75rem 1rem;
-  background-color: var(--accent-dim);
-  color: var(--accent-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.table-container tbody tr {
-  height: 56px;
-}
-
-.table-container tbody td {
-  padding: 0 1rem;
-  height: 56px;
-  border-bottom: 1px solid var(--border-light);
-  color: var(--text-main);
-  font-size: 0.85rem;
-  vertical-align: middle;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-  background-color: transparent;
-  transition: background-color 0.15s ease;
-}
-
-.table-container tbody tr:last-child td { border-bottom: none; }
-.table-container tbody tr:hover td { background-color: var(--bg-hover); }
+/* th/td/tr styles are handled by .alerts-table in analyst.css */
 
 .loading-text,
 .empty-text {

@@ -127,32 +127,32 @@ function NetworkTraffic() {
             </div>
 
             <div style={styles.tableWrap}>
-              <table style={styles.table}>
+              <table className="alerts-table">
                 <thead>
                   <tr>
-                    <th style={styles.th}>Timestamp</th>
-                    <th style={styles.th}>Source IP</th>
-                    <th style={styles.th}>Destination IP</th>
-                    <th style={styles.th}>Ports</th>
-                    <th style={styles.th}>Protocol</th>
-                    <th style={styles.th}>Bytes</th>
-                    <th style={styles.th}>Source</th>
-                    <th style={styles.th}>Action</th>
+                    <th>Timestamp</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Ports</th>
+                    <th>Protocol</th>
+                    <th>Bytes</th>
+                    <th>Source</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r, idx) => (
-                    <tr key={idx} style={styles.tr}>
-                      <td style={styles.td}>{r.ts}</td>
-                      <td style={styles.tdLink} onClick={() => openIpDetails(r.src)}>{r.src}</td>
-                      <td style={styles.tdLink} onClick={() => openIpDetails(r.dst)}>{r.dst}</td>
-                      <td style={styles.td}>{r.sport} → {r.dport}</td>
-                      <td style={styles.td}>
+                    <tr key={idx}>
+                      <td>{r.ts}</td>
+                      <td style={{ color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }} onClick={() => openIpDetails(r.src)}>{r.src}</td>
+                      <td style={{ color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }} onClick={() => openIpDetails(r.dst)}>{r.dst}</td>
+                      <td>{r.sport} → {r.dport}</td>
+                      <td>
                         <span style={{ ...styles.badge, ...badgeForProto(r.proto) }}>{r.proto}</span>
                       </td>
-                      <td style={styles.td}>{r.bytes}</td>
-                      <td style={styles.td}><span style={styles.tag}>{r.ids}</span></td>
-                      <td style={styles.td}>
+                      <td>{r.bytes}</td>
+                      <td><span style={styles.tag}>{r.ids}</span></td>
+                      <td>
                         <button style={styles.smallBtn}>View</button>
                       </td>
                     </tr>
@@ -232,11 +232,6 @@ const styles = {
   contentRow: { display: "flex", gap: "1rem" },
   tableHeader: { color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem" },
   tableWrap: { overflowX: "auto", borderRadius: "12px", border: "1px solid var(--border-color)", borderTop: "3px solid var(--accent-primary)" },
-  table: { width: "100%", borderCollapse: "collapse", backgroundColor: "var(--bg-card)" },
-  th: { textAlign: "left", padding: "0.75rem 0.9rem", borderBottom: "1px solid var(--border-color)", backgroundColor: "var(--accent-dim)", color: "var(--accent-primary)", fontSize: "0.78rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" },
-  tr: { borderBottom: "1px solid var(--border-color)" },
-  td: { padding: "0.75rem 0.9rem", color: "var(--text-main)", fontSize: "0.85rem" },
-  tdLink: { padding: "0.75rem 0.9rem", color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline", fontSize: "0.85rem" },
   badge: { padding: "0.2rem 0.5rem", borderRadius: "10px", color: "#fff", fontSize: "0.7rem", fontWeight: "bold" },
   tag: { display: "inline-block", padding: "0.25rem 0.55rem", borderRadius: "10px", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-color)", color: "var(--text-primary)", fontSize: "0.75rem", fontWeight: "700" },
   smallBtn: { backgroundColor: "var(--bg-hover)", border: "1px solid var(--border-color)", color: "var(--text-main)", padding: "0.4rem 0.75rem", borderRadius: "8px", cursor: "pointer", fontWeight: "600", fontSize: "0.8rem" },

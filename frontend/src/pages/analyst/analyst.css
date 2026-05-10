@@ -802,45 +802,37 @@ button {
 
 .table-scroll { overflow-x: auto; }
 
+/* ── Shared table style — used by Dashboard, Alerts, NetworkTraffic, Reports ── */
 .alerts-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   font-size: 0.875rem;
+  background-color: var(--bg-card);
 }
 
 .alerts-table th {
-  padding: 0.6rem 0.9rem;
+  padding: 0.75rem 0.9rem;
   text-align: left;
+  background-color: var(--accent-dim);
   color: var(--accent-primary);
-  font-weight: 700;
   font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
-  background-color: var(--accent-dim);
-}
-
-.alerts-table tbody tr {
-  height: 56px;
 }
 
 .alerts-table td {
-  padding: 0 0.9rem;
-  height: 56px;
+  padding: 0.75rem 0.9rem;
   color: var(--text-main);
-  border-bottom: 1px solid var(--border-light);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  background-color: transparent;
-  transition: background-color 0.15s ease;
 }
 
 .alerts-table tr:last-child td { border-bottom: none; }
-.alerts-table tr:hover td { background-color: var(--bg-hover); }
+.alerts-table tbody tr:hover td { background-color: var(--bg-hover); }
 
 /* Severity badges */
 .severity-badge {

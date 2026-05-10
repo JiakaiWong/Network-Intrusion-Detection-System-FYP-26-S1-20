@@ -85,72 +85,76 @@ function Notifications() {
         </div>
       </div>
 
-      {/* Notification cards */}
+      {/* Notification cards — 2-column grid */}
       {filtered.length === 0 ? (
         <div className="empty-text">No notifications match the current filters.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
           {filtered.map((n) => (
             <div
               key={n.id}
               className="card"
               style={{
-                opacity: n.read ? 0.6 : 1,
+                opacity: n.read ? 0.55 : 1,
                 borderLeft: `3px solid ${sevColor(n.sev)}`,
-                padding: '1rem 1.25rem',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem',
               }}
             >
-              {/* Top row: badge + failed + time */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+              {/* Top row: badge + time */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{
                   display: 'inline-block',
-                  padding: '0.2rem 0.65rem',
+                  padding: '0.15rem 0.55rem',
                   borderRadius: '999px',
-                  fontSize: '0.72rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
                   letterSpacing: '0.05em',
                   backgroundColor: sevBg(n.sev),
                   color: sevColor(n.sev),
                   border: `1px solid ${sevColor(n.sev)}`,
+                  flexShrink: 0,
                 }}>
                   {n.sev === 'MED' ? 'MEDIUM' : n.sev}
                 </span>
 
                 {n.failed && (
-                  <span style={{ color: 'var(--color-yellow)', fontSize: '0.82rem', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--color-yellow)', fontSize: '0.72rem', fontWeight: 700 }}>
                     ⚠ Delivery failed
                   </span>
                 )}
 
-                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                   {n.when}
                 </span>
               </div>
 
               {/* Title */}
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.3 }}>
                 {n.title}
               </div>
 
               {/* Meta */}
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                IP: <span className="src-ip mono">{n.ip}</span>
-                <span style={{ margin: '0 0.4rem' }}>•</span>
-                Channel: {n.channel}
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                IP: <span className="src-ip mono" style={{ fontSize: '0.75rem' }}>{n.ip}</span>
+                <span style={{ margin: '0 0.3rem' }}>•</span>
+                {n.channel}
               </div>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
                 {!n.read ? (
-                  <button className="view-btn" onClick={() => acknowledge(n.id)}>
+                  <button className="view-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => acknowledge(n.id)}>
                     ✓ Acknowledge
                   </button>
                 ) : (
-                  <button className="view-btn" onClick={() => alert("Mock modal")}>
+                  <button className="view-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => alert("Mock modal")}>
                     View
                   </button>
                 )}
-                <button className="export-btn" onClick={() => navigate("/alerts")}>
+                <button className="export-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => navigate("/alerts")}>
                   View Alert →
                 </button>
               </div>

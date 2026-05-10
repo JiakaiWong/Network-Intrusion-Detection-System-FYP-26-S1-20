@@ -43,14 +43,14 @@ function Reports() {
   };
 
   const reset = () => {
-    setFrom("2024-04-01"); 
-    setTo("2024-04-24"); 
+    setFrom("2024-04-01");
+    setTo("2024-04-24");
     setSeverity("HIGH_ONLY");
-    setIncludeAlerts(true); 
-    setIncludeTimeline(true); 
+    setIncludeAlerts(true);
+    setIncludeTimeline(true);
     setIncludeEnrichment(true);
-    setFormat("PDF"); 
-    setIdsSource("ALL"); 
+    setFormat("PDF");
+    setIdsSource("ALL");
     setViewing(null);
   };
 
@@ -67,9 +67,9 @@ function Reports() {
         <h2 className="section-title">Generate Report</h2>
 
         <div className="filters">
-          <div className="field">
+          <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             <label className="nav-section-title">Date Range</label>
-            <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <input className="time-filter" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
               <span>to</span>
               <input className="time-filter" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
@@ -77,7 +77,7 @@ function Reports() {
           </div>
           <select className="time-filter" value={severity} onChange={(e) => setSeverity(e.target.value)}>
             <option value="HIGH_ONLY">High Only</option>
-            <option value="HIGH_MED">Medium & High</option>
+            <option value="HIGH_MED">Medium &amp; High</option>
             <option value="ALL">All</option>
           </select>
           <select className="time-filter" value={idsSource} onChange={(e) => setIdsSource(e.target.value)}>
@@ -89,7 +89,7 @@ function Reports() {
 
         <div className="filters">
           <label className="nav-section-title">Include</label>
-          <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <label className="checkItem">
               <input type="checkbox" checked={includeAlerts} onChange={(e) => setIncludeAlerts(e.target.checked)} />
               Alerts
@@ -161,12 +161,12 @@ function Reports() {
               <button className="back-icon" onClick={() => setViewing(null)} aria-label="Close">×</button>
             </div>
             <div className="modal-body">
-              <div className="summary-grid">
-                <div className="card-total summary-card">
+              <div className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div className="card card-total">
                   <div className="text-muted">Total Alerts</div>
                   <div className="card-value">1,245</div>
                 </div>
-                <div className="card-high summary-card">
+                <div className="card card-high">
                   <div className="text-muted">High</div>
                   <div className="card-value">12</div>
                 </div>
@@ -174,7 +174,7 @@ function Reports() {
               <textarea className="note-input" defaultValue="Analyst summary notes here..." />
             </div>
             <div className="modal-footer">
-              <button className="modal-cancel">Close</button>
+              <button className="modal-cancel" onClick={() => setViewing(null)}>Close</button>
             </div>
           </div>
         </div>

@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import './analyst.css';
-import { useTheme } from "../../contexts/ThemeContext";
 
 function Notifications() {
   const navigate = useNavigate();
-  
+
   // State and Logic
   const [severity, setSeverity] = useState("ALL");
   const [status, setStatus] = useState("UNREAD");
@@ -29,7 +28,6 @@ function Notifications() {
   const acknowledge = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const unreadCount = items.filter((n) => !n.read).length;
 
-  // 2. Generate styles dynamically
   return (
     <main className="dashboard-main">
       <div className="dashboard-status-bar">
@@ -48,8 +46,7 @@ function Notifications() {
       <div className="card">
         <div className="trends-header">
           <div className="nav-section-title">Filters</div>
-          {/* Severity Select */}
-          <div style={{display: 'flex', gap: '1rem'}}>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <select className="time-filter" value={severity} onChange={(e) => setSeverity(e.target.value)}>
               <option value="ALL">All</option>
               <option value="HIGH">High</option>
@@ -77,58 +74,26 @@ function Notifications() {
             key={n.id}
             className={`card ${n.read ? 'text-muted' : ''}`}
           >
-            <div className="card-icon severity-badge severity-badge-high">{n.sev}</div>
-            {n.failed && <div className="text-yellow">Delivery failed</div>}
+            <div className={`card-icon severity-badge ${n.sev === 'MED' ? 'medium' : n.sev.toLowerCase()}`}>{n.sev}</div>
+            {n.failed && <div style={{ color: 'var(--color-yellow)', fontSize: '0.85rem', fontWeight: 700 }}>Delivery failed</div>}
             <div className="card-label">{n.when}</div>
-            <div className="card-value">{n.title}</div>
+            <div className="card-value" style={{ fontSize: '1rem', fontWeight: 700 }}>{n.title}</div>
             <div className="text-sm">
               IP: <span className="src-ip mono">{n.ip}</span> • {n.channel}
             </div>
-            <div className="card-actions">
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
               {!n.read ? (
-                <button className="view-btn">Acknowledge</button>
+                <button className="view-btn" onClick={() => acknowledge(n.id)}>Acknowledge</button>
               ) : (
-                <button className="telegram-btn">View</button>
+                <button className="telegram-btn" onClick={() => alert("Mock modal")}>View</button>
               )}
-              <button className="view-btn">View Alert</button>
+              <button className="view-btn" onClick={() => navigate("/alerts")}>View Alert</button>
             </div>
           </div>
         ))}
       </div>
     </main>
   );
-}
-
-// 3. Keep static structure separate from dynamic colors
-const getDynamicStyles = (colors) => ({
-  main: { flex: 1, padding: "2rem", overflowY: "auto", transition: "all 0.2s ease" },
-  headerRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" },
-  heading: { fontSize: "1.5rem", margin: 0 },
-  subheading: { marginTop: "0.35rem" },
-  card: { border: "1px solid", borderRadius: "12px", padding: "1rem", marginBottom: "1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" },
-  filtersRow: { display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-end" },
-  field: { display: "flex", flexDirection: "column", gap: "0.35rem", minWidth: "220px", flex: "1" },
-  label: { fontSize: "0.8rem" },
-  select: { border: "1px solid", borderRadius: "10px", padding: "0.75rem 0.9rem", outline: "none" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" },
-  notice: { border: "1px solid", borderRadius: "12px", padding: "1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" },
-  noticeTop: { display: "flex", alignItems: "center", gap: "0.5rem" },
-  sevBadge: { display: "inline-block", padding: "0.25rem 0.6rem", borderRadius: "999px", border: "1px solid", fontSize: "0.75rem", fontWeight: 800, color: "#fff" },
-  failed: { color: "#f59e0b", fontSize: "0.85rem", fontWeight: 700 },
-  noticeWhen: { marginLeft: "auto", fontSize: "0.85rem" },
-  noticeTitle: { fontSize: "1.05rem", fontWeight: 900, marginTop: "0.6rem" },
-  noticeMeta: { marginTop: "0.35rem", fontSize: "0.9rem" },
-  mono: { fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" },
-  noticeActions: { display: "flex", gap: "0.6rem", marginTop: "0.9rem", flexWrap: "wrap" },
-  primaryBtn: { backgroundColor: "#16a34a", border: "none", color: "#fff", padding: "0.6rem 0.9rem", borderRadius: "10px", cursor: "pointer", fontWeight: 700 },
-  secondaryBtn: { border: "1px solid transparent", padding: "0.6rem 0.9rem", borderRadius: "10px", cursor: "pointer", fontWeight: 700 },
-  ghostBtn: { backgroundColor: "transparent", border: "1px dashed", padding: "0.6rem 0.9rem", borderRadius: "10px", cursor: "pointer", fontWeight: 700 },
-});
-
-function sevStyle(sev) {
-  if (sev === "HIGH") return { backgroundColor: "#7f1d1d", borderColor: "#ef4444" };
-  if (sev === "MED") return { backgroundColor: "#78350f", borderColor: "#f59e0b" };
-  return { backgroundColor: "#064e3b", borderColor: "#10b981" };
 }
 
 export default Notifications;

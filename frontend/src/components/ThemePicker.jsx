@@ -6,9 +6,6 @@ export const THEMES = [
   { id: "white-yellow",  name: "White & Yellow",  bg: "#ffffff", accent: "#ca8a04" },
   { id: "blue-white",    name: "Blue & White",    bg: "#1e3a5f", accent: "#e0f2fe" },
   { id: "orange-black",  name: "Orange & Black",  bg: "#0a0a0a", accent: "#f97316" },
-  { id: "purple-dark",   name: "Purple Dark",     bg: "#1a0a2e", accent: "#a855f7" },
-  { id: "green-dark",    name: "Matrix Green",    bg: "#011c08", accent: "#22c55e" },
-  { id: "midnight-red",  name: "Midnight Red",    bg: "#1a0000", accent: "#ef4444" },
 ];
 
 export default function ThemePicker() {
@@ -27,7 +24,7 @@ export default function ThemePicker() {
               onClick={() => setTheme(t.id)}
               style={{
                 ...styles.btn,
-                background: `linear-gradient(135deg, ${t.bg} 50%, ${t.accent} 50%)`,
+                background: `linear-gradient(to right, ${t.bg} 50%, ${t.accent} 50%)`,
                 boxShadow: isActive
                   ? `0 0 0 3px var(--accent-main, #3b82f6)`
                   : "none",

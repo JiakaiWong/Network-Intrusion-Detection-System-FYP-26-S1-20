@@ -187,6 +187,8 @@ const Dashboard = () => {
   const [telegramId, setTelegramId] = useState("");
   const [trendsChartType, setTrendsChartType] = useState('bar'); // 'bar' | 'radar' | 'scatter'
   const [distChartType, setDistChartType] = useState('donut');
+  const [alertPage, setAlertPage] = useState(1);
+  const ALERTS_PER_PAGE = 10;
 
   // Summary counts derived from live data
   const high = alerts.filter(a => a.severity_label === "high").length;
@@ -333,7 +335,12 @@ const Dashboard = () => {
 
       {/* Recent Alerts Table */}
       <div className="recent-alerts-section">
-        <h2 style={{ color: 'var(--text-main)' }}>Recent Alerts</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Recent Alerts</h2>
+          <Link to="/alerts" style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', textDecoration: 'none' }}>
+            View all alerts →
+          </Link>
+        </div>
         {loading ? (
           <p style={{ color: 'var(--text-muted)', padding: '1rem 0' }}>Loading alerts…</p>
         ) : alerts.length === 0 ? (
@@ -341,53 +348,75 @@ const Dashboard = () => {
             No alerts found. Run <code>eve_ingestor.py</code> to ingest sample data.
           </p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="alerts-table">
-              <thead>
-                <tr>
-                  <th>Severity</th>
-                  <th>Alert Type</th>
-                  <th>Source IP</th>
-                  <th>Destination IP</th>
-                  <th>Protocol</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>View</th>
-                  <th>Telegram</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.map((alert) => (
-                  <tr key={alert.id}>
-                    <td><span className={`severity-badge ${alert.severity_label}`}>{alert.severity_label}</span></td>
-                    <td style={{ color: 'var(--text-main)', textTransform: 'capitalize' }}>{alert.signature}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{alert.src_ip}</td>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{alert.dest_ip}</td>
-                    <td style={{ color: 'var(--text-main)' }}>{alert.proto}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                      {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([], 
-                        { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
-                    </td>
-                    <td><span className={`progress-badge ${alert.status}`}>{alert.status}</span></td>
-                    <td>
-                      <button className="view-btn" onClick={() => handleViewAlert(alert)} title="View details">
-                        <FiEye />
-                      </button>
-                    </td>
-                    <td>
-                      <button className="telegram-btn" onClick={() => sendTelegramMessage(alert)}>Send</button>
-                    </td>
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="alerts-table">
+                <thead>
+                  <tr>
+                    <th>Severity</th>
+                    <th>Alert Type</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Protocol</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>View</th>
+                    <th>Telegram</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {alerts.slice((alertPage - 1) * ALERTS_PER_PAGE, alertPage * ALERTS_PER_PAGE).map((alert) => (
+                    <tr key={alert.id}>
+                      <td><span className={`severity-badge ${alert.severity_label}`}>{alert.severity_label}</span></td>
+                      <td style={{ color: 'var(--text-main)', textTransform: 'capitalize' }}>{alert.signature}</td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{alert.src_ip}</td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{alert.dest_ip}</td>
+                      <td style={{ color: 'var(--text-main)' }}>{alert.proto}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([],
+                          { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                      </td>
+                      <td><span className={`progress-badge ${alert.status}`}>{alert.status}</span></td>
+                      <td>
+                        <button className="view-btn" onClick={() => handleViewAlert(alert)} title="View details">
+                          <FiEye />
+                        </button>
+                      </td>
+                      <td>
+                        <button className="telegram-btn" onClick={() => sendTelegramMessage(alert)}>Send</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            <div className="pagination" style={{ marginTop: '0.75rem' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Showing {alerts.length === 0 ? 0 : (alertPage - 1) * ALERTS_PER_PAGE + 1}–{Math.min(alertPage * ALERTS_PER_PAGE, alerts.length)} of {alerts.length} alerts
+              </p>
+              <div className="pages">
+                <button
+                  className="page-nav"
+                  onClick={() => setAlertPage(p => p - 1)}
+                  disabled={alertPage === 1}
+                >‹</button>
+                {Array.from({ length: Math.ceil(alerts.length / ALERTS_PER_PAGE) }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`page-number ${page === alertPage ? 'active' : ''}`}
+                    onClick={() => setAlertPage(page)}
+                  >{page}</button>
                 ))}
-              </tbody>
-            </table>
-          </div>
+                <button
+                  className="page-nav"
+                  onClick={() => setAlertPage(p => p + 1)}
+                  disabled={alertPage === Math.ceil(alerts.length / ALERTS_PER_PAGE)}
+                >›</button>
+              </div>
+            </div>
+          </>
         )}
-        <div style={{ marginTop: '1rem' }}>
-          <Link to="/alerts" style={{ color: '#38bdf8', fontSize: '0.85rem', textDecoration: 'none' }}>
-            View all alerts →
-          </Link>
-        </div>
       </div>
 
       <footer className="footer" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)' }}>

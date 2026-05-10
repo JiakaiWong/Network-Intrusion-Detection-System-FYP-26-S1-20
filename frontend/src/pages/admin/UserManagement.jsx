@@ -290,8 +290,8 @@ function UserManagement() {
 
   const tabStyle = (id) => ({
     padding: "10px 20px", cursor: "pointer",
-    color: activeTab === id ? "#3b82f6" : "#94a3b8",
-    borderBottom: activeTab === id ? "2px solid #3b82f6" : "2px solid transparent",
+    color: activeTab === id ? "var(--accent-primary)" : "#94a3b8",
+    borderBottom: activeTab === id ? "2px solid var(--accent-primary)" : "2px solid transparent",
     fontWeight: activeTab === id ? "600" : "400",
     transition: "all 0.2s ease",
   });

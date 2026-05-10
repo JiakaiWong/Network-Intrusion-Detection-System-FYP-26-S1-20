@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FiEye, FiDownload, FiSearch, FiMap } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "../../contexts/ThemeContext";
 import { refreshAllLocations } from "../../services/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
 const Alerts = () => {
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
   const navigate = useNavigate();
 
   const [alerts, setAlerts] = useState([]);
@@ -191,7 +188,7 @@ const Alerts = () => {
 
   return (
     <main className="dashboard-main">
-      <div className={`alerts-wrapper ${isDarkMode ? "dark" : "light"}`}>
+      <div className="alerts-wrapper">
         <div className="alerts-header">
           <h1>Intrusion Detection Alerts</h1>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -286,7 +283,7 @@ const Alerts = () => {
           ) : currentAlerts.length === 0 ? (
             <p className="empty-text">No alerts found.</p>
           ) : (
-            <div className="table-scroll"><table>
+            <div className="table-scroll"><table className="alerts-table">
               <thead>
                 <tr>
                   <th>Severity</th>

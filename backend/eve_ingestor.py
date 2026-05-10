@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/api/ingest/alerts")
+API_URL = os.getenv("API_URL", "https://network-intrusion-detection-system-fyp.onrender.com/api/ingest/alerts")
 
 EVE_PATH = "/opt/homebrew/var/log/suricata/eve.json"
 SEVERITY_THRESHOLD = int(os.getenv("SEVERITY_THRESHOLD", "2"))

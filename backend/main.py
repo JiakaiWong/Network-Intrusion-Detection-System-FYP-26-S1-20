@@ -13,7 +13,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # optional for local testing
-        "https://networkintrusiondection.netlify.app"
+        "https://networkintrusiondetection.netlify.app"
 ],
     allow_credentials=True,
     allow_methods=["*"],

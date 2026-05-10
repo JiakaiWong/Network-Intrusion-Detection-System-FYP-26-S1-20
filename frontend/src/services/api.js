@@ -5,8 +5,8 @@
  */
 
 // Define the two different base URLs
-const AUTH_BASE = import.meta.env.VITE_AUTH_URL || "http://127.0.0.1:8000";
-const ALERTS_BASE = import.meta.env.VITE_ALERTS_URL || "http://127.0.0.1:8000";
+const AUTH_BASE = import.meta.env.VITE_AUTH_URL || "https://network-intrusion-detection-system-fyp.onrender.com";
+const ALERTS_BASE = import.meta.env.VITE_ALERTS_URL || "https://network-intrusion-detection-system-fyp.onrender.com";
 
 /**
  * Core request helper

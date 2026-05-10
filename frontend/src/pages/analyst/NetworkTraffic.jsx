@@ -113,7 +113,6 @@ function NetworkTraffic() {
 
           <div style={styles.filtersRow}>
              <div style={styles.actions}>
-              <button style={styles.primaryBtn}>Apply Filter</button>
               <button style={styles.secondaryBtn} onClick={onReset}>Reset</button>
               <button style={styles.ghostBtn} onClick={() => alert("Exporting...")}>Export CSV</button>
             </div>

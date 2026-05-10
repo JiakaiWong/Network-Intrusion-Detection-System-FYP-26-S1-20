@@ -5,59 +5,72 @@ import './analyst.css';
 function Notifications() {
   const navigate = useNavigate();
 
-  // State and Logic
   const [severity, setSeverity] = useState("ALL");
   const [status, setStatus] = useState("UNREAD");
   const [channel, setChannel] = useState("ALL");
   const [items, setItems] = useState([
-    { id: "NTF-0001", sev: "HIGH", title: "SQL Injection attack detected", ip: "192.168.1.12", when: "5 mins ago", channel: "MOBILE", read: false, failed: false },
-    { id: "NTF-0002", sev: "HIGH", title: "Brute Force attack detected", ip: "10.0.0.45", when: "10 mins ago", channel: "DASHBOARD", read: false, failed: true },
-    { id: "NTF-0003", sev: "MED", title: "Command Injection attack detected", ip: "172.16.8.200", when: "1 hr ago", channel: "MOBILE", read: true },
-    { id: "NTF-0004", sev: "LOW", title: "Phishing attempt blocked", ip: "172.16.8.12", when: "3 hrs ago", channel: "EMAIL", read: true },
+    { id: "NTF-0001", sev: "HIGH", title: "SQL Injection attack detected",      ip: "192.168.1.12",  when: "5 mins ago",  channel: "MOBILE",    read: false, failed: false },
+    { id: "NTF-0002", sev: "HIGH", title: "Brute Force attack detected",         ip: "10.0.0.45",     when: "10 mins ago", channel: "DASHBOARD", read: false, failed: true  },
+    { id: "NTF-0003", sev: "MED",  title: "Command Injection attack detected",   ip: "172.16.8.200",  when: "1 hr ago",    channel: "MOBILE",    read: true,  failed: false },
+    { id: "NTF-0004", sev: "LOW",  title: "Phishing attempt blocked",            ip: "172.16.8.12",   when: "3 hrs ago",   channel: "EMAIL",     read: true,  failed: false },
   ]);
 
   const filtered = useMemo(() => {
     return items.filter((n) => {
-      const sevMatch = severity === "ALL" || n.sev === severity;
-      const statusMatch = status === "ALL" || (status === "UNREAD" ? !n.read : n.read);
-      const chanMatch = channel === "ALL" || n.channel === channel;
+      const sevMatch    = severity === "ALL" || n.sev === severity;
+      const statusMatch = status   === "ALL" || (status === "UNREAD" ? !n.read : n.read);
+      const chanMatch   = channel  === "ALL" || n.channel === channel;
       return sevMatch && statusMatch && chanMatch;
     });
   }, [items, severity, status, channel]);
 
-  const acknowledge = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const unreadCount = items.filter((n) => !n.read).length;
+  const acknowledge = (id) =>
+    setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+
+  const unreadCount = items.filter(n => !n.read).length;
 
   return (
     <main className="dashboard-main">
+      {/* Header */}
       <div className="dashboard-status-bar">
         <div>
           <h1 className="page-title">Notifications</h1>
           <div className="text-sm text-muted">Unread: {unreadCount}</div>
         </div>
         <button
-          className="refresh-btn"
+          className="export-btn"
           onClick={() => setItems(prev => prev.map(n => ({ ...n, read: true })))}
         >
           Mark all as read
         </button>
       </div>
 
-      <div className="card">
-        <div className="trends-header">
-          <div className="nav-section-title">Filters</div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+      {/* Filter bar */}
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <div className="filters" style={{ marginBottom: 0 }}>
+          <span className="nav-section-title" style={{ alignSelf: 'center' }}>Filters</span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Severity</span>
             <select className="time-filter" value={severity} onChange={(e) => setSeverity(e.target.value)}>
               <option value="ALL">All</option>
               <option value="HIGH">High</option>
               <option value="MED">Medium</option>
               <option value="LOW">Low</option>
             </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</span>
             <select className="time-filter" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="UNREAD">Unread</option>
               <option value="READ">Read</option>
               <option value="ALL">All</option>
             </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Channel</span>
             <select className="time-filter" value={channel} onChange={(e) => setChannel(e.target.value)}>
               <option value="ALL">All</option>
               <option value="MOBILE">Mobile</option>
@@ -65,35 +78,100 @@ function Notifications() {
               <option value="DASHBOARD">Dashboard</option>
             </select>
           </div>
+
+          <div style={{ marginLeft: 'auto', alignSelf: 'flex-end', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            {filtered.length} notification{filtered.length !== 1 ? 's' : ''}
+          </div>
         </div>
       </div>
 
-      <div className="summary-cards">
-        {filtered.map((n) => (
-          <div
-            key={n.id}
-            className={`card ${n.read ? 'text-muted' : ''}`}
-          >
-            <div className={`card-icon severity-badge ${n.sev === 'MED' ? 'medium' : n.sev.toLowerCase()}`}>{n.sev}</div>
-            {n.failed && <div style={{ color: 'var(--color-yellow)', fontSize: '0.85rem', fontWeight: 700 }}>Delivery failed</div>}
-            <div className="card-label">{n.when}</div>
-            <div className="card-value" style={{ fontSize: '1rem', fontWeight: 700 }}>{n.title}</div>
-            <div className="text-sm">
-              IP: <span className="src-ip mono">{n.ip}</span> • {n.channel}
+      {/* Notification cards */}
+      {filtered.length === 0 ? (
+        <div className="empty-text">No notifications match the current filters.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {filtered.map((n) => (
+            <div
+              key={n.id}
+              className="card"
+              style={{
+                opacity: n.read ? 0.6 : 1,
+                borderLeft: `3px solid ${sevColor(n.sev)}`,
+                padding: '1rem 1.25rem',
+              }}
+            >
+              {/* Top row: badge + failed + time */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{
+                  display: 'inline-block',
+                  padding: '0.2rem 0.65rem',
+                  borderRadius: '999px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.05em',
+                  backgroundColor: sevBg(n.sev),
+                  color: sevColor(n.sev),
+                  border: `1px solid ${sevColor(n.sev)}`,
+                }}>
+                  {n.sev === 'MED' ? 'MEDIUM' : n.sev}
+                </span>
+
+                {n.failed && (
+                  <span style={{ color: 'var(--color-yellow)', fontSize: '0.82rem', fontWeight: 700 }}>
+                    ⚠ Delivery failed
+                  </span>
+                )}
+
+                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {n.when}
+                </span>
+              </div>
+
+              {/* Title */}
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+                {n.title}
+              </div>
+
+              {/* Meta */}
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                IP: <span className="src-ip mono">{n.ip}</span>
+                <span style={{ margin: '0 0.4rem' }}>•</span>
+                Channel: {n.channel}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {!n.read ? (
+                  <button className="view-btn" onClick={() => acknowledge(n.id)}>
+                    ✓ Acknowledge
+                  </button>
+                ) : (
+                  <button className="view-btn" onClick={() => alert("Mock modal")}>
+                    View
+                  </button>
+                )}
+                <button className="export-btn" onClick={() => navigate("/alerts")}>
+                  View Alert →
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-              {!n.read ? (
-                <button className="view-btn" onClick={() => acknowledge(n.id)}>Acknowledge</button>
-              ) : (
-                <button className="telegram-btn" onClick={() => alert("Mock modal")}>View</button>
-              )}
-              <button className="view-btn" onClick={() => navigate("/alerts")}>View Alert</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </main>
   );
+}
+
+/* Severity colour helpers */
+function sevColor(sev) {
+  if (sev === 'HIGH') return '#ef4444';
+  if (sev === 'MED')  return '#f59e0b';
+  return '#22c55e';
+}
+function sevBg(sev) {
+  if (sev === 'HIGH') return 'rgba(239,68,68,0.12)';
+  if (sev === 'MED')  return 'rgba(245,158,11,0.12)';
+  return 'rgba(34,197,94,0.12)';
 }
 
 export default Notifications;

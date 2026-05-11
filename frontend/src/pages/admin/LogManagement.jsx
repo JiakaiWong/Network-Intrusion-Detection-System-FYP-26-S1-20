@@ -90,7 +90,7 @@ const hintBoxStyle = {
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
-function LogManagement({ logs, setLogs }) {
+function LogManagement({ logs = [], setLogs }) {
   const [formData, setFormData]         = useState(EMPTY_FORM);
   const [filter, setFilter]             = useState('');
   const [hoveredRow, setHoveredRow]     = useState(null);
@@ -110,9 +110,9 @@ function LogManagement({ logs, setLogs }) {
   }, []);
 
   // ── Fetch logs on mount ──────────────────────────────────────────
-  useEffect(() => {
+useEffect(() => {
     apiFetch('/api/logs')
-      .then(setLogs)
+      .then(data => setLogs(Array.isArray(data) ? data : data.logs ?? []))
       .catch(() => showToast('Failed to load logs', 'error'));
   }, [setLogs, showToast]);
 
@@ -245,7 +245,7 @@ function LogManagement({ logs, setLogs }) {
     });
   };
 
-  const filteredLogs = logs.filter(log =>
+ const filteredLogs = (logs ?? []).filter(log =>
     log.name.toLowerCase().includes(filter.toLowerCase()) ||
     log.type.toLowerCase().includes(filter.toLowerCase())
   );

@@ -25,8 +25,10 @@ function Reports() {
   const [format, setFormat]       = useState("PDF");
   const [idsSource, setIdsSource] = useState("ALL");
 
-  /* ── History table ─────────────────────────────────────────── */
-  const [reports, setReports] = useState([]);
+  /* ── History table (persisted) ────────────────────────────── */
+  const [reports, setReports] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("report_history") || "[]"); } catch { return []; }
+  });
 
   /* ── Table filters ─────────────────────────────────────────── */
   const [filterScope,  setFilterScope]  = useState("ALL");
@@ -99,8 +101,12 @@ function Reports() {
       triggerPDF(newReport, scopedAlerts);
     }
 
-    // Log to history
-    setReports((prev) => [newReport, ...prev]);
+    // Log to history + persist
+    setReports((prev) => {
+      const updated = [newReport, ...prev];
+      localStorage.setItem("report_history", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const resetForm = () => {
@@ -219,9 +225,6 @@ function Reports() {
     <main className="dashboard-main">
       <div className="dashboard-status-bar">
         <h1 className="page-title">Reports</h1>
-        <button className="view-btn" onClick={generate} disabled={!isRangeValid}>
-          + Generate &amp; Download
-        </button>
       </div>
 
       {/* ── Generate form ── */}
@@ -275,7 +278,7 @@ function Reports() {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '0.75rem' }}>
           <button className="export-btn" onClick={resetForm}>Reset</button>
           <button className="view-btn" onClick={generate} disabled={!isRangeValid}>
-            Generate &amp; Download
+            Generate
           </button>
         </div>
       </div>

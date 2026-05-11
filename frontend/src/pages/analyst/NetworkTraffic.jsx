@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from "react"; 
-import { getTrafficLogs } from "../../services/api"; 
+import { useMemo, useState, useEffect } from "react";
+import { getTrafficLogs } from "../../services/api";
 import './analyst.css';
 
 function NetworkTraffic() {
@@ -9,6 +9,7 @@ function NetworkTraffic() {
   const [timeRange, setTimeRange] = useState("24H");
   const [idsSource, setIdsSource] = useState("ALL");
   const [selectedIp, setSelectedIp] = useState(null);
+  const [viewingRow, setViewingRow] = useState(null);
 
   const [liveRows, setLiveRows] = useState([]);
   const [backendOnline, setBackendOnline] = useState(false);
@@ -21,16 +22,16 @@ function NetworkTraffic() {
           setBackendOnline(true);
         }
       })
-      .catch(() => {}); 
+      .catch(() => {});
   }, []);
 
   const rows = useMemo(
     () => backendOnline && liveRows.length > 0 ? liveRows : [
-      { ts: "12:31:23", src: "192.168.1.12", dst: "10.0.0.45", sport: 443, dport: 3080, proto: "TCP", bytes: 1600, ids: "Suricata" },
-      { ts: "12:25:10", src: "192.168.1.100", dst: "172.16.8.101", sport: 80, dport: 3200, proto: "TCP", bytes: 503, ids: "Suricata" },
-      { ts: "12:22:30", src: "192.168.1.100", dst: "172.16.8.101", sport: 305, dport: 2320, proto: "UDP", bytes: 708, ids: "Zeek" },
-      { ts: "12:24:42", src: "192.168.1.52", dst: "172.16.8.11", sport: 8970, dport: 3080, proto: "TCP", bytes: 692, ids: "Zeek" },
-      { ts: "12:30:06", src: "192.168.1.100", dst: "172.16.8.05", sport: 8080, dport: 3200, proto: "UDP", bytes: 706, ids: "Snort" },
+      { ts: "12:31:23", src: "192.168.1.12",  dst: "10.0.0.45",      sport: 443,  dport: 3080, proto: "TCP",  bytes: 1600, ids: "Suricata", flags: "SYN, ACK", duration: "0.42s", packets: 12 },
+      { ts: "12:25:10", src: "192.168.1.100", dst: "172.16.8.101",   sport: 80,   dport: 3200, proto: "TCP",  bytes: 503,  ids: "Suricata", flags: "PSH, ACK", duration: "0.18s", packets: 4  },
+      { ts: "12:22:30", src: "192.168.1.100", dst: "172.16.8.101",   sport: 305,  dport: 2320, proto: "UDP",  bytes: 708,  ids: "Zeek",     flags: "—",        duration: "0.05s", packets: 2  },
+      { ts: "12:24:42", src: "192.168.1.52",  dst: "172.16.8.11",    sport: 8970, dport: 3080, proto: "TCP",  bytes: 692,  ids: "Zeek",     flags: "FIN, ACK", duration: "0.31s", packets: 7  },
+      { ts: "12:30:06", src: "192.168.1.100", dst: "172.16.8.05",    sport: 8080, dport: 3200, proto: "UDP",  bytes: 706,  ids: "Snort",    flags: "—",        duration: "0.09s", packets: 3  },
     ],
     [backendOnline, liveRows]
   );
@@ -60,6 +61,39 @@ function NetworkTraffic() {
         { type: "Command Injection", when: "3 weeks ago", source: "Suricata" },
       ],
     });
+  };
+
+  /* ── Export CSV ───────────────────────────────────────────────────────────── */
+  const exportCSV = () => {
+    const headers = ["Timestamp", "Source IP", "Destination IP", "Src Port", "Dst Port", "Protocol", "Bytes", "Packets", "Duration", "Flags", "IDS Source"];
+    const csvRows = filtered.map((r) => [
+      r.ts,
+      r.src,
+      r.dst,
+      r.sport,
+      r.dport,
+      r.proto,
+      r.bytes,
+      r.packets ?? "",
+      r.duration ?? "",
+      r.flags ?? "",
+      r.ids,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `traffic_logs_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -112,9 +146,9 @@ function NetworkTraffic() {
           </div>
 
           <div style={styles.filtersRow}>
-             <div style={styles.actions}>
+            <div style={styles.actions}>
               <button style={styles.secondaryBtn} onClick={onReset}>Reset</button>
-              <button style={styles.ghostBtn} onClick={() => alert("Exporting...")}>Export CSV</button>
+              <button style={styles.ghostBtn} onClick={exportCSV}>Export CSV</button>
             </div>
           </div>
         </div>
@@ -152,7 +186,7 @@ function NetworkTraffic() {
                       <td>{r.bytes}</td>
                       <td><span style={styles.tag}>{r.ids}</span></td>
                       <td>
-                        <button style={styles.smallBtn}>View</button>
+                        <button style={styles.smallBtn} onClick={() => setViewingRow(r)}>View</button>
                       </td>
                     </tr>
                   ))}
@@ -176,62 +210,100 @@ function NetworkTraffic() {
                 <div style={styles.divider} />
                 <div style={styles.drawerSectionTitle}>Quick Links</div>
                 <div style={styles.quickLinks}>
-                  <button style={styles.linkBtn}>VirusTotal</button>
-                  <button style={styles.linkBtn}>Whois</button>
+                  <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${selectedIp.ip}`, '_blank')}>VirusTotal</button>
+                  <button style={styles.linkBtn} onClick={() => window.open(`https://who.is/whois-ip/ip-address/${selectedIp.ip}`, '_blank')}>Whois</button>
                 </div>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Traffic Log Detail Modal ──────────────────────────────────────── */}
+      {viewingRow && (
+        <div className="modal-overlay" onClick={() => setViewingRow(null)}>
+          <div className="modal-box" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Traffic Log Detail</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>{viewingRow.ts} · {viewingRow.ids}</div>
+              </div>
+              <button className="back-icon" onClick={() => setViewingRow(null)} aria-label="Close">×</button>
+            </div>
+
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {/* Protocol badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <span style={{ ...styles.badge, ...badgeForProto(viewingRow.proto), padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}>{viewingRow.proto}</span>
+                <span style={styles.tag}>{viewingRow.ids}</span>
+              </div>
+
+              {/* Key-value rows */}
+              {[
+                ["Timestamp",       viewingRow.ts],
+                ["Source IP",       viewingRow.src],
+                ["Destination IP",  viewingRow.dst],
+                ["Source Port",     viewingRow.sport],
+                ["Destination Port",viewingRow.dport],
+                ["Bytes",           viewingRow.bytes],
+                ["Packets",         viewingRow.packets ?? "—"],
+                ["Duration",        viewingRow.duration ?? "—"],
+                ["TCP Flags",       viewingRow.flags ?? "—"],
+                ["IDS Source",      viewingRow.ids],
+              ].map(([key, val]) => (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.35rem' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{key}</span>
+                  <span style={{ color: 'var(--text-main)', fontSize: '0.83rem', fontWeight: 600, fontFamily: ['Source IP','Destination IP','Source Port','Destination Port'].includes(key) ? 'monospace' : 'inherit' }}>
+                    {val}
+                  </span>
+                </div>
+              ))}
+
+              {/* Quick enrichment links */}
+              <div style={{ marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Investigate</div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.src}`, '_blank')}>VT — Src IP</button>
+                  <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.dst}`, '_blank')}>VT — Dst IP</button>
+                  <button style={styles.linkBtn} onClick={() => window.open(`https://who.is/whois-ip/ip-address/${viewingRow.src}`, '_blank')}>Whois</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="modal-cancel" onClick={() => setViewingRow(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 function badgeForProto(proto) {
   switch (proto) {
-    case "TCP": return { backgroundColor: "#1e40af", borderColor: "#3b82f6" };
-    case "UDP": return { backgroundColor: "#92400e", borderColor: "#f59e0b" };
+    case "TCP":  return { backgroundColor: "#1e40af", borderColor: "#3b82f6" };
+    case "UDP":  return { backgroundColor: "#92400e", borderColor: "#f59e0b" };
     case "ICMP": return { backgroundColor: "#064e3b", borderColor: "#10b981" };
-    default: return { backgroundColor: "#334155", borderColor: "#64748b" };
+    default:     return { backgroundColor: "#334155", borderColor: "#64748b" };
   }
 }
 
 const styles = {
   main: { flex: 1, padding: "2rem", overflowY: "auto" },
-  heading: { fontSize: "1.5rem", marginBottom: "1rem", color: "var(--text-main)" },
-  card: { 
-    backgroundColor: "var(--bg-card)", 
-    border: "1px solid var(--border-color)", 
-    borderRadius: "12px", 
-    padding: "1rem", 
-    marginBottom: "1rem" 
-  },
+  card: { backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "12px", padding: "1rem", marginBottom: "1rem" },
   filtersRow: { display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "0.75rem" },
   field: { display: "flex", flexDirection: "column", gap: "0.35rem", flex: "1", minWidth: "150px" },
   label: { fontSize: "0.8rem", color: "var(--text-muted)" },
-  input: { 
-    backgroundColor: "var(--bg-main)", 
-    border: "1px solid var(--border-color)", 
-    color: "var(--text-main)", 
-    borderRadius: "8px", 
-    padding: "0.6rem" 
-  },
-  select: { 
-    backgroundColor: "var(--bg-main)", 
-    border: "1px solid var(--border-color)", 
-    color: "var(--text-main)", 
-    borderRadius: "8px", 
-    padding: "0.6rem" 
-  },
+  input: { backgroundColor: "var(--bg-main)", border: "1px solid var(--border-color)", color: "var(--text-main)", borderRadius: "8px", padding: "0.6rem" },
+  select: { backgroundColor: "var(--bg-main)", border: "1px solid var(--border-color)", color: "var(--text-main)", borderRadius: "8px", padding: "0.6rem" },
   actions: { display: "flex", gap: "0.6rem", flex: "1", justifyContent: "flex-end" },
-  primaryBtn: { backgroundColor: "var(--accent-primary)", color: "#fff", border: "none", padding: "0.6rem 1.2rem", borderRadius: "8px", cursor: "pointer" },
   secondaryBtn: { backgroundColor: "var(--bg-main)", color: "var(--text-main)", border: "1px solid var(--border-color)", padding: "0.6rem 1.2rem", borderRadius: "8px", cursor: "pointer" },
   ghostBtn: { background: "none", border: "1px dashed var(--border-color)", color: "var(--text-muted)", padding: "0.6rem 1.2rem", borderRadius: "8px", cursor: "pointer" },
   contentRow: { display: "flex", gap: "1rem" },
   tableHeader: { color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem" },
   tableWrap: { overflowX: "auto", borderRadius: "12px", border: "1px solid var(--border-color)", borderTop: "3px solid var(--accent-primary)" },
-  badge: { padding: "0.2rem 0.5rem", borderRadius: "10px", color: "#fff", fontSize: "0.7rem", fontWeight: "bold" },
+  badge: { padding: "0.2rem 0.5rem", borderRadius: "10px", color: "#fff", fontSize: "0.7rem", fontWeight: "bold", border: "1px solid transparent" },
   tag: { display: "inline-block", padding: "0.25rem 0.55rem", borderRadius: "10px", backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-color)", color: "var(--text-primary)", fontSize: "0.75rem", fontWeight: "700" },
   smallBtn: { backgroundColor: "var(--bg-hover)", border: "1px solid var(--border-color)", color: "var(--text-main)", padding: "0.4rem 0.75rem", borderRadius: "8px", cursor: "pointer", fontWeight: "600", fontSize: "0.8rem" },
   drawer: { width: "320px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "12px", padding: "1rem", position: "sticky", top: "0" },
@@ -239,13 +311,14 @@ const styles = {
   drawerIp: { fontSize: "1.2rem", fontWeight: "bold", color: "var(--text-main)" },
   drawerTitle: { fontSize: "0.8rem", color: "var(--text-muted)" },
   drawerClose: { background: "none", border: "none", color: "var(--text-main)", fontSize: "1.5rem", cursor: "pointer" },
+  drawerBody: {},
   kvRow: { display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" },
   kvKey: { color: "var(--text-muted)", fontSize: "0.85rem" },
   kvVal: { color: "var(--text-main)", fontSize: "0.85rem", fontWeight: "bold" },
   divider: { height: "1px", backgroundColor: "var(--border-color)", margin: "1rem 0" },
   drawerSectionTitle: { fontSize: "0.9rem", fontWeight: "bold", color: "var(--text-main)", marginBottom: "0.5rem" },
   quickLinks: { display: "flex", gap: "0.5rem" },
-  linkBtn: { backgroundColor: "var(--bg-main)", border: "1px solid var(--border-color)", color: "var(--text-main)", padding: "0.4rem 0.6rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem" }
+  linkBtn: { backgroundColor: "var(--bg-main)", border: "1px solid var(--border-color)", color: "var(--text-main)", padding: "0.4rem 0.6rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem" },
 };
 
 export default NetworkTraffic;

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAlerts } from "../../services/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import './analyst.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
@@ -175,69 +177,50 @@ function Reports() {
   };
 
   const triggerPDF = (report, alerts) => {
-    const tableRows = alerts.map((a) => `
-      <tr>
-        <td>${a.severity_label ?? ""}</td>
-        <td>${(a.signature ?? "").replace(/</g, "&lt;")}</td>
-        <td style="font-family:monospace">${a.src_ip ?? ""}</td>
-        <td style="font-family:monospace">${a.dest_ip ?? ""}</td>
-        <td>${a.dest_port ?? ""}</td>
-        <td>${a.status ?? ""}</td>
-        <td>${a.timestamp ? new Date(a.timestamp).toLocaleString() : ""}</td>
-      </tr>`).join("");
-
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const highCount = alerts.filter(a => (a.severity_label || '').toLowerCase() === 'high').length;
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>${report.id} - Security Report</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; color: #111; font-size: 13px; }
-    h1 { font-size: 1.4rem; border-bottom: 2px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; }
-    .meta { display: flex; gap: 2rem; margin: 0.75rem 0 1rem; font-size: 0.88rem; color: #444; flex-wrap: wrap; }
-    .stats { display: flex; gap: 1rem; margin: 1rem 0; }
-    .stat { background: #f3f4f6; border-radius: 8px; padding: 0.75rem 1.5rem; text-align: center; min-width: 100px; }
-    .stat-val { font-size: 1.8rem; font-weight: bold; color: #111; }
-    .stat-val.red { color: #dc2626; }
-    .stat-lbl { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.8rem; }
-    th { background: #e5e7eb; text-align: left; padding: 0.5rem 0.75rem; }
-    td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
-    tr:nth-child(even) td { background: #f9fafb; }
-    .empty { color: #888; font-style: italic; margin-top: 1rem; }
-    @media print { body { padding: 0; } }
-  </style>
-</head>
-<body>
-  <h1>Security Alert Report - ${report.id}</h1>
-  <div class="meta">
-    <span><strong>Generated:</strong> ${new Date().toLocaleString()}</span>
-    <span><strong>Period:</strong> ${report.dateFrom} to ${report.dateTo}</span>
-    <span><strong>Scope:</strong> ${report.scope}</span>
-    <span><strong>IDS Source:</strong> ${report.by}</span>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="stat-val">${alerts.length}</div><div class="stat-lbl">Matching Alerts</div></div>
-    <div class="stat"><div class="stat-val red">${highCount}</div><div class="stat-lbl">High Severity</div></div>
-  </div>
-  ${alerts.length > 0 ? `
-  <table>
-    <thead>
-      <tr><th>Severity</th><th>Signature</th><th>Src IP</th><th>Dst IP</th><th>Port</th><th>Status</th><th>Time</th></tr>
-    </thead>
-    <tbody>${tableRows}</tbody>
-  </table>` : `<p class="empty">No alerts matched the selected filters for this period.</p>`}
-  <script>window.onload = function(){ window.print(); }<\/script>
-</body>
-</html>`;
+    // Header
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Security Alert Report - ${report.id}`, 40, 40);
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) win.focus();
-    setTimeout(() => URL.revokeObjectURL(url), 15000);
+    // Meta info
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 60);
+    doc.text(`Period: ${report.dateFrom}  to  ${report.dateTo}`, 40, 73);
+    doc.text(`Scope: ${report.scope}   |   IDS Source: ${report.by}`, 40, 86);
+    doc.text(`Total Matching Alerts: ${alerts.length}   |   High Severity: ${highCount}`, 40, 99);
+
+    // Table
+    doc.setTextColor(0);
+    if (alerts.length > 0) {
+      autoTable(doc, {
+        startY: 115,
+        head: [["Severity", "Signature", "Src IP", "Dst IP", "Port", "Status", "Time"]],
+        body: alerts.map(a => [
+          (a.severity_label ?? "").toUpperCase(),
+          a.signature ?? "",
+          a.src_ip ?? "",
+          a.dest_ip ?? "",
+          String(a.dest_port ?? ""),
+          a.status ?? "",
+          a.timestamp ? new Date(a.timestamp).toLocaleString() : "",
+        ]),
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { cellWidth: 160 } },
+      });
+    } else {
+      doc.setFontSize(10);
+      doc.setTextColor(150);
+      doc.text("No alerts matched the selected filters for this period.", 40, 130);
+    }
+
+    doc.save(`${report.id}_${report.dateFrom}_${report.dateTo}.pdf`);
   };
 
   /* ─────────────────────────────────────────────────────────── */

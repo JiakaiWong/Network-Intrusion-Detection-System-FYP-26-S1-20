@@ -6,6 +6,7 @@ from routes import auth
 from routes import alerts
 from routes import logs
 from routes import maintenance
+from routes import reports
 
 app = FastAPI(title="IDS Backend API")
 
@@ -26,6 +27,7 @@ app.include_router(maintenance.router)
 app.include_router(auth.router)
 app.include_router(alerts.router)
 app.include_router(logs.router)
+app.include_router(reports.router)
 
 
 @app.get("/")

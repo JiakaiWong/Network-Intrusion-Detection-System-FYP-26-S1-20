@@ -2,6 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import { getAlerts } from "../../services/api";
 import './analyst.css';
 
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
+
+async function fetchReportHistory() {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/api/reports/history`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.items || [];
+}
+
+async function saveReportEntry(entry) {
+  const token = localStorage.getItem("token");
+  await fetch(`${API_BASE}/api/reports/history`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(entry),
+  });
+}
+
 function Reports() {
   /* ── Live alert data from API ──────────────────────────────── */
   const [liveAlerts, setLiveAlerts] = useState([]);
@@ -25,10 +46,12 @@ function Reports() {
   const [format, setFormat]       = useState("PDF");
   const [idsSource, setIdsSource] = useState("ALL");
 
-  /* ── History table (persisted) ────────────────────────────── */
-  const [reports, setReports] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("report_history") || "[]"); } catch { return []; }
-  });
+  /* ── History table (account-linked via API) ───────────────── */
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    fetchReportHistory().then(setReports).catch(() => {});
+  }, []);
 
   /* ── Table filters ─────────────────────────────────────────── */
   const [filterScope,  setFilterScope]  = useState("ALL");
@@ -84,7 +107,7 @@ function Reports() {
     const generatedAt = new Date().toLocaleDateString();
 
     const newReport = {
-      id: `RPT-${String(reports.length + 1).padStart(3, '0')}`,
+      id: `RPT-${Date.now()}`,
       generatedAt,
       dateFrom: from,
       dateTo: to,
@@ -101,12 +124,9 @@ function Reports() {
       triggerPDF(newReport, scopedAlerts);
     }
 
-    // Log to history + persist
-    setReports((prev) => {
-      const updated = [newReport, ...prev];
-      localStorage.setItem("report_history", JSON.stringify(updated));
-      return updated;
-    });
+    // Save to backend + update local state
+    saveReportEntry(newReport).catch(() => {});
+    setReports((prev) => [newReport, ...prev]);
   };
 
   const resetForm = () => {

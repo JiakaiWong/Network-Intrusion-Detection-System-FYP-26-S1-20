@@ -1,28 +1,48 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+
 from routes import auth
 from routes import alerts
-from routes import logs  
+from routes import logs
 from routes import maintenance
 
 app = FastAPI(title="IDS Backend API")
-app.include_router(maintenance.router)
+
+origins = [
+    "http://localhost:5173",
+    "https://networkintrusiondetection.netlify.app",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # optional for local testing
-        "https://networkintrusiondetection.netlify.app"
-],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.include_router(maintenance.router)
 app.include_router(auth.router)
 app.include_router(alerts.router)
-app.include_router(logs.router)  
+app.include_router(logs.router)
+
+
+@app.get("/")
+def home():
+    return {
+        "ok": True,
+        "message": "IDS backend is running"
+    }
+
+
+@app.get("/health")
+def health():
+    return {
+        "ok": True,
+        "service": "IDS Backend API"
+    }
+
 
 def custom_openapi():
     if app.openapi_schema:
@@ -35,9 +55,7 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    if "components" not in openapi_schema:
-        openapi_schema["components"] = {}
-
+    openapi_schema.setdefault("components", {})
     openapi_schema["components"]["securitySchemes"] = {
         "HTTPBearer": {
             "type": "http",
@@ -50,4 +68,7 @@ def custom_openapi():
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
+
 app.openapi = custom_openapi
+
+print("Loaded FastAPI app with CORS origins:", origins)

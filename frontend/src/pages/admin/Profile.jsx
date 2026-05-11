@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import "./admin.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+const API_BASE =
+  import.meta.env.VITE_API_BASE ??
+  "https://network-intrusion-detection-system-fyp.onrender.com";
 
 function getPasswordStrength(password) {
   if (!password) return null;
@@ -327,9 +329,9 @@ function Profile() {
   const handlePasswordSubmit = async () => {
     const errors = {};
     const strength = getPasswordStrength(passwordForm.newPass);
-    if (!passwordForm.current)                             errors.current = "Required";
-    if (strength?.label === "Weak")                        errors.newPass = "Password is too weak";
-    if (passwordForm.newPass !== passwordForm.confirm)     errors.confirm = "Passwords do not match";
+    if (!passwordForm.current)                         errors.current = "Required";
+    if (strength?.label === "Weak")                    errors.newPass = "Password is too weak";
+    if (passwordForm.newPass !== passwordForm.confirm) errors.confirm = "Passwords do not match";
     if (Object.keys(errors).length > 0) return setPasswordErrors(errors);
 
     setIsPasswordSubmitting(true);
@@ -381,13 +383,8 @@ function Profile() {
           <div style={s.onlineDot} />
         </div>
         <div>
-          <h2 style={{ margin: 0, color: "#ffffff" }}>
-            {userData.full_name}
-          </h2>
-          {/* ✅ FIX: semi-transparent white — readable on any dark gradient */}
-          <p style={{ color: "rgba(255,255,255,0.7)", margin: "4px 0" }}>
-            {userData.email}
-          </p>
+          <h2 style={{ margin: 0, color: "#ffffff" }}>{userData.full_name}</h2>
+          <p style={{ color: "rgba(255,255,255,0.7)", margin: "4px 0" }}>{userData.email}</p>
           <div style={s.badgeRow}>
             <span style={s.roleBadge}>{userData.role || "Admin"}</span>
             <span style={{
@@ -497,15 +494,55 @@ function Profile() {
             <div style={s.inputGrid}>
               <div style={s.inputWrap}>
                 <label style={s.label}>Current Password</label>
-                <input type="password" style={s.input(true)} placeholder="••••••••" />
+                <input
+                  type="password"
+                  style={s.input(true)}
+                  placeholder="••••••••"
+                  value={passwordForm.current}
+                  onChange={(e) => setPasswordForm((p) => ({ ...p, current: e.target.value }))}
+                />
+                {passwordErrors.current && (
+                  <small style={{ color: "#ef4444" }}>{passwordErrors.current}</small>
+                )}
               </div>
               <div style={s.inputWrap}>
                 <label style={s.label}>New Password</label>
-                <input type="password" style={s.input(true)} placeholder="••••••••" />
+                <input
+                  type="password"
+                  style={s.input(true)}
+                  placeholder="••••••••"
+                  value={passwordForm.newPass}
+                  onChange={(e) => setPasswordForm((p) => ({ ...p, newPass: e.target.value }))}
+                />
+                {strength && (
+                  <>
+                    <div style={s.strengthBar}>
+                      <div style={{
+                        height: "100%",
+                        width: strength.width,
+                        backgroundColor: strength.color,
+                        borderRadius: "2px",
+                      }} />
+                    </div>
+                    <small style={{ color: strength.color }}>Strength: {strength.label}</small>
+                  </>
+                )}
+                {passwordErrors.newPass && (
+                  <small style={{ color: "#ef4444" }}>{passwordErrors.newPass}</small>
+                )}
               </div>
               <div style={s.inputWrap}>
                 <label style={s.label}>Confirm Password</label>
-                <input type="password" style={s.input(true)} placeholder="••••••••" />
+                <input
+                  type="password"
+                  style={s.input(true)}
+                  placeholder="••••••••"
+                  value={passwordForm.confirm}
+                  onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
+                />
+                {passwordErrors.confirm && (
+                  <small style={{ color: "#ef4444" }}>{passwordErrors.confirm}</small>
+                )}
               </div>
               <div style={s.inputWrap}>
                 <label style={s.label}>MFA</label>
@@ -523,14 +560,22 @@ function Profile() {
                 </div>
               </div>
             </div>
+
             <div style={{
               display: "flex", justifyContent: "flex-end", gap: "0.6rem",
               marginTop: "2rem",
               borderTop: "1px solid var(--border-primary)",
               paddingTop: "1.5rem",
             }}>
-              <button style={s.btnPrimary} onClick={() => showToast("Password updated (mock)")}>
-                Update Password
+              <button
+                style={s.btnPrimary}
+                onClick={() => {
+                  setPasswordErrors({});
+                  handlePasswordSubmit();
+                }}
+                disabled={isPasswordSubmitting}
+              >
+                {isPasswordSubmitting ? "Updating…" : "Update Password"}
               </button>
               <button style={s.btnSecondary} onClick={() => showToast("MFA setup (mock)")}>
                 Setup MFA
@@ -645,7 +690,11 @@ function Profile() {
               <button
                 type="button"
                 style={{ ...s.btnSecondary, flex: 1 }}
-                onClick={() => { setShowPasswordModal(false); setPasswordErrors({}); }}
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordErrors({});
+                  setPasswordForm({ current: "", newPass: "", confirm: "" });
+                }}
               >
                 Cancel
               </button>

@@ -14,7 +14,7 @@ const styles = {
   td: { padding: "16px 24px", fontSize: "0.85rem" }
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
 
 const getAuthHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

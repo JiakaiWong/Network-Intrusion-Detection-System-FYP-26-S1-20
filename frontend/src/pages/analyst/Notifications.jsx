@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import './analyst.css';
+
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
 
 function Notifications() {
   const navigate = useNavigate();
@@ -8,12 +10,80 @@ function Notifications() {
   const [severity, setSeverity] = useState("ALL");
   const [status, setStatus] = useState("UNREAD");
   const [channel, setChannel] = useState("ALL");
-  const [items, setItems] = useState([
-    { id: "NTF-0001", sev: "HIGH", title: "SQL Injection attack detected",      ip: "192.168.1.12",  when: "5 mins ago",  channel: "MOBILE",    read: false, failed: false },
-    { id: "NTF-0002", sev: "HIGH", title: "Brute Force attack detected",         ip: "10.0.0.45",     when: "10 mins ago", channel: "DASHBOARD", read: false, failed: true  },
-    { id: "NTF-0003", sev: "MED",  title: "Command Injection attack detected",   ip: "172.16.8.200",  when: "1 hr ago",    channel: "MOBILE",    read: true,  failed: false },
-    { id: "NTF-0004", sev: "LOW",  title: "Phishing attempt blocked",            ip: "172.16.8.12",   when: "3 hrs ago",   channel: "EMAIL",     read: true,  failed: false },
-  ]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchAlerts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/alerts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const mapped = (data.items || []).map((alert) => ({
+        id:      alert.id,
+        sev:     severityMap(alert.severity_label),
+        title:   alert.signature || "Unknown Alert",
+        ip:      alert.src_ip || "-",
+        when:    alert.timestamp
+                   ? new Date(alert.timestamp).toLocaleString([], { dateStyle: "short", timeStyle: "short" })
+                   : "-",
+        channel: "DASHBOARD",
+        read:    alert.status === "resolved",
+        failed:  false,
+        status:  alert.status,
+      }));
+
+      setItems(mapped);
+    } catch (err) {
+      setError("Failed to load notifications.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
+
+  const acknowledge = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_BASE}/api/alerts/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "investigating" }),
+      });
+      setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch {
+      // silently fail — UI still marks as read locally
+      setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    }
+  };
+
+  const markAllRead = async () => {
+    const token = localStorage.getItem("token");
+    const unread = items.filter(n => !n.read);
+    await Promise.allSettled(
+      unread.map(n =>
+        fetch(`${API_BASE}/api/alerts/${n.id}/status`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "investigating" }),
+        })
+      )
+    );
+    setItems(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   const filtered = useMemo(() => {
     return items.filter((n) => {
@@ -23,9 +93,6 @@ function Notifications() {
       return sevMatch && statusMatch && chanMatch;
     });
   }, [items, severity, status, channel]);
-
-  const acknowledge = (id) =>
-    setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
 
   const unreadCount = items.filter(n => !n.read).length;
 
@@ -37,10 +104,7 @@ function Notifications() {
           <h1 className="page-title">Notifications</h1>
           <div className="text-sm text-muted">Unread: {unreadCount}</div>
         </div>
-        <button
-          className="export-btn"
-          onClick={() => setItems(prev => prev.map(n => ({ ...n, read: true })))}
-        >
+        <button className="export-btn" onClick={markAllRead}>
           Mark all as read
         </button>
       </div>
@@ -73,8 +137,6 @@ function Notifications() {
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Channel</span>
             <select className="time-filter" value={channel} onChange={(e) => setChannel(e.target.value)}>
               <option value="ALL">All</option>
-              <option value="MOBILE">Mobile</option>
-              <option value="EMAIL">Email</option>
               <option value="DASHBOARD">Dashboard</option>
             </select>
           </div>
@@ -85,8 +147,12 @@ function Notifications() {
         </div>
       </div>
 
-      {/* Notification cards — 2-column grid */}
-      {filtered.length === 0 ? (
+      {/* States */}
+      {loading && <div className="loading-text">Loading notifications…</div>}
+      {error   && <div className="error-banner">⚠️ {error}</div>}
+
+      {/* Notification cards */}
+      {!loading && filtered.length === 0 ? (
         <div className="empty-text">No notifications match the current filters.</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
@@ -103,7 +169,7 @@ function Notifications() {
                 gap: '0.4rem',
               }}
             >
-              {/* Top row: badge + time */}
+              {/* Top row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{
                   display: 'inline-block',
@@ -146,15 +212,27 @@ function Notifications() {
               {/* Actions */}
               <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
                 {!n.read ? (
-                  <button className="view-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => acknowledge(n.id)}>
+                  <button
+                    className="view-btn"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                    onClick={() => acknowledge(n.id)}
+                  >
                     ✓ Acknowledge
                   </button>
                 ) : (
-                  <button className="view-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => alert("Mock modal")}>
+                  <button
+                    className="view-btn"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                    onClick={() => navigate(`/alert/${n.id}`)}
+                  >
                     View
                   </button>
                 )}
-                <button className="export-btn" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }} onClick={() => navigate("/alerts")}>
+                <button
+                  className="export-btn"
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                  onClick={() => navigate("/alerts")}
+                >
                   View Alert →
                 </button>
               </div>
@@ -166,12 +244,21 @@ function Notifications() {
   );
 }
 
-/* Severity colour helpers */
+/* Severity helpers */
+function severityMap(label) {
+  if (!label) return "LOW";
+  const l = label.toLowerCase();
+  if (l === "high")   return "HIGH";
+  if (l === "medium") return "MED";
+  return "LOW";
+}
+
 function sevColor(sev) {
   if (sev === 'HIGH') return '#ef4444';
   if (sev === 'MED')  return '#f59e0b';
   return '#22c55e';
 }
+
 function sevBg(sev) {
   if (sev === 'HIGH') return 'rgba(239,68,68,0.12)';
   if (sev === 'MED')  return 'rgba(245,158,11,0.12)';

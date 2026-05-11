@@ -389,7 +389,7 @@ const AlertDetails = () => {
                         <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', flex: 1, fontWeight: 500 }}>{a.signature || 'Unknown'}</span>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{a.src_ip} → {a.dest_ip}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTime(a.timestamp)}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--accent-main)', whiteSpace: 'nowrap' }}>View →</span>
+                        <span style={{ fontSize: '0.72rem', color: '#fff', background: 'var(--accent-main)', padding: '0.2rem 0.6rem', borderRadius: 5, whiteSpace: 'nowrap', pointerEvents: 'none', fontWeight: 600 }}>View →</span>
                       </div>
                     ))}
                   </div>

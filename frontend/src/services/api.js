@@ -25,6 +25,10 @@ async function request(baseUrl, path, options = {}) {
   const res = await fetch(`${baseUrl}${path}`, { ...options, headers });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
     const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody.detail || `HTTP ${res.status}`);
   }

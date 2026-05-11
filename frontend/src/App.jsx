@@ -37,7 +37,7 @@ import AnalystSettings from "./pages/analyst/Settings";
 import AnalystSidebar from "./pages/analyst/AnalystSidebar";
 import ThreatMap from "./pages/analyst/ThreatMap";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
 
 const getAuthHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

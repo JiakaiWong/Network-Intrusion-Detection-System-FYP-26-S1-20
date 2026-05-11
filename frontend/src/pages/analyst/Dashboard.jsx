@@ -10,9 +10,12 @@ import {
 import './analyst.css';
 import AnalystSidebar from './AnalystSidebar';
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  "https://network-intrusion-detection-system-fyp.onrender.com";
+
 const SEV_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
 
-// ── Distribution Chart (switchable) ──────────────────────────────────────────
 const DistributionChart = ({ high = 0, medium = 0, low = 0, chartType = 'donut' }) => {
   const pieData = [
     { name: 'High', value: high, color: SEV_COLORS.high },
@@ -42,7 +45,6 @@ const DistributionChart = ({ high = 0, medium = 0, low = 0, chartType = 'donut' 
     );
   }
 
-  const total = high + medium + low || 1;
   return (
     <ResponsiveContainer width="100%" height={160}>
       <PieChart>
@@ -65,9 +67,7 @@ const DistributionChart = ({ high = 0, medium = 0, low = 0, chartType = 'donut' 
   );
 };
 
-// ── Trends Chart (switchable) ─────────────────────────────────────────────────
 const TrendsChart = ({ alerts = [], chartType = 'bar' }) => {
-  // Group alerts by hour
   const hourMap = {};
   alerts.forEach(a => {
     if (!a.timestamp) return;
@@ -91,7 +91,6 @@ const TrendsChart = ({ alerts = [], chartType = 'bar' }) => {
   const gridProps = { strokeDasharray: "3 3", stroke: "var(--border-color)" };
 
   if (chartType === 'radar') {
-    // Line chart — smooth curves with visible dots per data point
     return (
       <ResponsiveContainer width="100%" height={160}>
         <LineChart {...commonProps}>
@@ -109,7 +108,6 @@ const TrendsChart = ({ alerts = [], chartType = 'bar' }) => {
   }
 
   if (chartType === 'scatter') {
-    // Scatter plot — each severity as a dot cloud by hour
     const toScatter = (sev) =>
       alerts
         .filter(a => a.severity_label === sev && a.timestamp)
@@ -147,7 +145,6 @@ const TrendsChart = ({ alerts = [], chartType = 'bar' }) => {
     );
   }
 
-  // default: bar
   return (
     <ResponsiveContainer width="100%" height={160}>
       <BarChart {...commonProps}>
@@ -176,8 +173,6 @@ const ChartTypeBtn = ({ active, onClick, label }) => (
   }}>{label}</button>
 );
 
-
-// ── Dashboard ─────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
 
@@ -185,12 +180,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [backendStatus, setBackendStatus] = useState("Connecting…");
   const [telegramId, setTelegramId] = useState("");
-  const [trendsChartType, setTrendsChartType] = useState('bar'); // 'bar' | 'radar' | 'scatter'
+  const [trendsChartType, setTrendsChartType] = useState('bar');
   const [distChartType, setDistChartType] = useState('donut');
   const [alertPage, setAlertPage] = useState(1);
   const ALERTS_PER_PAGE = 10;
 
-  // Summary counts derived from live data
   const high = alerts.filter(a => a.severity_label === "high").length;
   const medium = alerts.filter(a => a.severity_label === "medium").length;
   const low = alerts.filter(a => a.severity_label === "low").length;
@@ -199,7 +193,10 @@ const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/alerts");
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/alerts`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
       setAlerts(data.items || []);
       setBackendStatus(`✅ Connected — ${data.items?.length ?? 0} alert(s) loaded`);
@@ -215,8 +212,8 @@ const Dashboard = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8000/api/users/profile", {
-          headers: { "Authorization": `Bearer ${token}` }
+        const res = await fetch(`${API_BASE}/api/users/profile`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const data = await res.json();
         setTelegramId(data.telegram_id);
@@ -235,15 +232,16 @@ const Dashboard = () => {
       alert("No Telegram ID set in profile!");
       return;
     }
+
     const message = `🚨 IDS ALERT\n\nType: ${alertData.signature}\nSource: ${alertData.src_ip}\nDestination: ${alertData.dest_ip}\nSeverity: ${alertData.severity_label}\nIDS: ${alertData.proto}\nTime: ${alertData.timestamp ? new Date(alertData.timestamp).toLocaleString() : '—'}`;
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/alerts/send-telegram", {
+      const res = await fetch(`${API_BASE}/api/alerts/send-telegram`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           chat_id: telegramId,
@@ -265,7 +263,6 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Status bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h1 className="page-title">Dashboard Overview</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -279,7 +276,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="summary-cards">
         <div className="card card-total">
           <span className="card-icon">!</span>
@@ -307,7 +303,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Trends + Distribution */}
       <div className="trends-distribution-row">
         <div className="trends-card" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="trends-header">
@@ -333,7 +328,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Alerts Table */}
       <div className="recent-alerts-section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
           <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Recent Alerts</h2>
@@ -373,8 +367,7 @@ const Dashboard = () => {
                       <td style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{alert.dest_ip}</td>
                       <td style={{ color: 'var(--text-main)' }}>{alert.proto}</td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([],
-                          { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                        {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
                       </td>
                       <td><span className={`progress-badge ${alert.status}`}>{alert.status}</span></td>
                       <td>
@@ -390,7 +383,7 @@ const Dashboard = () => {
                 </tbody>
               </table>
             </div>
-            {/* Pagination */}
+
             <div className="pagination" style={{ marginTop: '0.75rem' }}>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 Showing {alerts.length === 0 ? 0 : (alertPage - 1) * ALERTS_PER_PAGE + 1}–{Math.min(alertPage * ALERTS_PER_PAGE, alerts.length)} of {alerts.length} alerts

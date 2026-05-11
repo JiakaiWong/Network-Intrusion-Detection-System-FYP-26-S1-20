@@ -378,10 +378,7 @@ const AlertDetails = () => {
                     {relatedAlerts[key].map(a => (
                       <div
                         key={a.id}
-                        onClick={() => navigate(`/alert/${a.id}`)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderLeft: `3px solid ${color}`, borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-main)'}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderLeft: `3px solid ${color}`, borderRadius: 8 }}
                       >
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 999, border: `1px solid ${a.severity_label === 'high' ? '#ef4444' : a.severity_label === 'medium' ? '#f59e0b' : '#22c55e'}`, color: a.severity_label === 'high' ? '#ef4444' : a.severity_label === 'medium' ? '#f59e0b' : '#22c55e', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                           {a.severity_label || 'low'}
@@ -389,7 +386,10 @@ const AlertDetails = () => {
                         <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', flex: 1, fontWeight: 500 }}>{a.signature || 'Unknown'}</span>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{a.src_ip} → {a.dest_ip}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTime(a.timestamp)}</span>
-                        <span style={{ fontSize: '0.72rem', color: '#fff', background: 'var(--accent-main)', padding: '0.2rem 0.6rem', borderRadius: 5, whiteSpace: 'nowrap', pointerEvents: 'none', fontWeight: 600 }}>View →</span>
+                        <button
+                          onClick={() => navigate(`/alert/${a.id}`)}
+                          style={{ fontSize: '0.72rem', color: '#fff', background: 'var(--accent-main)', padding: '0.2rem 0.6rem', borderRadius: 5, whiteSpace: 'nowrap', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                        >View →</button>
                       </div>
                     ))}
                   </div>

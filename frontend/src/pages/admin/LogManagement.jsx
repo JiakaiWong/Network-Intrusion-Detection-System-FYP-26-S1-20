@@ -245,10 +245,10 @@ useEffect(() => {
     });
   };
 
- const filteredLogs = (logs ?? []).filter(log =>
-    log.name.toLowerCase().includes(filter.toLowerCase()) ||
-    log.type.toLowerCase().includes(filter.toLowerCase())
-  );
+const filteredLogs = (logs ?? []).filter(log =>
+  (log.name ?? '').toLowerCase().includes(filter.toLowerCase()) ||
+  (log.type ?? '').toLowerCase().includes(filter.toLowerCase())
+);
 
   // ── Render ───────────────────────────────────────────────────────
   return (
@@ -300,8 +300,8 @@ useEffect(() => {
               <button style={styles.modalClose} onClick={closeModal}>✕</button>
             </div>
             <div style={styles.modalStatusRow}>
-              <span style={styles.statusBadge(modalLog.status.toLowerCase())}>
-                <span style={styles.statusDot(modalLog.status.toLowerCase())} />
+              <span style={styles.statusBadge((modalLog.status ?? 'unknown').toLowerCase())}>
+                <span style={styles.statusDot((modalLog.status ?? 'unknown').toLowerCase())} />
                 {modalLog.status}
               </span>
               <span style={styles.modalTimestamp}>Last updated: {modalLog.lastUpdated}</span>
@@ -372,8 +372,8 @@ useEffect(() => {
               ) : (
                 <>
                   <button style={styles.btnEdit} onClick={() => setEditMode(true)}>Edit</button>
-                  <button style={styles.btnToggle(modalLog.status)} onClick={handleToggleStatus}>
-                    {modalLog.status === 'Active' ? 'Deactivate' : 'Activate'}
+                    <button style={styles.btnToggle(modalLog.status ?? 'unknown')} onClick={handleToggleStatus}>
+                      {modalLog.status === 'Active' ? 'Deactivate' : 'Activate'}
                   </button>
                   <button style={styles.btnDelete} onClick={handleDeleteLog}>Remove</button>
                 </>
@@ -429,9 +429,9 @@ useEffect(() => {
                   <td style={styles.td}>{log.type}</td>
                   <td style={styles.td}>{log.logType}</td>
                   <td style={styles.td}>
-                    <span style={styles.statusBadge(log.status.toLowerCase())}>
-                      <span style={styles.statusDot(log.status.toLowerCase())} />
-                      {log.status}
+                    <span style={styles.statusBadge((log.status ?? 'unknown').toLowerCase())}>
+                      <span style={styles.statusDot((log.status ?? 'unknown').toLowerCase())} />
+                      {log.status ?? 'unknown'}
                     </span>
                   </td>
                   <td style={styles.td}>{log.lastUpdated}</td>

@@ -11,11 +11,8 @@ app.include_router(maintenance.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # optional for local testing
-        "https://networkintrusiondection.netlify.app"
-],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  
     allow_methods=["*"],
     allow_headers=["*"],
 )

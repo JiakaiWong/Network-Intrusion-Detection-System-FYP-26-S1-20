@@ -5,7 +5,10 @@ import 'leaflet/dist/leaflet.css';
 import './analyst.css';
 import L from 'leaflet';
 
-// Fix Leaflet default icon paths with Vite
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  "https://network-intrusion-detection-system-fyp.onrender.com";
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -16,7 +19,6 @@ L.Icon.Default.mergeOptions({
 const SEV_COLOR = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' };
 const SEV_RADIUS = { high: 10, medium: 7, low: 5 };
 
-// ── Inner component: handles map fly-to when a focus alert is set ─────────────
 const MapFocuser = ({ focusAlert, markerRefs }) => {
   const map = useMap();
 
@@ -25,7 +27,6 @@ const MapFocuser = ({ focusAlert, markerRefs }) => {
     const { latitude, longitude } = focusAlert.dest_location;
     map.flyTo([latitude, longitude], 8, { duration: 1.2 });
 
-    // Open the popup after flying
     const timer = setTimeout(() => {
       const ref = markerRefs.current[focusAlert.id];
       if (ref) ref.openPopup();
@@ -37,7 +38,6 @@ const MapFocuser = ({ focusAlert, markerRefs }) => {
   return null;
 };
 
-// ── Main ThreatMap component ──────────────────────────────────────────────────
 const ThreatMap = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -49,13 +49,15 @@ const ThreatMap = () => {
   const [focusAlert, setFocusAlert] = useState(null);
   const [stats, setStats] = useState({ total: 0, mapped: 0, high: 0, medium: 0, low: 0 });
 
-  // Holds refs to each CircleMarker by alert id
   const markerRefs = useRef({});
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/alerts?limit=500');
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/alerts?limit=500`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
       const items = data.items || [];
 
@@ -66,9 +68,9 @@ const ThreatMap = () => {
         medium: items.filter(a => a.severity_label === 'medium').length,
         low: items.filter(a => a.severity_label === 'low').length,
       });
+
       setAlerts(items);
 
-      // If navigated with an alertId, find and focus it
       if (highlightId) {
         const target = items.find(a => a.id === highlightId);
         if (target?.dest_location?.latitude) {
@@ -142,7 +144,6 @@ const ThreatMap = () => {
         </div>
       </div>
 
-      {/* Focused alert banner */}
       {focusAlert && (
         <div style={{
           background: 'var(--bg-card)',
@@ -185,7 +186,6 @@ const ThreatMap = () => {
         </div>
       )}
 
-      {/* Stats row */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {[
           { label: 'Total Alerts', value: stats.total, color: 'var(--text-main)' },
@@ -207,7 +207,6 @@ const ThreatMap = () => {
         ))}
       </div>
 
-      {/* Map */}
       <div style={{
         borderRadius: 10,
         overflow: 'hidden',
@@ -250,7 +249,7 @@ const ThreatMap = () => {
                 >
                   <Popup>
                     <div style={{ minWidth: 190, fontFamily: 'inherit' }}>
-                      <div className="popup-sev-title" style={{ fontWeight: 700, marginBottom: 6, color: SEV_COLOR[alert.severity_label] }}>
+                      <div style={{ fontWeight: 700, marginBottom: 6, color: SEV_COLOR[alert.severity_label] }}>
                         {alert.severity_label?.toUpperCase()} — {alert.signature}
                       </div>
                       <div style={{ fontSize: '0.82rem', lineHeight: 1.7 }}>
@@ -288,7 +287,6 @@ const ThreatMap = () => {
         )}
       </div>
 
-      {/* Legend */}
       <div style={{ display: 'flex', gap: '16px', marginTop: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Severity:</span>
         {Object.entries(SEV_COLOR).map(([sev, color]) => (

@@ -26,16 +26,24 @@ function NetworkTraffic() {
       .catch(() => {});
   }, []);
 
-  const rows = useMemo(
-    () => backendOnline && liveRows.length > 0 ? liveRows : [
-      { ts: "12:31:23", src: "192.168.1.12",  dst: "10.0.0.45",      sport: 443,  dport: 3080, proto: "TCP",  bytes: 1600, ids: "Suricata", flags: "SYN, ACK", duration: "0.42s", packets: 12 },
-      { ts: "12:25:10", src: "192.168.1.100", dst: "172.16.8.101",   sport: 80,   dport: 3200, proto: "TCP",  bytes: 503,  ids: "Suricata", flags: "PSH, ACK", duration: "0.18s", packets: 4  },
-      { ts: "12:22:30", src: "192.168.1.100", dst: "172.16.8.101",   sport: 305,  dport: 2320, proto: "UDP",  bytes: 708,  ids: "Zeek",     flags: "—",        duration: "0.05s", packets: 2  },
-      { ts: "12:24:42", src: "192.168.1.52",  dst: "172.16.8.11",    sport: 8970, dport: 3080, proto: "TCP",  bytes: 692,  ids: "Zeek",     flags: "FIN, ACK", duration: "0.31s", packets: 7  },
-      { ts: "12:30:06", src: "192.168.1.100", dst: "172.16.8.05",    sport: 8080, dport: 3200, proto: "UDP",  bytes: 706,  ids: "Snort",    flags: "—",        duration: "0.09s", packets: 3  },
-    ],
-    [backendOnline, liveRows]
-  );
+  const rows = useMemo(() => {
+    if (backendOnline && liveRows.length > 0) return liveRows;
+    // Fallback demo data — shows both triggered alerts and clean flows
+    const now = Date.now();
+    const ago = (min) => new Date(now - min * 60000).toISOString();
+    return [
+      { ts: ago(2),  src: "192.168.1.45",  dst: "185.220.101.45", sport: 54231, dport: 443,  proto: "TCP",  bytes: 4821, ids: "Suricata", flags: "PSH, ACK", duration: "1.23s", packets: 18, triggered: true,  signature: "ET SCAN Port Sweep",          severity: "high"   },
+      { ts: ago(5),  src: "192.168.1.10",  dst: "8.8.8.8",        sport: 54231, dport: 53,   proto: "UDP",  bytes: 72,   ids: "Zeek",     flags: "—",        duration: "0.01s", packets: 1,  triggered: false, signature: null,                           severity: null     },
+      { ts: ago(8),  src: "192.168.1.22",  dst: "142.250.80.46",  sport: 52341, dport: 443,  proto: "TCP",  bytes: 3100, ids: "Suricata", flags: "SYN, ACK", duration: "0.88s", packets: 9,  triggered: false, signature: null,                           severity: null     },
+      { ts: ago(12), src: "10.0.0.55",     dst: "192.168.1.100",  sport: 6667,  dport: 8080, proto: "TCP",  bytes: 9200, ids: "Snort",    flags: "PSH, ACK", duration: "3.40s", packets: 42, triggered: true,  signature: "ET TROJAN IRC Botnet Command", severity: "high"   },
+      { ts: ago(18), src: "192.168.1.33",  dst: "140.82.114.4",   sport: 58901, dport: 443,  proto: "TCP",  bytes: 1870, ids: "Suricata", flags: "PSH, ACK", duration: "0.55s", packets: 7,  triggered: false, signature: null,                           severity: null     },
+      { ts: ago(25), src: "192.168.1.100", dst: "192.168.1.200",  sport: 55678, dport: 5432, proto: "TCP",  bytes: 8900, ids: "Zeek",     flags: "PSH, ACK", duration: "0.08s", packets: 42, triggered: false, signature: null,                           severity: null     },
+      { ts: ago(31), src: "192.168.1.52",  dst: "203.0.113.42",   sport: 44321, dport: 4444, proto: "TCP",  bytes: 512,  ids: "Snort",    flags: "SYN",      duration: "0.02s", packets: 2,  triggered: true,  signature: "ET MALWARE Reverse Shell",    severity: "high"   },
+      { ts: ago(40), src: "192.168.1.1",   dst: "216.239.35.0",   sport: 123,   dport: 123,  proto: "UDP",  bytes: 48,   ids: "Zeek",     flags: "—",        duration: "0.03s", packets: 1,  triggered: false, signature: null,                           severity: null     },
+      { ts: ago(47), src: "192.168.1.22",  dst: "52.42.196.12",   sport: 56123, dport: 443,  proto: "TCP",  bytes: 2800, ids: "Suricata", flags: "PSH, ACK", duration: "0.72s", packets: 14, triggered: false, signature: null,                           severity: null     },
+      { ts: ago(55), src: "192.168.1.77",  dst: "10.0.0.1",       sport: 12345, dport: 23,   proto: "TCP",  bytes: 320,  ids: "Snort",    flags: "SYN, ACK", duration: "0.11s", packets: 3,  triggered: true,  signature: "ET SCAN Telnet Brute Force",  severity: "medium" },
+    ];
+  }, [backendOnline, liveRows]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -205,8 +213,8 @@ function NetworkTraffic() {
                       <td><span style={styles.tag}>{r.ids}</span></td>
                       <td>
                         {r.triggered
-                          ? <span style={{ ...styles.badge, backgroundColor: '#7f1d1d', borderColor: '#ef4444', fontSize: '0.68rem' }}>⚠ Alert</span>
-                          : <span style={{ ...styles.badge, backgroundColor: '#052e16', borderColor: '#22c55e', fontSize: '0.68rem' }}>✓ Clean</span>
+                          ? <span style={{ ...styles.badge, backgroundColor: '#7f1d1d', borderColor: '#ef4444', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>⚠ Alert</span>
+                          : <span style={{ ...styles.badge, backgroundColor: '#052e16', borderColor: '#22c55e', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>✓ Clean</span>
                         }
                       </td>
                       <td>

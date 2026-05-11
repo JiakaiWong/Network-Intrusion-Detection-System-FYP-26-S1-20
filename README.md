@@ -30,5 +30,5 @@ This project does not cover packet capture or the development of IDS rules.
 
 The system is deployed using a cloud-based architecture, separating the frontend and backend components:
 
-- **Frontend (Netlify): **https://networkintrusiondetection.netlify.app
+- **Frontend (Netlify): **https://networkintrusiondetection-system.netlify.app
 - **Backend (Render):** https://network-intrusion-detection-system-fyp.onrender.com  

@@ -8,12 +8,13 @@ import {
   FaCloudDownloadAlt,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-import { 
-  getAlertById, 
-  getNotes, 
-  addNote, 
+import {
+  getAlertById,
+  getNotes,
+  addNote,
   updateAlertStatus,
-  refreshAlertLocation 
+  refreshAlertLocation,
+  getAlerts,
 } from "../../services/api";
 
 const AlertDetails = () => {
@@ -52,6 +53,11 @@ const AlertDetails = () => {
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [selectedProgress, setSelectedProgress] = useState("new");
+
+  // Related alerts state
+  const [showRelated, setShowRelated] = useState(false);
+  const [relatedAlerts, setRelatedAlerts] = useState(null); // null = not loaded yet
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   // 1. Effect to fetch Alert Metadata and refresh location on every load
   useEffect(() => {
@@ -137,6 +143,36 @@ const AlertDetails = () => {
 
   const handleUpdateStatus = () => handleStatusChange(selectedProgress);
   const handleBack = () => navigate(-1);
+
+  const handleLinkAlerts = async () => {
+    if (showRelated) { setShowRelated(false); return; }
+    if (relatedAlerts) { setShowRelated(true); return; } // already loaded
+    setRelatedLoading(true);
+    setShowRelated(true);
+    try {
+      const data = await getAlerts();
+      const all = Array.isArray(data) ? data : (data.items ?? []);
+      const others = all.filter(a => a.id !== (alert?.id || id));
+
+      const bySrcIp   = others.filter(a => a.src_ip  && a.src_ip  === alert?.src_ip);
+      const byDstIp   = others.filter(a => a.dest_ip && a.dest_ip === alert?.dest_ip);
+      const bySig     = others.filter(a => a.signature && a.signature === alert?.signature && a.id !== (alert?.id || id));
+
+      // De-duplicate across groups
+      const seen = new Set();
+      const dedup = (arr) => arr.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+
+      setRelatedAlerts({
+        sameSrc: dedup(bySrcIp),
+        sameDst: dedup(byDstIp),
+        sameSig: dedup(bySig),
+      });
+    } catch {
+      setRelatedAlerts({ sameSrc: [], sameDst: [], sameSig: [] });
+    } finally {
+      setRelatedLoading(false);
+    }
+  };
 
   const handleRefreshLocation = async () => {
     if (!alert?.id) return;
@@ -268,9 +304,15 @@ const AlertDetails = () => {
               <FaExclamationCircle style={{ color: '#ef4444' }} />
               <span>Create Incident</span>
             </div>
-            <div className="action-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', color: 'var(--text-main)' }}>
+            <div
+              className="action-item"
+              onClick={handleLinkAlerts}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', color: 'var(--accent-main)', cursor: 'pointer', borderRadius: 6, transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
               <FaLink style={{ color: 'var(--accent-main)' }} />
-              <span>Link Alerts</span>
+              <span style={{ fontWeight: 500 }}>{showRelated ? 'Hide Related Alerts' : 'Link Alerts'}</span>
             </div>
             {destLocation?.latitude && destLocation?.longitude && (
               <div
@@ -303,6 +345,60 @@ const AlertDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* RELATED ALERTS PANEL */}
+      {showRelated && (
+        <div style={{ marginTop: '2rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem' }}>
+          <h2 className="section-title" style={{ color: 'var(--text-main)', marginBottom: '1rem' }}>
+            Related Alerts
+            <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+              — grouped by shared attacker IP, victim IP, or attack signature
+            </span>
+          </h2>
+
+          {relatedLoading ? (
+            <div style={{ color: 'var(--text-muted)', padding: '1rem' }}>Loading related alerts…</div>
+          ) : relatedAlerts && (relatedAlerts.sameSrc.length + relatedAlerts.sameDst.length + relatedAlerts.sameSig.length === 0) ? (
+            <div style={{ color: 'var(--text-muted)', padding: '1rem', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: 8 }}>
+              No related alerts found — this appears to be an isolated incident.
+            </div>
+          ) : relatedAlerts && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {[
+                { label: `Same Source IP (${alert?.src_ip})`, key: 'sameSrc', color: '#ef4444' },
+                { label: `Same Destination IP (${alert?.dest_ip})`, key: 'sameDst', color: '#f59e0b' },
+                { label: `Same Signature (${alert?.signature})`, key: 'sameSig', color: '#8b5cf6' },
+              ].map(({ label, key, color }) => relatedAlerts[key].length > 0 && (
+                <div key={key}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                    {label} — {relatedAlerts[key].length} alert{relatedAlerts[key].length !== 1 ? 's' : ''}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {relatedAlerts[key].map(a => (
+                      <div
+                        key={a.id}
+                        onClick={() => navigate(`/alert/${a.id}`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderLeft: `3px solid ${color}`, borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-main)'}
+                      >
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 999, border: `1px solid ${a.severity_label === 'high' ? '#ef4444' : a.severity_label === 'medium' ? '#f59e0b' : '#22c55e'}`, color: a.severity_label === 'high' ? '#ef4444' : a.severity_label === 'medium' ? '#f59e0b' : '#22c55e', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                          {a.severity_label || 'low'}
+                        </span>
+                        <span style={{ color: 'var(--text-main)', fontSize: '0.85rem', flex: 1, fontWeight: 500 }}>{a.signature || 'Unknown'}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{a.src_ip} → {a.dest_ip}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTime(a.timestamp)}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--accent-main)', whiteSpace: 'nowrap' }}>View →</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* INVESTIGATION NOTES */}
       <div className="investigation-notes" style={{ marginTop: '2rem' }}>

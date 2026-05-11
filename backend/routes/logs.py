@@ -31,7 +31,7 @@ def get_timestamp():
 
 @router.get("/api/logs")
 async def get_logs(user=Depends(get_current_user)):
-    logs = await db.logs.find().to_list(None)
+    logs = await db.log_sources.find().to_list(None)
     for log in logs:
         log["id"] = str(log["_id"])
         del log["_id"]
@@ -42,7 +42,7 @@ async def get_logs(user=Depends(get_current_user)):
 async def create_log(log: LogIn, user=Depends(get_current_user)):
     new_log = log.dict()
     new_log["lastUpdated"] = get_timestamp()
-    result = await db.logs.insert_one(new_log)
+    result = await db.log_sources.insert_one(new_log)
     new_log["id"] = str(result.inserted_id)
     del new_log["_id"]
     return new_log
@@ -52,10 +52,10 @@ async def create_log(log: LogIn, user=Depends(get_current_user)):
 async def update_log(log_id: str, data: LogUpdate, user=Depends(get_current_user)):
     update = {k: v for k, v in data.dict().items() if v is not None}
     update["lastUpdated"] = get_timestamp()
-    result = await db.logs.update_one({"_id": ObjectId(log_id)}, {"$set": update})
+    result = await db.log_sources.update_one({"_id": ObjectId(log_id)}, {"$set": update})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
-    updated = await db.logs.find_one({"_id": ObjectId(log_id)})
+    updated = await db.log_sources.find_one({"_id": ObjectId(log_id)}) 
     updated["id"] = str(updated["_id"])
     del updated["_id"]
     return updated
@@ -63,11 +63,11 @@ async def update_log(log_id: str, data: LogUpdate, user=Depends(get_current_user
 
 @router.put("/api/logs/{log_id}/status")
 async def toggle_status(log_id: str, user=Depends(get_current_user)):
-    log = await db.logs.find_one({"_id": ObjectId(log_id)})
+    log = await db.log_sources.find_one({"_id": ObjectId(log_id)}) 
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
     new_status = "Inactive" if log["status"] == "Active" else "Active"
-    await db.logs.update_one(
+    await db.log_sources.update_one( 
         {"_id": ObjectId(log_id)},
         {"$set": {"status": new_status, "lastUpdated": get_timestamp()}}
     )
@@ -79,7 +79,7 @@ async def toggle_status(log_id: str, user=Depends(get_current_user)):
 
 @router.delete("/api/logs/{log_id}")
 async def delete_log(log_id: str, user=Depends(get_current_user)):
-    result = await db.logs.delete_one({"_id": ObjectId(log_id)})
+    result = await db.log_sources.delete_one({"_id": ObjectId(log_id)}) 
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
     return {"deleted": log_id}

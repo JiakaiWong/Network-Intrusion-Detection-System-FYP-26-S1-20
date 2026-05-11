@@ -115,8 +115,7 @@ export async function refreshAllLocations() {
 }
 
 export async function getTrafficLogs(params = {}) {
-  console.warn("[api] GET /traffic not yet on backend – using mock data.");
-  return { ok: true, items: [] };
+  return request(ALERTS_BASE, "/api/traffic");
 }
 
 export async function getNotifications() {

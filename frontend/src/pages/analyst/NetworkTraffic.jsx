@@ -8,6 +8,7 @@ function NetworkTraffic() {
   const [protocol, setProtocol] = useState("ALL");
   const [timeRange, setTimeRange] = useState("24H");
   const [idsSource, setIdsSource] = useState("ALL");
+  const [flowType, setFlowType] = useState("ALL"); // ALL | TRIGGERED | CLEAN
   const [selectedIp, setSelectedIp] = useState(null);
   const [viewingRow, setViewingRow] = useState(null);
 
@@ -38,16 +39,23 @@ function NetworkTraffic() {
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      const ipMatch = ip.trim() === "" || r.src.includes(ip.trim()) || r.dst.includes(ip.trim());
-      const portMatch = port.trim() === "" || String(r.sport) === String(port.trim()) || String(r.dport) === String(port.trim());
+      const ipMatch   = ip.trim() === "" || (r.src || "").includes(ip.trim()) || (r.dst || "").includes(ip.trim());
+      const portMatch = port.trim() === "" || String(r.sport) === port.trim() || String(r.dport) === port.trim();
       const protoMatch = protocol === "ALL" || r.proto === protocol;
-      const idsMatch = idsSource === "ALL" || r.ids === idsSource;
-      return ipMatch && portMatch && protoMatch && idsMatch;
+      const idsMatch  = idsSource === "ALL" || r.ids === idsSource;
+      const typeMatch = flowType === "ALL" || (flowType === "TRIGGERED" ? r.triggered : !r.triggered);
+      return ipMatch && portMatch && protoMatch && idsMatch && typeMatch;
     });
-  }, [rows, ip, port, protocol, idsSource]);
+  }, [rows, ip, port, protocol, idsSource, flowType]);
+
+  const fmtTs = (ts) => {
+    if (!ts) return "—";
+    try { return new Date(ts).toLocaleString([], { dateStyle: "short", timeStyle: "medium" }); }
+    catch { return ts; }
+  };
 
   const onReset = () => {
-    setIp(""); setPort(""); setProtocol("ALL"); setTimeRange("24H"); setIdsSource("ALL"); setSelectedIp(null);
+    setIp(""); setPort(""); setProtocol("ALL"); setTimeRange("24H"); setIdsSource("ALL"); setFlowType("ALL"); setSelectedIp(null);
   };
 
   const openIpDetails = (ipAddr) => {
@@ -143,6 +151,15 @@ function NetworkTraffic() {
                 <option value="Zeek">Zeek</option>
               </select>
             </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Flow Type</label>
+              <select style={styles.select} value={flowType} onChange={(e) => setFlowType(e.target.value)}>
+                <option value="ALL">All Flows</option>
+                <option value="TRIGGERED">Triggered (Alerts)</option>
+                <option value="CLEAN">Clean (No Alert)</option>
+              </select>
+            </div>
           </div>
 
           <div style={styles.filtersRow}>
@@ -170,13 +187,14 @@ function NetworkTraffic() {
                     <th>Protocol</th>
                     <th>Bytes</th>
                     <th>Source</th>
+                    <th>Type</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r, idx) => (
                     <tr key={idx}>
-                      <td>{r.ts}</td>
+                      <td style={{ fontSize: '0.78rem' }}>{fmtTs(r.ts)}</td>
                       <td style={{ color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }} onClick={() => openIpDetails(r.src)}>{r.src}</td>
                       <td style={{ color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }} onClick={() => openIpDetails(r.dst)}>{r.dst}</td>
                       <td>{r.sport} → {r.dport}</td>
@@ -185,6 +203,12 @@ function NetworkTraffic() {
                       </td>
                       <td>{r.bytes}</td>
                       <td><span style={styles.tag}>{r.ids}</span></td>
+                      <td>
+                        {r.triggered
+                          ? <span style={{ ...styles.badge, backgroundColor: '#7f1d1d', borderColor: '#ef4444', fontSize: '0.68rem' }}>⚠ Alert</span>
+                          : <span style={{ ...styles.badge, backgroundColor: '#052e16', borderColor: '#22c55e', fontSize: '0.68rem' }}>✓ Clean</span>
+                        }
+                      </td>
                       <td>
                         <button style={styles.smallBtn} onClick={() => setViewingRow(r)}>View</button>
                       </td>
@@ -234,14 +258,17 @@ function NetworkTraffic() {
 
             <div style={{ padding: '0.5rem 0.9rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem 1rem' }}>
               {[
-                ["Src IP",    viewingRow.src,           true],
-                ["Dst IP",    viewingRow.dst,           true],
-                ["Src Port",  viewingRow.sport,         true],
-                ["Dst Port",  viewingRow.dport,         true],
-                ["Bytes",     viewingRow.bytes,         false],
-                ["Packets",   viewingRow.packets ?? "—",false],
-                ["Duration",  viewingRow.duration ?? "—",false],
-                ["TCP Flags", viewingRow.flags ?? "—",  false],
+                ["Src IP",    viewingRow.src,              true],
+                ["Dst IP",    viewingRow.dst,              true],
+                ["Src Port",  viewingRow.sport,            true],
+                ["Dst Port",  viewingRow.dport,            true],
+                ["Bytes",     viewingRow.bytes,            false],
+                ["Packets",   viewingRow.packets ?? "—",   false],
+                ["Duration",  viewingRow.duration ?? "—",  false],
+                ["TCP Flags", viewingRow.flags ?? "—",     false],
+                ...(viewingRow.triggered && viewingRow.signature
+                  ? [["Signature", viewingRow.signature, false], ["Severity", (viewingRow.severity || "").toUpperCase(), false]]
+                  : []),
               ].map(([key, val, mono]) => (
                 <div key={key} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{key}</div>

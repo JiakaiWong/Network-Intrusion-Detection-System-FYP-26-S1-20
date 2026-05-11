@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { FiEye, FiDownload, FiSearch, FiMap } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { refreshAllLocations } from "../../services/api";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  "https://network-intrusion-detection-system-fyp.onrender.com";
 
 const Alerts = () => {
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ const Alerts = () => {
 
   const alertsPerPage = 5;
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -41,29 +43,40 @@ const Alerts = () => {
         url += `?${params.toString()}`;
       }
 
-      const response = await fetch(url);
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(url, {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {},
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch alerts");
+        throw new Error(`Failed to fetch alerts: HTTP ${response.status}`);
       }
 
       const data = await response.json();
       setAlerts(data.items || []);
     } catch (err) {
+      console.error("Fetch alerts failed:", err);
       setError("Could not reach backend — showing no live data.");
       setAlerts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [severityFilter, statusFilter]);
 
   useEffect(() => {
     fetchAlerts();
-  }, [severityFilter, statusFilter]);
+  }, [fetchAlerts]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) => {
-      const text = `${alert.src_ip || ""} ${alert.dest_ip || ""} ${alert.signature || ""} ${alert.dest_port || ""} ${alert.proto || ""}`.toLowerCase();
+      const text =
+        `${alert.src_ip || ""} ${alert.dest_ip || ""} ${alert.signature || ""} ${alert.dest_port || ""} ${alert.proto || ""}`.toLowerCase();
+
       return text.includes(search.toLowerCase());
     });
   }, [alerts, search]);
@@ -74,9 +87,11 @@ const Alerts = () => {
   const highCount = alerts.filter(
     (a) => (a.severity_label || "").toLowerCase() === "high"
   ).length;
+
   const mediumCount = alerts.filter(
     (a) => (a.severity_label || "").toLowerCase() === "medium"
   ).length;
+
   const lowCount = alerts.filter(
     (a) => (a.severity_label || "").toLowerCase() === "low"
   ).length;
@@ -141,8 +156,10 @@ const Alerts = () => {
       alert.signature || "",
       alert.src_ip || "",
       alert.dest_ip || "",
-      alert.dest_location 
-        ? (alert.dest_location.city ? `${alert.dest_location.city}, ${alert.dest_location.country}` : alert.dest_location.country || "")
+      alert.dest_location
+        ? alert.dest_location.city
+          ? `${alert.dest_location.city}, ${alert.dest_location.country}`
+          : alert.dest_location.country || ""
         : "",
       alert.dest_port || "",
       alert.proto || "",
@@ -173,7 +190,6 @@ const Alerts = () => {
     setRefreshingLocations(true);
     try {
       await refreshAllLocations();
-      // Refresh the alerts list
       await fetchAlerts();
     } catch (error) {
       console.error("Failed to refresh locations:", error);
@@ -191,9 +207,9 @@ const Alerts = () => {
       <div className="alerts-wrapper">
         <div className="alerts-header">
           <h1>Intrusion Detection Alerts</h1>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button 
-              className="refresh-btn" 
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              className="refresh-btn"
               onClick={handleRefreshAllLocations}
               disabled={refreshingLocations}
             >
@@ -283,73 +299,101 @@ const Alerts = () => {
           ) : currentAlerts.length === 0 ? (
             <p className="empty-text">No alerts found.</p>
           ) : (
-            <div className="table-scroll"><table className="alerts-table">
-              <thead>
-                <tr>
-                  <th>Severity</th>
-                  <th>Alert Type</th>
-                  <th>Source IP</th>
-                  <th>Destination IP</th>
-                  <th>Location</th>
-                  <th>Port</th>
-                  <th>IDS Source</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>View</th>
-                  <th>Map</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentAlerts.map((alert) => {
-                  const hasgeo = alert.dest_location?.latitude && alert.dest_location?.longitude;
-                  return (
-                  <tr key={alert.id}>
-                    <td>
-                      <span
-                        className={`badge ${getSeverityClass(alert.severity_label)}`}
-                      >
-                        {alert.severity_label || "-"}
-                      </span>
-                    </td>
-                    <td style={{ textTransform: 'capitalize' }}>{alert.signature || "-"}</td>
-                    <td>{alert.src_ip || "-"}</td>
-                    <td>{alert.dest_ip || "-"}</td>
-                    <td>
-                      {alert.dest_location ? (
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                          {alert.dest_location.city ? `${alert.dest_location.city}, ${alert.dest_location.country}` : alert.dest_location.country || "-"}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>-</span>
-                      )}
-                    </td>
-                    <td>{alert.dest_port || "-"}</td>
-                    <td>{alert.proto || "-"}</td>
-                    <td>{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString([],
-                      { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}</td>
-                    <td>{alert.status || "new"}</td>
-                    <td>
-                      <Link to={`/alert/${alert.id}`} state={{ alert }}>
-                        <FiEye className="view-icon" />
-                      </Link>
-                    </td>
-                    <td>
-                      {hasgeo ? (
-                        <FiMap
-                          className="view-icon"
-                          title="View on Threat Map"
-                          style={{ cursor: 'pointer', color: 'var(--accent-main)' }}
-                          onClick={() => navigate(`/threat-map?alertId=${alert.id}`)}
-                        />
-                      ) : (
-                        <span style={{ color: 'var(--text-dim)' }}>—</span>
-                      )}
-                    </td>
+            <div className="table-scroll">
+              <table className="alerts-table">
+                <thead>
+                  <tr>
+                    <th>Severity</th>
+                    <th>Alert Type</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Location</th>
+                    <th>Port</th>
+                    <th>IDS Source</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>View</th>
+                    <th>Map</th>
                   </tr>
-                  );
-                })}
-              </tbody>
-            </table></div>
+                </thead>
+                <tbody>
+                  {currentAlerts.map((alert) => {
+                    const hasgeo =
+                      alert.dest_location?.latitude &&
+                      alert.dest_location?.longitude;
+
+                    return (
+                      <tr key={alert.id}>
+                        <td>
+                          <span
+                            className={`badge ${getSeverityClass(
+                              alert.severity_label
+                            )}`}
+                          >
+                            {alert.severity_label || "-"}
+                          </span>
+                        </td>
+                        <td style={{ textTransform: "capitalize" }}>
+                          {alert.signature || "-"}
+                        </td>
+                        <td>{alert.src_ip || "-"}</td>
+                        <td>{alert.dest_ip || "-"}</td>
+                        <td>
+                          {alert.dest_location ? (
+                            <span
+                              style={{
+                                fontSize: "0.85rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              {alert.dest_location.city
+                                ? `${alert.dest_location.city}, ${alert.dest_location.country}`
+                                : alert.dest_location.country || "-"}
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)" }}>-</span>
+                          )}
+                        </td>
+                        <td>{alert.dest_port || "-"}</td>
+                        <td>{alert.proto || "-"}</td>
+                        <td>
+                          {alert.timestamp
+                            ? new Date(alert.timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })
+                            : "-"}
+                        </td>
+                        <td>{alert.status || "new"}</td>
+                        <td>
+                          <Link to={`/alert/${alert.id}`} state={{ alert }}>
+                            <FiEye className="view-icon" />
+                          </Link>
+                        </td>
+                        <td>
+                          {hasgeo ? (
+                            <FiMap
+                              className="view-icon"
+                              title="View on Threat Map"
+                              style={{
+                                cursor: "pointer",
+                                color: "var(--accent-main)",
+                              }}
+                              onClick={() =>
+                                navigate(`/threat-map?alertId=${alert.id}`)
+                              }
+                            />
+                          ) : (
+                            <span style={{ color: "var(--text-dim)" }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 

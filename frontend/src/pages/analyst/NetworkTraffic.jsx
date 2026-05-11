@@ -222,56 +222,40 @@ function NetworkTraffic() {
       {/* ── Traffic Log Detail Modal ──────────────────────────────────────── */}
       {viewingRow && (
         <div className="modal-overlay" onClick={() => setViewingRow(null)}>
-          <div className="modal-box" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <div className="modal-title">Traffic Log Detail</div>
-                <div className="text-muted" style={{ fontSize: '0.8rem' }}>{viewingRow.ts} · {viewingRow.ids}</div>
+          <div className="modal-box" style={{ maxWidth: '460px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '0.6rem 0.9rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ ...styles.badge, ...badgeForProto(viewingRow.proto), padding: '0.15rem 0.55rem', fontSize: '0.72rem' }}>{viewingRow.proto}</span>
+                <span style={styles.tag}>{viewingRow.ids}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{viewingRow.ts}</span>
               </div>
               <button className="back-icon" onClick={() => setViewingRow(null)} aria-label="Close">×</button>
             </div>
 
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {/* Protocol badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ ...styles.badge, ...badgeForProto(viewingRow.proto), padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}>{viewingRow.proto}</span>
-                <span style={styles.tag}>{viewingRow.ids}</span>
-              </div>
-
-              {/* Key-value rows */}
+            <div style={{ padding: '0.5rem 0.9rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem 1rem' }}>
               {[
-                ["Timestamp",       viewingRow.ts],
-                ["Source IP",       viewingRow.src],
-                ["Destination IP",  viewingRow.dst],
-                ["Source Port",     viewingRow.sport],
-                ["Destination Port",viewingRow.dport],
-                ["Bytes",           viewingRow.bytes],
-                ["Packets",         viewingRow.packets ?? "—"],
-                ["Duration",        viewingRow.duration ?? "—"],
-                ["TCP Flags",       viewingRow.flags ?? "—"],
-                ["IDS Source",      viewingRow.ids],
-              ].map(([key, val]) => (
-                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.35rem' }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{key}</span>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.83rem', fontWeight: 600, fontFamily: ['Source IP','Destination IP','Source Port','Destination Port'].includes(key) ? 'monospace' : 'inherit' }}>
-                    {val}
-                  </span>
+                ["Src IP",    viewingRow.src,           true],
+                ["Dst IP",    viewingRow.dst,           true],
+                ["Src Port",  viewingRow.sport,         true],
+                ["Dst Port",  viewingRow.dport,         true],
+                ["Bytes",     viewingRow.bytes,         false],
+                ["Packets",   viewingRow.packets ?? "—",false],
+                ["Duration",  viewingRow.duration ?? "—",false],
+                ["TCP Flags", viewingRow.flags ?? "—",  false],
+              ].map(([key, val, mono]) => (
+                <div key={key} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{key}</div>
+                  <div style={{ color: 'var(--text-main)', fontSize: '0.8rem', fontWeight: 600, fontFamily: mono ? 'monospace' : 'inherit' }}>{val}</div>
                 </div>
               ))}
-
-              {/* Quick enrichment links */}
-              <div style={{ marginTop: '0.5rem' }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Investigate</div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.src}`, '_blank')}>VT — Src IP</button>
-                  <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.dst}`, '_blank')}>VT — Dst IP</button>
-                  <button style={styles.linkBtn} onClick={() => window.open(`https://who.is/whois-ip/ip-address/${viewingRow.src}`, '_blank')}>Whois</button>
-                </div>
-              </div>
             </div>
 
-            <div className="modal-footer">
-              <button className="modal-cancel" onClick={() => setViewingRow(null)}>Close</button>
+            <div style={{ padding: '0.5rem 0.9rem 0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '0.25rem' }}>Investigate:</span>
+              <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.src}`, '_blank')}>VT — Src IP</button>
+              <button style={styles.linkBtn} onClick={() => window.open(`https://www.virustotal.com/gui/ip-address/${viewingRow.dst}`, '_blank')}>VT — Dst IP</button>
+              <button style={styles.linkBtn} onClick={() => window.open(`https://who.is/whois-ip/ip-address/${viewingRow.src}`, '_blank')}>Whois</button>
+              <button className="modal-cancel" style={{ marginLeft: 'auto', fontSize: '0.75rem', padding: '0.25rem 0.75rem' }} onClick={() => setViewingRow(null)}>Close</button>
             </div>
           </div>
         </div>

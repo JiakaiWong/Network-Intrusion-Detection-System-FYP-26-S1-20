@@ -4,8 +4,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import './analyst.css';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
-
 function getStorageKey() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -23,17 +21,6 @@ function saveLocalHistory(items) {
   catch {}
 }
 
-// Best-effort API sync (used when backend is available)
-async function saveReportEntry(entry) {
-  try {
-    const token = localStorage.getItem("token");
-    await fetch(`${API_BASE}/api/reports/history`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(entry),
-    });
-  } catch {}
-}
 
 function Reports() {
   /* ── Live alert data from API ──────────────────────────────── */
@@ -132,13 +119,12 @@ function Reports() {
       triggerPDF(newReport, scopedAlerts);
     }
 
-    // Save to localStorage + best-effort API sync
+    // Save to localStorage
     setReports((prev) => {
       const updated = [newReport, ...prev];
       saveLocalHistory(updated);
       return updated;
     });
-    saveReportEntry(newReport);
   };
 
   const resetForm = () => {

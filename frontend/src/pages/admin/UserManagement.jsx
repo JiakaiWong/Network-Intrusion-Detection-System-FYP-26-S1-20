@@ -3,7 +3,7 @@ import axios from "axios";
 import { styles } from "./UserManagement.styles";
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
 
 const getId = (user) => user._id || user.id;
 

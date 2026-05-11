@@ -6,23 +6,33 @@ import './analyst.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "https://network-intrusion-detection-system-fyp.onrender.com";
 
-async function fetchReportHistory() {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE}/api/reports/history`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.items || [];
+function getStorageKey() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return `report_history_${user.email || "default"}`;
+  } catch { return "report_history_default"; }
 }
 
+function loadLocalHistory() {
+  try { return JSON.parse(localStorage.getItem(getStorageKey()) || "[]"); }
+  catch { return []; }
+}
+
+function saveLocalHistory(items) {
+  try { localStorage.setItem(getStorageKey(), JSON.stringify(items)); }
+  catch {}
+}
+
+// Best-effort API sync (used when backend is available)
 async function saveReportEntry(entry) {
-  const token = localStorage.getItem("token");
-  await fetch(`${API_BASE}/api/reports/history`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(entry),
-  });
+  try {
+    const token = localStorage.getItem("token");
+    await fetch(`${API_BASE}/api/reports/history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(entry),
+    });
+  } catch {}
 }
 
 function Reports() {
@@ -48,12 +58,8 @@ function Reports() {
   const [format, setFormat]       = useState("PDF");
   const [idsSource, setIdsSource] = useState("ALL");
 
-  /* ── History table (account-linked via API) ───────────────── */
-  const [reports, setReports] = useState([]);
-
-  useEffect(() => {
-    fetchReportHistory().then(setReports).catch(() => {});
-  }, []);
+  /* ── History table (user-scoped localStorage + API sync) ───── */
+  const [reports, setReports] = useState(() => loadLocalHistory());
 
   /* ── Table filters ─────────────────────────────────────────── */
   const [filterScope,  setFilterScope]  = useState("ALL");
@@ -126,9 +132,13 @@ function Reports() {
       triggerPDF(newReport, scopedAlerts);
     }
 
-    // Save to backend + update local state
-    saveReportEntry(newReport).catch(() => {});
-    setReports((prev) => [newReport, ...prev]);
+    // Save to localStorage + best-effort API sync
+    setReports((prev) => {
+      const updated = [newReport, ...prev];
+      saveLocalHistory(updated);
+      return updated;
+    });
+    saveReportEntry(newReport);
   };
 
   const resetForm = () => {

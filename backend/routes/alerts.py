@@ -79,13 +79,11 @@ async def ingest_alert(alert: AlertIn):
     doc["status"] = "new"
     doc["notes"] = []
     doc["created_at"] = datetime.utcnow().isoformat()
-    
-    # Add geolocation data for destination IP
+
     dest_location = get_location_from_ip(doc["dest_ip"])
     if dest_location:
         doc["dest_location"] = dest_location
-    
-    # Optionally add geolocation for source IP (internal network usually won't resolve)
+
     src_location = get_location_from_ip(doc["src_ip"])
     if src_location:
         doc["src_location"] = src_location
@@ -134,6 +132,68 @@ def get_alerts(
     return {"ok": True, "items": alerts}
 
 
+# ── STATIC ROUTES BEFORE WILDCARD ──────────────────────────────
+
+@router.get("/alerts/dashboard/summary")          # ✅ moved up
+def summary():
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=500, detail="MongoDB not connected")
+
+    alerts = list(collection.find({}, {"_id": 0, "severity_label": 1}))
+    result = {"high": 0, "medium": 0, "low": 0}
+
+    for alert in alerts:
+        label = alert.get("severity_label")
+        if label in result:
+            result[label] += 1
+
+    return {"ok": True, "total": len(alerts), "severity_summary": result}
+
+
+@router.post("/alerts/send-telegram")             # ✅ moved up
+async def send_telegram(alert: dict, current_user: dict = Security(get_current_user)):
+    chat_id = alert.get("chat_id")
+    text = alert.get("text")
+    if not chat_id or not text:
+        raise HTTPException(status_code=400, detail="chat_id and text required")
+
+    res = await send_telegram_message(chat_id, text)
+    if res is None:
+        raise HTTPException(status_code=500, detail="Telegram bot not configured")
+
+    if res.status_code != 200:
+        raise HTTPException(status_code=res.status_code, detail=res.text)
+
+    return {"ok": True, "telegram_response": res.json()}
+
+
+@router.post("/alerts/refresh-all-locations")     # ✅ moved up
+def refresh_all_locations():
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=500, detail="MongoDB not connected")
+
+    alerts = list(collection.find({}, {"_id": 0}))
+    updated_count = 0
+
+    for alert in alerts:
+        update_data = {}
+        if alert.get("dest_ip"):
+            dest_location = get_location_from_ip(alert["dest_ip"])
+            update_data["dest_location"] = dest_location if dest_location else None
+        if alert.get("src_ip"):
+            src_location = get_location_from_ip(alert["src_ip"])
+            update_data["src_location"] = src_location if src_location else None
+        if update_data:
+            collection.update_one({"id": alert["id"]}, {"$set": update_data})
+            updated_count += 1
+
+    return {"ok": True, "message": f"Refreshed locations for {updated_count} alerts"}
+
+
+# ── WILDCARD ROUTES AFTER ───────────────────────────────────────
+
 @router.get("/alerts/{alert_id}")
 def get_alert(alert_id: str):
     collection = get_collection()
@@ -155,10 +215,7 @@ def update_status(alert_id: str, body: StatusUpdate):
 
     new_status = body.status.lower().strip()
     if new_status not in ALLOWED_STATUS:
-        raise HTTPException(
-            status_code=400,
-            detail="Status must be new, investigating, or resolved",
-        )
+        raise HTTPException(status_code=400, detail="Status must be new, investigating, or resolved")
 
     result = collection.update_one({"id": alert_id}, {"$set": {"status": new_status}})
     if result.matched_count == 0:
@@ -174,29 +231,17 @@ def update_alert(alert_id: str, body: AlertUpdate):
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
 
-    # Prepare update data
     update_data = {}
     if body.dest_ip is not None:
         update_data["dest_ip"] = body.dest_ip
-        # Recalculate destination location
         dest_location = get_location_from_ip(body.dest_ip)
-        if dest_location:
-            update_data["dest_location"] = dest_location
-        else:
-            update_data["dest_location"] = None
-
+        update_data["dest_location"] = dest_location if dest_location else None
     if body.src_ip is not None:
         update_data["src_ip"] = body.src_ip
-        # Recalculate source location
         src_location = get_location_from_ip(body.src_ip)
-        if src_location:
-            update_data["src_location"] = src_location
-        else:
-            update_data["src_location"] = None
-
+        update_data["src_location"] = src_location if src_location else None
     if body.signature is not None:
         update_data["signature"] = body.signature
-
     if body.severity is not None:
         update_data["severity"] = body.severity
         update_data["severity_label"] = SEVERITY_LABELS.get(body.severity, "unknown")
@@ -212,79 +257,15 @@ def update_alert(alert_id: str, body: AlertUpdate):
     return {"ok": True, "item": alert}
 
 
-@router.post("/alerts/{alert_id}/refresh-location")
-def refresh_alert_location(alert_id: str):
-    """Refresh geolocation data for an existing alert based on current IPs"""
-    collection = get_collection()
-    if collection is None:
-        raise HTTPException(status_code=500, detail="MongoDB not connected")
-
-    # Get current alert
-    alert = collection.find_one({"id": alert_id}, {"_id": 0})
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-
-    update_data = {}
-
-    # Recalculate destination location if dest_ip exists
-    if alert.get("dest_ip"):
-        dest_location = get_location_from_ip(alert["dest_ip"])
-        update_data["dest_location"] = dest_location if dest_location else None
-
-    # Recalculate source location if src_ip exists
-    if alert.get("src_ip"):
-        src_location = get_location_from_ip(alert["src_ip"])
-        update_data["src_location"] = src_location if src_location else None
-
-    if update_data:
-        collection.update_one({"id": alert_id}, {"$set": update_data})
-
-    # Return updated alert
-    updated_alert = collection.find_one({"id": alert_id}, {"_id": 0})
-    return {"ok": True, "item": updated_alert}
-
-
-@router.post("/alerts/refresh-all-locations")
-def refresh_all_locations():
-    """Refresh geolocation data for all alerts in the database"""
-    collection = get_collection()
-    if collection is None:
-        raise HTTPException(status_code=500, detail="MongoDB not connected")
-
-    # Get all alerts
-    alerts = list(collection.find({}, {"_id": 0}))
-    updated_count = 0
-
-    for alert in alerts:
-        update_data = {}
-
-        # Recalculate destination location
-        if alert.get("dest_ip"):
-            dest_location = get_location_from_ip(alert["dest_ip"])
-            update_data["dest_location"] = dest_location if dest_location else None
-
-        # Recalculate source location
-        if alert.get("src_ip"):
-            src_location = get_location_from_ip(alert["src_ip"])
-            update_data["src_location"] = src_location if src_location else None
-
-        if update_data:
-            collection.update_one({"id": alert["id"]}, {"$set": update_data})
-            updated_count += 1
-
-    return {"ok": True, "message": f"Refreshed locations for {updated_count} alerts"}
-
-
 @router.post("/alerts/{alert_id}/notes")
 async def add_note(alert_id: str, body: NoteIn, current_user: dict = Security(get_current_user)):
     collection = get_collection()
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
 
-    # Fetch full user data from database
     user_email = current_user.get("sub")
     user_data = await get_user_by_email(user_email)
-    
+
     note = {
         "text": body.text,
         "author": user_data.get("full_name", "Analyst") if user_data else "Analyst",
@@ -309,61 +290,37 @@ def get_notes(alert_id: str):
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    # Normalize notes: handle both string notes (legacy) and object notes (new)
     raw_notes = alert.get("notes", [])
     normalized_notes = []
     for idx, note in enumerate(raw_notes):
         if isinstance(note, str):
-            # Legacy: plain string note
-            normalized_notes.append({
-                "id": idx,
-                "text": note,
-                "author": "System",
-                "role": "System",
-                "time": "—"
-            })
+            normalized_notes.append({"id": idx, "text": note, "author": "System", "role": "System", "time": "—"})
         elif isinstance(note, dict):
-            # New: object note with text and time
-            normalized_notes.append({
-                "id": idx,
-                "text": note.get("text", ""),
-                "author": note.get("author", "System"),
-                "role": note.get("role", "Analyst"),
-                "time": note.get("time", "—")
-            })
-    
+            normalized_notes.append({"id": idx, "text": note.get("text", ""), "author": note.get("author", "System"), "role": note.get("role", "Analyst"), "time": note.get("time", "—")})
+
     return {"ok": True, "items": normalized_notes}
 
 
-@router.get("/alerts/dashboard/summary")
-def summary():
+@router.post("/alerts/{alert_id}/refresh-location")
+def refresh_alert_location(alert_id: str):
     collection = get_collection()
     if collection is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
 
-    alerts = list(collection.find({}, {"_id": 0, "severity_label": 1}))
-    result = {"high": 0, "medium": 0, "low": 0}
+    alert = collection.find_one({"id": alert_id}, {"_id": 0})
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
 
-    for alert in alerts:
-        label = alert.get("severity_label")
-        if label in result:
-            result[label] += 1
+    update_data = {}
+    if alert.get("dest_ip"):
+        dest_location = get_location_from_ip(alert["dest_ip"])
+        update_data["dest_location"] = dest_location if dest_location else None
+    if alert.get("src_ip"):
+        src_location = get_location_from_ip(alert["src_ip"])
+        update_data["src_location"] = src_location if src_location else None
 
-    return {"ok": True, "total": len(alerts), "severity_summary": result}
+    if update_data:
+        collection.update_one({"id": alert_id}, {"$set": update_data})
 
-
-@router.post("/alerts/send-telegram")
-async def send_telegram(alert: dict, current_user: dict = Security(get_current_user)):
-    chat_id = alert.get("chat_id")
-    text = alert.get("text")
-    if not chat_id or not text:
-        raise HTTPException(status_code=400, detail="chat_id and text required")
-
-    res = await send_telegram_message(chat_id, text)
-    if res is None:
-        raise HTTPException(status_code=500, detail="Telegram bot not configured")
-
-    if res.status_code != 200:
-        raise HTTPException(status_code=res.status_code, detail=res.text)
-
-    return {"ok": True, "telegram_response": res.json()}
+    updated_alert = collection.find_one({"id": alert_id}, {"_id": 0})
+    return {"ok": True, "item": updated_alert}

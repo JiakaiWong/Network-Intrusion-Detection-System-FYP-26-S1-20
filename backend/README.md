@@ -12,7 +12,9 @@ to when running locally (or once deployed).
 - Alert filtering
 - Integration with frontend dashboard
 
-# Setup
+## IDS Setup & Local Rules
+
+# Suricata Setup
 1. **Install Suricata**
     ```bash
     sudo apt update
@@ -29,6 +31,12 @@ to when running locally (or once deployed).
     ```bash
     sudo suricata -i eth0 -c /etc/suricata/suricata.yaml
     ```
+
+# Snort Setup
+
+# Kismet Setup
+
+# Zeek Setup
 
 ---
 

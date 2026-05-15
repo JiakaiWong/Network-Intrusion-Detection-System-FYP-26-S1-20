@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-KISMET_API_KEY = os.getenv("KISMET_API_KEY", "6D0B4FAB8A6C1B687D8B2B6E3A07F05D")
+KISMET_API_KEY = os.getenv("KISMET_API_KEY", "YOUR_API_KEY")
 KISMET_URL = "http://localhost:2501/alerts/last-time/{}/alerts.json"
 
 API_URL = os.getenv("API_URL", "https://network-intrusion-detection-system-fyp.onrender.com/api/ingest/alerts")

@@ -15,28 +15,66 @@ to when running locally (or once deployed).
 ## IDS Setup & Local Rules
 
 # Suricata Setup
-1. **Install Suricata**
-    ```bash
-    sudo apt update
-    sudo apt install suricata
-    ```
+1. **Install Suricata**: Download the Windows MSI installer from the [official Suricata website](https://suricata.io/download/) and run it. It will install to `C:\Program Files\Suricata`.
+2. **Add Local Rules**: We need to tell Suricata what to look for.
+   * Open your File Explorer and go to `C:\Program Files\Suricata\rules\`.
+   * Open the file named `local.rules` using Notepad.
+   * Paste this exact line at the bottom and save the file:
+     `alert icmp any any -> any any (msg:"Suricata Ping Sweep Detected"; sid:1000001; rev:1;)`
+3. **Run Suricata**: 
+   * Click the Windows Start Button, type `cmd`, right-click **Command Prompt**, and select **Run as Administrator**.
+   * Type these commands, pressing Enter after each:
+     ```cmd
+     cd "C:\Program Files\Suricata"
+     suricata.exe -c suricata.yaml -i 192.168.1.XX
+     ```
+     (Replace with your computer IP)
 
-2. **Configure the paths**
-    ```bash
-    /etc/suricata/suricata.yaml
-    /var/lib/suricata/rules/local.rules
-    ```
-
-3. **Run Suricata**
-    ```bash
-    sudo suricata -i eth0 -c /etc/suricata/suricata.yaml
-    ```
 
 # Snort Setup
-
+1. **Install Snort**: Download the Windows executable from the [Snort website](https://www.snort.org/downloads) and install it directly to `C:\Snort`. (You will also need to install **Npcap** or **WinPcap** if you haven't already, so Snort can read the network).
+2. **Add Local Rules**: 
+   * Go to `C:\Snort\rules\`.
+   * Open `local.rules` in Notepad.
+   * Paste this line at the bottom and save:
+     `alert tcp any any -> any 80 (msg:"[Web] Snort Admin Page Access Attempt"; sid:1000005; rev:1;)`
+3. **Run Snort**:
+   * Open Command Prompt as **Administrator**.
+   * Type these commands:
+     ```cmd
+     cd C:\Snort\bin
+     snort.exe -c C:\Snort\etc\snort.conf -i 1
+     ```
 # Kismet Setup
+1. **Start the Kismet Server**: Kismet natively requires a Linux environment (or WSL on Windows). Run your Kismet engine from the terminal (e.g., kismet -c wlan0).
+
+2. **Access the Web UI**: Open your web browser and go to http://localhost:2501.
+
+3. **Generate an API Key**:
+
+    * Log in using your admin credentials (or create them if it's your first launch).
+
+    * Click the menu icon (top left) and navigate to Settings > API Keys (or click your username/profile).
+
+    * Click Generate New Key, assign it a descriptive name (like "IDS Ingestor"), and copy the generated key.
+
+4. **Link to Backend**:
+
+    * Open the .env file in your backend directory.
+
+    * Add the following line, pasting the key you just copied: KISMET_API_KEY=your_copied_api_key_here
+
 
 # Zeek Setup
+1. **Install Zeek**: Zeek also requires a Linux environment (or WSL on Windows). Install it via your package manager (e.g., sudo apt install zeek).
+
+2. **Configure the Interface**: Open the node configuration file (typically /opt/zeek/etc/node.cfg) and ensure the interface= matches your active network adapter (e.g., interface=eth0).
+
+3. **Run Zeek**: Start the engine by typing sudo zeekctl deploy in your terminal. Zeek will begin monitoring and writing anomalies to its notice.log file.
+
+4. **Simulator**:  By running the provided zeek_simulator.py and kismet_simulator.py scripts to generate authentic test data for your dashboard.
+
+
 
 ---
 
@@ -166,7 +204,13 @@ backend/
 ├── tests/                # pytest async tests
 │   ├── conftest.py       # fixtures (mongodb_client, etc.)
 │   └── test_auth.py      # registration/password/full‑name tests
-├── eve_ingestor.py       # reaeds Suricata eve.json, extract alerts
+├── eve_ingestor.py       # reads Suricata eve.json, extract alerts
+├── snort_ingestor.py     # Script to read Snort logs
+├── eve_ingestor.py       # Script to read Suricata logs
+├── kismet_ingestor.py    # Script to receive Kismet data
+├── kismet_simulator.py   # Generates fake Wi-Fi attacks
+├── zeek_ingestor.py      # Script to read Zeek logs
+├── zeek_simulator.py     # Generates fake network anomalies
 ├── main.py               # FastAPI app instance
 ├── pytest.ini            # test configuration
 ├── .env                  # local environment override (ignored by git)

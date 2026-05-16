@@ -13,7 +13,7 @@ app = FastAPI(title="IDS Backend API")
 
 origins = [
     "http://localhost:5173",
-    "https://networkintrusiondetection-system.netlify.app",
+    "https://intrusight.netlify.app/p",
 ]
 
 app.add_middleware(

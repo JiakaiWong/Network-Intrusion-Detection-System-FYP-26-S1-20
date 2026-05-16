@@ -43,7 +43,7 @@ const handleLogout = () => {
   return (
     <div className="dashboard-container">
       <aside className="sidebar">
-        <div className="sidebar-header">🛡️ NIDS Analyst</div>
+        <div className="sidebar-header">Intrusight</div>
 
         <nav className="sidebar-nav">
           <div className="nav-section">

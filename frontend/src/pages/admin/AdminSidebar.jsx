@@ -35,7 +35,7 @@ const navItems = [
     <div className="admin-container">
       <div className="admin-layout">
         <aside className="admin-sidebar">
-          <div className="admin-logo">🛡️ NIDS Dashboard</div>
+          <div className="admin-logo">Intrusight</div>
 
           <nav className="admin-nav">
             {navItems.map((item) => (

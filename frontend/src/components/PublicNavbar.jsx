@@ -13,7 +13,7 @@ function PublicNavbar({ active }) {
 
   return (
     <nav style={styles.navbar}>
-      <h2 style={styles.logo} onClick={() => navigate("/")}>Intrusion Detection</h2>
+      <h2 style={styles.logo} onClick={() => navigate("/")}>Intrusight</h2>
       <div style={styles.navLinks}>
         {links.map(({ label, to }) =>
           label === active ? (
